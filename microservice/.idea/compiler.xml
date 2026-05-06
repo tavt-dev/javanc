@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="api-gateway" target="21" />
+      <module name="discovery-server" target="21" />
+      <module name="email-service" target="21" />
+      <module name="image-service" target="21" />
+      <module name="manager-service" target="21" />
+      <module name="notification-service" target="21" />
+      <module name="profile-service" target="21" />
+      <module name="project-service" target="21" />
+      <module name="user-service" target="21" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

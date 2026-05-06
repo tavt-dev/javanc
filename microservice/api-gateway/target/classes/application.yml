@@ -1,0 +1,48 @@
+server:
+  port: 8080
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8671/eureka
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: profile-service
+          uri: lb://PROFILE-SERVICE
+          predicates:
+            - Path=/profile/**
+          filters:
+            - AuthenticationFilter
+        - id: project-service
+          uri: lb://PROJECT-SERVICE
+          predicates:
+            - Path=/project/**
+          filters:
+            - AuthenticationFilter
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/auth/**
+        - id: profile-hr-service
+          uri: lb://PROFILE-HR-SERVICE
+          predicates:
+            - Path=/profile-hr/**
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/notification/**
+        - id: manager-service
+          uri: lb://MANAGER-SERVICE
+          predicates:
+            - Path=/manager/**
+          filters:
+            - AuthenticationFilter
+        - id: image-service
+          uri: lb://IMAGE-SERVICE
+          predicates:
+            - Path=/image/**
+
