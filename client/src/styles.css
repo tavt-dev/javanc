@@ -1,0 +1,14 @@
+@media (max-width: 768px) {
+    body
+    {
+        width: 100%;
+    }
+}
+
+@media (min-width: 768px) {
+    body
+    {
+        min-width: 1024px;
+    }
+    
+}

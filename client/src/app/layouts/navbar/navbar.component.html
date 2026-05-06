@@ -1,0 +1,62 @@
+<div class="container-fluid">
+    <header class="bg-light py-3">
+        <h2 class="text-center">Admin</h2>
+    </header>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa fa-bars"></i>
+    </button>
+    <div class="row">
+        <!-- Menu -->
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 bg-light sidebar">
+            <div class="nav-title text-center mb-3 font-weight-bold">MENU</div>
+            <div class="nav flex-column">
+                <a routerLink="admin" class="nav-link" [ngClass]="{'active': isActive('/admin')}">
+                    <i class="fa fa-home"></i> Home
+                </a>
+                <a routerLink="admin/list-company" class="nav-link" [ngClass]="{'active': isActive('/admin/list-company')}">
+                    <i class="fa fa-file-text-o"></i> Company List
+                </a>
+                <a routerLink="admin/list-user" class="nav-link" [ngClass]="{'active': isActive('/admin/list-user')}">
+                    <i class="fa fa-address-book-o"></i> User List
+                </a>
+                <hr>
+                <a (click)="logout()" class="nav-link" >
+                    <i class="fa fa-arrow-left"></i> Logout (go home)
+                </a>
+            </div>
+        </nav>
+        <main class="main col-md-9 col-lg-10">
+            <app-project-list *ngIf="currentUrl === '/admin/list-project'"></app-project-list>
+            <app-user-list *ngIf="currentUrl === '/admin/list-user'"></app-user-list>
+            <app-company-list *ngIf="currentUrl === '/admin/list-company'"></app-company-list>
+            <ng-container *ngIf="currentUrl === '/admin'">
+                <!-- Nội dung trang chủ -->
+                <div class="home-content text-center">
+                    <h3 class="welcome-message mb-4">Welcome back Admin</h3>
+                    <div class="row justify-content-around">
+                        <div class="col-md-4 mb-4">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fa fa-users fa-3x mb-3"></i>
+                                    <h4 class="card-title">Manager Management</h4>
+                                    <p class="card-text">Manage your users effectively and efficiently.</p>
+                                    <a routerLink="/admin/list-user" class="btn btn-primary">View Users</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fa fa-building fa-3x mb-3"></i>
+                                    <h4 class="card-title">Company Management</h4>
+                                    <p class="card-text">Oversee company details and contact information.</p>
+                                    <a routerLink="/admin/list-company" class="btn btn-primary">View Companies</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+        </main>
+    </div>
+</div>

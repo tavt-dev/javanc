@@ -1,0 +1,57 @@
+<!-- List Company - Home -->
+<div *ngIf="displayedProfiles.length>0 && router.url ==='/home'; else noItem"  class="row" [ngStyle]="{'text-align': 'center'}">
+    <a *ngFor="let company of displayedProfiles" (click)="viewDetailsCompany(company.id)" class="company-card col-sm-6 col-lg-4 m-15px-tb">
+        <!-- <div class="company-logo">
+            <img  alt="Company Logo">
+        </div> -->
+        <div class="company-info">
+            <h3>{{company.name}}</h3>
+            <p>City: {{company.city}}</p>
+            <p>Contact: {{company.email}}</p>
+            <p>Phone: {{company.phone}}</p>
+            <p>Address: {{company.street}}</p>
+        </div>
+    </a>
+    <div class="d-flex justify-content-end">
+        <button class="nav-button prev" (click)="prevPage()" [disabled]="currentPage === 0"><</button>
+        <button class="nav-button next" (click)="nextPage()" [disabled]="currentPage >= totalPages() - 1">></button>
+    </div>
+</div>
+
+<ng-template #noItem>
+    <div *ngIf="router.url ==='/home'" class="not-found-container">
+        <div class="not-found-content">
+            <h1>Oops!</h1>
+            <h2>We couldn't find what you're looking for.</h2>
+            <p>It seems that the page you're searching for doesn't exist or has been moved. Try searching with different keywords or explore other sections.</p>
+            <a routerLink="['/home']" class="home-button">Go to Homepage</a>
+        </div>
+    </div>
+</ng-template>
+<!-- Company - Details -->
+<div class="overlay" *ngIf="showCompany"></div>
+<div *ngIf="showCompany && router.url ==='/home'" class="container company-details-window">
+    <div class="window-header" (click)="closeViewCompany()">
+        <h3 class="window-title">Company & Jobs</h3>
+        <button class="close-button">&times;</button>
+    </div>
+
+    <!-- Company Information -->
+    <div class="company-header">
+        <img src="" alt="Company Logo">
+        <div class="company-info">
+            <h2>{{company.name}}</h2>
+            <p>Type: {{company.type}}</p>
+            <p>Description: {{company.description}}</p>
+            <p>Street: {{company.street}}</p>
+            <p>Email: {{company.email}}</p>
+            <p>Phone: {{company.phone}}</p>
+            <p>City: {{company.city}}</p>
+        </div>
+    </div>
+
+    <!-- Jobs Section -->
+    <app-job-list [isListJob]="true" 
+                  [idCompany]="company.id"
+    ></app-job-list>
+</div>
