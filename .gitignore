@@ -88,7 +88,7 @@ pnpm-debug.log*
 .env.production.local
 
 # local migration docs
-docs/
+
 
 # vercel
 .vercel/
