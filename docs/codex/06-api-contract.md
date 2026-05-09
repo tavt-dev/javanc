@@ -94,6 +94,11 @@ Base path: `/project`
 
 Notification base path: `/notification`
 
+Notification read-state compatibility:
+
+- Spring/Lombok `NotificationDTO.isRead` is serialized and consumed by the Angular client as JSON field `read`.
+- Preserve `read` in Quarkus responses. Accepting `isRead` as an input alias is allowed for backward compatibility.
+
 | Method | Path | Inputs | Response data |
 |---|---|---|---|
 | `POST` | `/create` | `MessageDTO` body | string `"true"` |
