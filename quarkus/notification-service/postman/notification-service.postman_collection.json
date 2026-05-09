@@ -1,0 +1,119 @@
+{
+  "info": {
+    "_postman_id": "348d745f-cc7a-4077-b431-cc81dc707d57",
+    "name": "Quarkus notification-service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{notificationBaseUrl}}/q/health",
+          "host": [
+            "{{notificationBaseUrl}}"
+          ],
+          "path": [
+            "q",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get All Compatibility",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{notificationBaseUrl}}/notification/getAll",
+          "host": [
+            "{{notificationBaseUrl}}"
+          ],
+          "path": [
+            "notification",
+            "getAll"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Application accepted\",\n  \"id\": {{notificationUserId}}\n}"
+        },
+        "url": {
+          "raw": "{{notificationBaseUrl}}/notification/create",
+          "host": [
+            "{{notificationBaseUrl}}"
+          ],
+          "path": [
+            "notification",
+            "create"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": {{notificationId}},\n  \"message\": \"Application accepted\",\n  \"url\": null,\n  \"read\": true,\n  \"idUser\": {{notificationUserId}}\n}"
+        },
+        "url": {
+          "raw": "{{notificationBaseUrl}}/notification/update",
+          "host": [
+            "{{notificationBaseUrl}}"
+          ],
+          "path": [
+            "notification",
+            "update"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Find By User",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{notificationBaseUrl}}/notification/user/findByUser?userId={{notificationUserId}}",
+          "host": [
+            "{{notificationBaseUrl}}"
+          ],
+          "path": [
+            "notification",
+            "user",
+            "findByUser"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{{notificationUserId}}"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
