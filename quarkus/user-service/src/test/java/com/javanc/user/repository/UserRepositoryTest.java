@@ -1,7 +1,12 @@
 package com.javanc.user.repository;
 
-import com.javanc.user.entity.Role;
-import com.javanc.user.entity.User;
+import com.javanc.user.adapter.out.persistence.JpaUserPanacheRepository;
+import com.javanc.user.domain.model.EmailAddress;
+import com.javanc.user.domain.model.EmployeeId;
+import com.javanc.user.domain.model.PasswordHash;
+import com.javanc.user.domain.model.Role;
+import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserId;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -19,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserRepositoryTest {
 
     @Inject
-    UserRepository userRepository;
+    JpaUserPanacheRepository userRepository;
 
     @Inject
     EntityManager entityManager;
@@ -27,48 +32,46 @@ class UserRepositoryTest {
     @Test
     @TestTransaction
     void persistsAndFindsUserByIdAndEmail() {
-        User user = new User(1001, "Jane", "jane@example.com", "EMP-1", "encoded", true, Role.user);
+        User user = user(1001, "Jane", "jane@example.com", "EMP-1", "encoded", true, Role.user);
 
-        userRepository.persist(user);
-        userRepository.flush();
+        userRepository.save(user);
 
-        Optional<User> byId = userRepository.findByIdOptional(1001);
-        Optional<User> byEmail = userRepository.findByEmail("jane@example.com");
+        Optional<User> byId = userRepository.findById(new UserId(1001));
+        Optional<User> byEmail = userRepository.findByEmail(new EmailAddress("jane@example.com"));
 
         assertTrue(byId.isPresent());
         assertTrue(byEmail.isPresent());
-        assertEquals("Jane", byId.orElseThrow().getName());
-        assertEquals(Role.user, byEmail.orElseThrow().getRole());
+        assertEquals("Jane", byId.orElseThrow().name());
+        assertEquals(Role.user, byEmail.orElseThrow().role());
     }
 
     @Test
     @TestTransaction
     void listsFindsByIdsAndDeletesUsers() {
-        User first = new User(2001, "Jane", "jane.list@example.com", "EMP-1", "encoded", true, Role.hr);
-        User second = new User(2002, "John", "john.list@example.com", "EMP-2", "encoded-2", false, Role.manager);
+        User first = user(2001, "Jane", "jane.list@example.com", "EMP-1", "encoded", true, Role.hr);
+        User second = user(2002, "John", "john.list@example.com", "EMP-2", "encoded-2", false, Role.manager);
 
-        userRepository.persist(first);
-        userRepository.persist(second);
-        userRepository.flush();
+        userRepository.save(first);
+        userRepository.save(second);
 
-        List<User> usersByIds = userRepository.findUsersByIds(List.of(2001, 2002, 9999));
+        List<User> usersByIds = userRepository.findUsersByIds(List.of(new UserId(2001), new UserId(2002),
+                new UserId(9999)));
 
-        assertEquals(2, userRepository.listAll().stream()
-                .filter(user -> List.of(2001, 2002).contains(user.getId()))
+        assertEquals(2, userRepository.findAllUsers().stream()
+                .filter(found -> List.of(2001, 2002).contains(found.id().value()))
                 .count());
         assertEquals(2, usersByIds.size());
         assertTrue(userRepository.findUsersByIds(List.of()).isEmpty());
-        assertTrue(userRepository.deleteUserById(2002));
-        assertFalse(userRepository.findByIdOptional(2002).isPresent());
+        userRepository.delete(second);
+        assertFalse(userRepository.findById(new UserId(2002)).isPresent());
     }
 
     @Test
     @TestTransaction
     void mapsExplicitColumnNamesAndRoleAsString() {
-        User user = new User(3001, "Admin", "admin@example.com", "EMP-ADMIN", "encoded-admin", true, Role.admin);
+        User user = user(3001, "Admin", "admin@example.com", "EMP-ADMIN", "encoded-admin", true, Role.admin);
 
-        userRepository.persist(user);
-        userRepository.flush();
+        userRepository.save(user);
 
         Object[] row = (Object[]) entityManager
                 .createNativeQuery("select id_employee, is_active, role from user where id = ?1")
@@ -78,5 +81,11 @@ class UserRepositoryTest {
         assertEquals("EMP-ADMIN", row[0]);
         assertEquals(Boolean.TRUE, row[1]);
         assertEquals("admin", row[2]);
+    }
+
+    private User user(Integer id, String name, String email, String employeeId, String passwordHash, boolean active,
+            Role role) {
+        return new User(new UserId(id), name, new EmailAddress(email), new EmployeeId(employeeId),
+                new PasswordHash(passwordHash), active, role);
     }
 }

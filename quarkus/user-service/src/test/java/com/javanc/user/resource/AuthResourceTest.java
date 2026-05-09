@@ -1,8 +1,9 @@
 package com.javanc.user.resource;
 
-import com.javanc.user.entity.User;
-import com.javanc.user.repository.UserRepository;
-import com.javanc.user.security.PasswordService;
+import com.javanc.user.adapter.out.persistence.JpaUserPanacheRepository;
+import com.javanc.user.adapter.out.security.BcryptPasswordHasher;
+import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserId;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
@@ -21,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AuthResourceTest {
 
     @Inject
-    UserRepository userRepository;
+    JpaUserPanacheRepository userRepository;
 
     @Inject
-    PasswordService passwordService;
+    BcryptPasswordHasher passwordHasher;
 
     @Test
     void signUpSuccessAndDuplicatePreserveWrapperAndStatus() {
@@ -200,6 +201,15 @@ class AuthResourceTest {
                 .body("data.email", hasItem("resource.lookup.one@example.com"));
 
         given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/auth/getAll")
+                .then()
+                .statusCode(200)
+                .body("message", equalTo("All users retrieved successfully"))
+                .body("data.email", hasItem("resource.lookup.one@example.com"));
+
+        given()
                 .queryParam("token", token)
                 .queryParam("ids", firstId)
                 .queryParam("ids", secondId)
@@ -219,7 +229,7 @@ class AuthResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .queryParam("token", token)
+                .header("Authorization", "Bearer " + token)
                 .body(Map.of(
                         "id", userId,
                         "name", "Updated User",
@@ -237,13 +247,13 @@ class AuthResourceTest {
                 .body("data.email", equalTo("resource.mutate.updated@example.com"))
                 .body("data.role", equalTo("manager"));
 
-        User updated = userRepository.findByIdOptional(userId).orElseThrow();
-        assertNotEquals("NewPassword1!", updated.getPassword());
-        assertTrue(passwordService.matches("NewPassword1!", updated.getPassword()));
+        User updated = userRepository.findById(new UserId(userId)).orElseThrow();
+        assertNotEquals("NewPassword1!", updated.passwordHash().value());
+        assertTrue(passwordHasher.matches("NewPassword1!", updated.passwordHash()));
 
         given()
                 .contentType(ContentType.JSON)
-                .queryParam("token", "ignored-token")
+                .queryParam("token", signInToken("resource.mutate.updated@example.com", "NewPassword1!", "data.token"))
                 .body(Map.of("id", userId))
                 .when()
                 .post("/auth/updateactive")
@@ -251,6 +261,16 @@ class AuthResourceTest {
                 .statusCode(200)
                 .body("message", equalTo("User updated successfully"))
                 .body("data.active", equalTo(false));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("id", userId))
+                .when()
+                .post("/auth/updateactive")
+                .then()
+                .statusCode(401)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Unauthorized"));
 
         given()
                 .queryParam("token", signInToken("resource.mutate.updated@example.com", "NewPassword1!", "data.token"))
