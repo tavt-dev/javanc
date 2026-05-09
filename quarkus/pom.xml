@@ -12,6 +12,7 @@
     <modules>
         <module>user-service</module>
         <module>profile-service</module>
+        <module>image-service</module>
     </modules>
 
     <properties>
