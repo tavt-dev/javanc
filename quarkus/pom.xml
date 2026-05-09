@@ -14,6 +14,7 @@
         <module>profile-service</module>
         <module>image-service</module>
         <module>email-service</module>
+        <module>manager-service</module>
     </modules>
 
     <properties>
