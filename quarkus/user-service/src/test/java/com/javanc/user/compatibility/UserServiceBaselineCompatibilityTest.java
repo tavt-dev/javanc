@@ -1,8 +1,9 @@
 package com.javanc.user.compatibility;
 
-import com.javanc.user.entity.User;
-import com.javanc.user.repository.UserRepository;
-import com.javanc.user.security.PasswordService;
+import com.javanc.user.adapter.out.persistence.JpaUserPanacheRepository;
+import com.javanc.user.adapter.out.security.BcryptPasswordHasher;
+import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserId;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
@@ -22,10 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserServiceBaselineCompatibilityTest {
 
     @Inject
-    UserRepository userRepository;
+    JpaUserPanacheRepository userRepository;
 
     @Inject
-    PasswordService passwordService;
+    BcryptPasswordHasher passwordHasher;
 
     @Test
     void authSignupSigninAndPasswordBaselineMatchesSpringContract() {
@@ -52,9 +53,9 @@ class UserServiceBaselineCompatibilityTest {
                 .extract()
                 .path("data.user.id");
 
-        User persisted = userRepository.findByIdOptional(userId).orElseThrow();
-        assertNotEquals("Password1!", persisted.getPassword());
-        assertTrue(passwordService.matches("Password1!", persisted.getPassword()));
+        User persisted = userRepository.findById(new UserId(userId)).orElseThrow();
+        assertNotEquals("Password1!", persisted.passwordHash().value());
+        assertTrue(passwordHasher.matches("Password1!", persisted.passwordHash()));
 
         given()
                 .contentType(ContentType.JSON)
@@ -271,13 +272,13 @@ class UserServiceBaselineCompatibilityTest {
                 .body("data.email", equalTo("baseline.user.updated@example.com"))
                 .body("data.role", equalTo("manager"));
 
-        User updated = userRepository.findByIdOptional(firstId).orElseThrow();
-        assertNotEquals("NewPassword1!", updated.getPassword());
-        assertTrue(passwordService.matches("NewPassword1!", updated.getPassword()));
+        User updated = userRepository.findById(new UserId(firstId)).orElseThrow();
+        assertNotEquals("NewPassword1!", updated.passwordHash().value());
+        assertTrue(passwordHasher.matches("NewPassword1!", updated.passwordHash()));
 
         given()
                 .contentType(ContentType.JSON)
-                .queryParam("token", "ignored-token-for-spring-compat")
+                .queryParam("token", signInValue("baseline.user.updated@example.com", "NewPassword1!", "data.token"))
                 .body(Map.of("id", firstId))
                 .when()
                 .post("/auth/updateactive")
@@ -285,6 +286,16 @@ class UserServiceBaselineCompatibilityTest {
                 .statusCode(200)
                 .body("message", equalTo("User updated successfully"))
                 .body("data.active", equalTo(false));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("id", firstId))
+                .when()
+                .post("/auth/updateactive")
+                .then()
+                .statusCode(401)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Unauthorized"));
 
         String updatedToken = signInValue("baseline.user.updated@example.com", "NewPassword1!", "data.token");
         given()

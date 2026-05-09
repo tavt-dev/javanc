@@ -1,8 +1,13 @@
 package com.javanc.user.security;
 
-import com.javanc.user.entity.Role;
-import com.javanc.user.entity.User;
-import com.javanc.user.exception.JwtServiceException;
+import com.javanc.user.adapter.out.security.JwtTokenService;
+import com.javanc.user.domain.model.EmailAddress;
+import com.javanc.user.domain.model.EmployeeId;
+import com.javanc.user.domain.model.PasswordHash;
+import com.javanc.user.domain.model.Role;
+import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserId;
+import com.javanc.user.shared.exception.JwtServiceException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.jwt.auth.principal.JWTParser;
 import jakarta.inject.Inject;
@@ -24,7 +29,7 @@ class JwtServiceTest {
     private static final String TEST_SECRET = "test-secret-key-with-at-least-32-bytes-1234567890";
 
     @Inject
-    JwtService jwtService;
+    JwtTokenService jwtService;
 
     @Inject
     JWTParser jwtParser;
@@ -33,10 +38,10 @@ class JwtServiceTest {
     void generatedTokenCanBeParsedWithEmailSubject() {
         User user = user("jwt.subject@example.com");
 
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
 
         assertNotNull(token);
-        assertEquals("jwt.subject@example.com", jwtService.extractUsername(token));
+        assertEquals("jwt.subject@example.com", jwtService.extractSubject(token));
         assertTrue(jwtService.isTokenValid(token, user));
     }
 
@@ -52,7 +57,7 @@ class JwtServiceTest {
 
     @Test
     void tokenForDifferentSubjectIsRejected() {
-        String token = jwtService.generateToken(user("jwt.owner@example.com"));
+        String token = jwtService.generateAccessToken(user("jwt.owner@example.com"));
 
         assertFalse(jwtService.isTokenValid(token, user("jwt.other@example.com")));
     }
@@ -60,12 +65,12 @@ class JwtServiceTest {
     @Test
     void invalidMalformedExpiredAndWrongSignatureTokensAreRejected() {
         User user = user("jwt.invalid@example.com");
-        String token = jwtService.generateToken(user);
-        JwtService wrongSecretService = new JwtService("different-test-secret-with-at-least-32-bytes",
+        String token = jwtService.generateAccessToken(user);
+        JwtTokenService wrongSecretService = new JwtTokenService("different-test-secret-with-at-least-32-bytes",
                 86400000, Clock.systemUTC(), jwtParser);
-        JwtService expiredService = new JwtService(TEST_SECRET, 1,
+        JwtTokenService expiredService = new JwtTokenService(TEST_SECRET, 1,
                 Clock.fixed(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC), jwtParser);
-        String expiredToken = expiredService.generateToken(user);
+        String expiredToken = expiredService.generateAccessToken(user);
 
         assertFalse(jwtService.isTokenValid("not-a-jwt", user));
         assertFalse(wrongSecretService.isTokenValid(token, user));
@@ -75,12 +80,14 @@ class JwtServiceTest {
 
     @Test
     void blankJwtSecretDoesNotGenerateToken() {
-        JwtService blankSecretService = new JwtService("", 86400000, Clock.systemUTC(), jwtParser);
+        JwtTokenService blankSecretService = new JwtTokenService("", 86400000, Clock.systemUTC(), jwtParser);
 
-        assertThrows(JwtServiceException.class, () -> blankSecretService.generateToken(user("jwt.blank@example.com")));
+        assertThrows(JwtServiceException.class,
+                () -> blankSecretService.generateAccessToken(user("jwt.blank@example.com")));
     }
 
     private User user(String email) {
-        return new User(1, "JWT User", email, "EMP-JWT", "encoded", true, Role.user);
+        return new User(new UserId(1), "JWT User", new EmailAddress(email), new EmployeeId("EMP-JWT"),
+                new PasswordHash("encoded"), true, Role.user);
     }
 }

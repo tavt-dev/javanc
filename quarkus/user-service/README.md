@@ -4,7 +4,22 @@ Quarkus migration target for the current Spring Boot `user-service`.
 
 This module does not have a Spring Boot-style `public static void main` application class. Quarkus owns the runtime bootstrap. The main HTTP entrypoint for the migrated auth/user contract is:
 
-- `src/main/java/com/javanc/user/resource/AuthResource.java`
+- `src/main/java/com/javanc/user/adapter/in/rest/AuthResource.java`
+
+## Architecture
+
+The module is organized as a Hexagonal DDD service:
+
+- `domain/model`: pure user aggregate, value objects, and role enum.
+- `domain/port`: repository, password, token, and id generation ports.
+- `application/usecase`: auth and user use cases with transaction boundaries.
+- `application/command` and `application/result`: framework-free inputs and outputs.
+- `adapter/in/rest`: Jakarta REST resource, wire DTOs, token resolver, and REST mapper.
+- `adapter/out/persistence`: Panache/JPA adapter mapped to MySQL table `user`.
+- `adapter/out/security`: BCrypt, JWT, and random integer id adapters.
+- `shared/exception`: exception types and API-compatible exception mappers.
+
+Domain and application code do not depend on REST DTOs, Panache entities, BCrypt, or JWT implementation classes.
 
 ## Requirements
 
@@ -35,6 +50,15 @@ $env:JWT_EXPIRATION_MILLIS='86400000'
 ```
 
 `JWT_SECRET` is intentionally blank by default in `application.properties`. Signup/signin/refresh token flows require this variable at runtime.
+
+## API Compatibility Notes
+
+- Auth routes remain under `/auth/**` and keep the `ApiResponse(success,message,data)` wrapper.
+- `AuthenticationResponse` still serializes the legacy field `vaild`; `isVaild` is accepted as an input alias.
+- User responses no longer serialize `password` or password hashes. Requests may still include `password` where the existing contract allows password updates.
+- Protected user endpoints prefer `Authorization: Bearer <token>`.
+- Legacy query `token` remains accepted for `/auth/getAll`, `/auth/getlistuserbyid`, `/auth/update`, `/auth/updateactive`, and `/auth/delete` during the compatibility window.
+- `/auth/ourUserDetailsService` intentionally returns `501` because the Spring mapping was broken and no new contract is invented.
 
 ## Run In Dev Mode
 
