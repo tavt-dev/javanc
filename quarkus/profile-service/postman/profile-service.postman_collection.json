@@ -1,0 +1,428 @@
+{
+  "info": {
+    "_postman_id": "f236db2c-f8ab-4278-b6e8-2fb8c07d46b8",
+    "name": "Quarkus profile-service",
+    "description": "API smoke collection for the Quarkus profile-service migration. Use the direct local base URL by default. Gateway calls can use the gatewayProfileBaseUrl variable and authToken.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{profileBaseUrl}}"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/q/health",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "q",
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('health endpoint is reachable', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profile User Endpoints",
+      "item": [
+        {
+          "name": "Create Profile",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Java Developer",
+                  "type": "text"
+                },
+                {
+                  "key": "objective",
+                  "value": "Build backend services",
+                  "type": "text"
+                },
+                {
+                  "key": "education",
+                  "value": "Computer Science",
+                  "type": "text"
+                },
+                {
+                  "key": "workExperience",
+                  "value": "3 years",
+                  "type": "text"
+                },
+                {
+                  "key": "skills",
+                  "value": "Java, Quarkus, MongoDB",
+                  "type": "text"
+                },
+                {
+                  "key": "typeProfile",
+                  "value": "{{typeProfile}}",
+                  "type": "text"
+                },
+                {
+                  "key": "idUser",
+                  "value": "{{profileUserId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.address",
+                  "value": "Ho Chi Minh City",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.phone",
+                  "value": "0900000000",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.email",
+                  "value": "candidate@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/save",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "save"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create profile succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('profileId', json.data.id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "id",
+                  "value": "{{profileId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Senior Java Developer",
+                  "type": "text"
+                },
+                {
+                  "key": "objective",
+                  "value": "Maintain Quarkus services",
+                  "type": "text"
+                },
+                {
+                  "key": "education",
+                  "value": "Computer Science",
+                  "type": "text"
+                },
+                {
+                  "key": "workExperience",
+                  "value": "4 years",
+                  "type": "text"
+                },
+                {
+                  "key": "skills",
+                  "value": "Java, Quarkus, REST",
+                  "type": "text"
+                },
+                {
+                  "key": "typeProfile",
+                  "value": "{{typeProfile}}",
+                  "type": "text"
+                },
+                {
+                  "key": "idUser",
+                  "value": "{{profileUserId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.address",
+                  "value": "Ho Chi Minh City",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.phone",
+                  "value": "0911111111",
+                  "type": "text"
+                },
+                {
+                  "key": "contact.email",
+                  "value": "candidate.updated@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/update",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "update"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('update profile succeeds', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/getAll",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "getAll"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Find Profile By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/findById?id={{profileId}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "findById"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{profileId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Find Profile By User Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/findByUserId?userId={{profileUserId}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "findByUserId"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{profileUserId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Find Profiles By Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/findProfileByType?typeProfile={{typeProfile}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "findProfileByType"
+              ],
+              "query": [
+                {
+                  "key": "typeProfile",
+                  "value": "{{typeProfile}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Find Profiles By Title",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/findByTitle?title={{titleQuery}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "findByTitle"
+              ],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "{{titleQuery}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check Profile Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/user/checkIdProfile?id={{profileId}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "user",
+                "checkIdProfile"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{profileId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manager Endpoints",
+      "item": [
+        {
+          "name": "Get Profiles By Pending Job Ids",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{profileBaseUrl}}/profile/manager/getProfileByIdPendingJob?ids={{pendingProfileIds}}",
+              "host": [
+                "{{profileBaseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "manager",
+                "getProfileByIdPendingJob"
+              ],
+              "query": [
+                {
+                  "key": "ids",
+                  "value": "{{pendingProfileIds}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
