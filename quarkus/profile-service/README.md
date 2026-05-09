@@ -4,7 +4,20 @@ Quarkus migration target for the current Spring Boot `profile-service`.
 
 This module does not have a Spring Boot-style `public static void main` application class. Quarkus owns the runtime bootstrap. The main HTTP entrypoint for the migrated profile contract is:
 
-- `src/main/java/com/javanc/profile/resource/ProfileResource.java`
+- `src/main/java/com/javanc/profile/interfaces/rest/resource/ProfileResource.java`
+
+## Architecture
+
+The module is organized with a small DDD-style boundary:
+
+- `domain/model`: Mongo document and value objects such as `Profile`, `Contact`, and `TypeProfile`.
+- `domain/repository`: repository contract used by application code.
+- `application/service`: profile use cases.
+- `application/port`: outbound ports for image storage and user lookup.
+- `application/mapper`: explicit DTO/domain mapping.
+- `infrastructure/persistence`: MongoDB Panache repository adapter.
+- `infrastructure/client`: MicroProfile REST clients and outbound adapters.
+- `interfaces/rest`: HTTP resource, multipart form model, response DTOs, and exception mappers.
 
 ## Requirements
 
@@ -76,6 +89,15 @@ After `quarkus:dev` starts on port `8085`, verify:
 - `POST /profile/user/save` with multipart form fields
 - `POST /profile/user/update` with multipart form fields
 - `GET /profile/user/findByUserId?userId=<id>`
+
+## Postman
+
+Import these files into Postman:
+
+- `postman/profile-service.postman_collection.json`
+- `postman/profile-service.postman_environment.json`
+
+Select the `Quarkus profile-service local` environment before running requests. Set `authToken` if requests go through the gateway or another protected route. Direct local service calls to `http://localhost:8085` do not validate JWT in the profile service.
 
 ## Commit Hygiene
 
