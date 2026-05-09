@@ -41,9 +41,12 @@ Preserve JSON fields used by DTOs:
 - `AuthenticationResponse`: `statusCode`, `error`, `message`, `token`, `refreshToken`, `expirationTime`, `user`, `isVaild`, `role`.
 - `UserDTO`: `id`, `name`, `email`, `password`, `idEmployee`, `role`, `isActive`.
 - `ImageDTO`: `id`, `url`.
+- `ProjectDTO`: `id`, `title`, `description`, `createAt`, `url`, `imageId`, `display`, `imageFile`, `idProfile`.
 - `NotificationDTO`: `id`, `message`, `createAt`, `url`, `read`, `idUser`.
 
 Notification compatibility note: the entity field is `isRead`, but the current Angular client consumes the DTO JSON field as `read`. Preserve `read` in Quarkus response JSON and accept `isRead` as an input alias if practical.
+
+Project compatibility note: the entity field is `isDisplay`, but the current Angular client consumes the DTO JSON field as `display`. Preserve `display` in Quarkus response JSON and accept `isDisplay` as an input alias if practical.
 
 ## Quarkus Persistence Mapping
 

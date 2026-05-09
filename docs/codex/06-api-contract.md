@@ -81,6 +81,12 @@ Base path: `/profile`
 
 Base path: `/project`
 
+Project display-state compatibility:
+
+- Spring/Lombok `ProjectDTO.isDisplay` is serialized and consumed by the Angular client as JSON field `display`.
+- Preserve `display` in Quarkus responses. Accepting `isDisplay` as an input alias is allowed for backward compatibility.
+- The Angular client contains a delete call under `/project/user/delete/{id}`, but the current Spring `ProjectController` does not expose that endpoint. Do not add it during baseline without an approved API change.
+
 | Method | Path | Inputs | Response data |
 |---|---|---|---|
 | `POST` | `/user/save` | `ProjectDTO` JSON body | `ProjectDTO` |
