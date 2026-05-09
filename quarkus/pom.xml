@@ -13,8 +13,10 @@
         <module>user-service</module>
         <module>profile-service</module>
         <module>image-service</module>
+        <module>manager-service</module>
         <module>notification-service</module>
         <module>project-service</module>
+        <module>email-service</module>
     </modules>
 
     <properties>
