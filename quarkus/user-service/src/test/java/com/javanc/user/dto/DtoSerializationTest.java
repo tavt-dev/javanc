@@ -1,9 +1,11 @@
 package com.javanc.user.dto;
 
+import com.javanc.user.adapter.in.rest.dto.ApiResponse;
+import com.javanc.user.adapter.in.rest.dto.UserDTO;
+import com.javanc.user.adapter.in.rest.dto.AuthenticationRequest;
+import com.javanc.user.adapter.in.rest.dto.AuthenticationResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.javanc.user.dto.request.AuthenticationRequest;
-import com.javanc.user.dto.response.AuthenticationResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -91,7 +93,7 @@ class DtoSerializationTest {
 
         assertTrue(json.get("active").asBoolean());
         assertFalse(json.has("isActive"));
-        assertEquals("encoded", json.get("password").asText());
+        assertFalse(json.has("password"));
         assertTrue(activeWire.isActive());
         assertTrue(isActiveWire.isActive());
         assertEquals("encoded", isActiveWire.getPassword());

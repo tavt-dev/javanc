@@ -418,32 +418,37 @@
           "name": "Get All",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/getAll?token={{token}}",
+              "raw": "{{baseUrl}}/auth/getAll",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "auth",
                 "getAll"
-              ],
-              "query": [
-                {
-                  "key": "token",
-                  "value": "{{token}}"
-                }
               ]
-            }
+            },
+            "description": "Authorization header is preferred. The legacy token query parameter is still accepted for compatibility."
           }
         },
         {
           "name": "Get List User By Id",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/getlistuserbyid?token={{token}}&ids={{userId}}&ids={{secondUserId}}",
+              "raw": "{{baseUrl}}/auth/getlistuserbyid?ids={{userId}}&ids={{secondUserId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -453,10 +458,6 @@
               ],
               "query": [
                 {
-                  "key": "token",
-                  "value": "{{token}}"
-                },
-                {
                   "key": "ids",
                   "value": "{{userId}}"
                 },
@@ -465,7 +466,8 @@
                   "value": "{{secondUserId}}"
                 }
               ]
-            }
+            },
+            "description": "Authorization header is preferred. The legacy token query parameter is still accepted for compatibility."
           }
         },
         {
@@ -476,6 +478,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
               }
             ],
             "body": {
@@ -483,22 +489,16 @@
               "raw": "{\n  \"id\": {{userId}},\n  \"name\": \"{{name}} Updated\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Password@456\",\n  \"idEmployee\": \"{{idEmployee}}-UPDATED\",\n  \"role\": \"{{role}}\",\n  \"active\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/update?token={{token}}",
+              "raw": "{{baseUrl}}/auth/update",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "auth",
                 "update"
-              ],
-              "query": [
-                {
-                  "key": "token",
-                  "value": "{{token}}"
-                }
               ]
             },
-            "description": "This changes the password to Password@456. Update the environment password variable manually if you want to signin with the new password afterward."
+            "description": "This changes the password to Password@456. Authorization header is preferred; legacy token query is still accepted."
           }
         },
         {
@@ -509,6 +509,10 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
               }
             ],
             "body": {
@@ -516,31 +520,30 @@
               "raw": "{\n  \"id\": {{userId}}\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/updateactive?token={{token}}",
+              "raw": "{{baseUrl}}/auth/updateactive",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "auth",
                 "updateactive"
-              ],
-              "query": [
-                {
-                  "key": "token",
-                  "value": "{{token}}"
-                }
               ]
             },
-            "description": "Preserves Spring compatibility: token query parameter is accepted but not validated by this endpoint."
+            "description": "Authorization header is preferred. Unlike the old Spring-compatible baseline, this endpoint now validates the token."
           }
         },
         {
           "name": "Delete User",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/delete?token={{token}}&id={{userId}}",
+              "raw": "{{baseUrl}}/auth/delete?id={{userId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -549,10 +552,6 @@
                 "delete"
               ],
               "query": [
-                {
-                  "key": "token",
-                  "value": "{{token}}"
-                },
                 {
                   "key": "id",
                   "value": "{{userId}}"
