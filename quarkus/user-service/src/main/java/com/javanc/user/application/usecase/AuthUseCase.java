@@ -1,20 +1,21 @@
 package com.javanc.user.application.usecase;
 
-import com.javanc.user.application.command.RefreshTokenCommand;
-import com.javanc.user.application.command.SignInCommand;
-import com.javanc.user.application.command.SignUpCommand;
-import com.javanc.user.application.result.AuthenticationResult;
+import com.javanc.user.application.command.LoginCommand;
+import com.javanc.user.application.command.RefreshSessionCommand;
+import com.javanc.user.application.command.RegisterUserCommand;
+import com.javanc.user.application.result.AuthSessionResult;
+import com.javanc.user.application.result.TokenClaims;
+import com.javanc.user.application.result.TokenIntrospectionResult;
 import com.javanc.user.domain.model.EmailAddress;
-import com.javanc.user.domain.model.EmployeeId;
-import com.javanc.user.domain.model.PasswordHash;
 import com.javanc.user.domain.model.Role;
+import com.javanc.user.domain.model.TokenType;
 import com.javanc.user.domain.model.User;
-import com.javanc.user.domain.port.IdGenerator;
 import com.javanc.user.domain.port.PasswordHasher;
 import com.javanc.user.domain.port.TokenService;
 import com.javanc.user.domain.port.UserRepository;
+import com.javanc.user.shared.exception.ApplicationException;
+import com.javanc.user.shared.exception.ErrorCode;
 import com.javanc.user.shared.exception.JwtServiceException;
-import com.javanc.user.shared.exception.UserNotFoundException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -25,105 +26,108 @@ public class AuthUseCase {
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final PasswordHasher passwordHasher;
-    private final IdGenerator idGenerator;
 
     @Inject
-    public AuthUseCase(UserRepository userRepository, TokenService tokenService, PasswordHasher passwordHasher,
-            IdGenerator idGenerator) {
+    public AuthUseCase(UserRepository userRepository, TokenService tokenService, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.passwordHasher = passwordHasher;
-        this.idGenerator = idGenerator;
     }
 
     @Transactional
-    public AuthenticationResult signUp(SignUpCommand command) {
-        EmailAddress email = new EmailAddress(command.email());
+    public AuthSessionResult register(RegisterUserCommand command) {
+        requirePassword(command.password());
+        EmailAddress email = email(command.email());
         if (userRepository.findByEmail(email).isPresent()) {
-            return response(409, "Email already exists", false);
+            throw new ApplicationException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         User user = new User(
-                idGenerator.nextUserId(),
-                command.name(),
+                null,
+                required(command.name(), "Name is required"),
                 email,
-                new EmployeeId(command.idEmployee()),
+                null,
                 passwordHasher.hash(command.password()),
                 true,
-                Role.fromNullable(command.role()));
+                Role.user);
 
-        userRepository.save(user);
-
-        AuthenticationResult response = response(200, "User Saved Successfully", true);
-        response.setUser(UserResultMapper.toResult(user));
-        return response;
+        return session(userRepository.save(user));
     }
 
-    public AuthenticationResult signIn(SignInCommand command) {
-        EmailAddress email = new EmailAddress(command.email());
-        return userRepository.findByEmail(email)
-                .map(user -> signInExistingUser(user, command.password()))
-                .orElseGet(() -> response(404, "Email not found", false));
+    public AuthSessionResult login(LoginCommand command) {
+        EmailAddress email = email(command.email());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.UNAUTHORIZED, "Invalid email or password"));
+        if (!user.active() || !passwordHasher.matches(command.password(), user.passwordHash())) {
+            throw new ApplicationException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
+        }
+        return session(user);
     }
 
-    public AuthenticationResult refreshToken(RefreshTokenCommand command) {
-        String email = tokenService.extractSubject(command.token());
-        User user = loadByEmail(email);
-
-        AuthenticationResult response = response(200, "Successfully Refreshed Token", false);
-        response.setToken(tokenService.generateAccessToken(user));
-        response.setRefreshToken(command.token());
-        response.setExpirationTime("24Hr");
-        return response;
+    public AuthSessionResult refresh(RefreshSessionCommand command) {
+        TokenClaims claims = tokenService.validate(command.refreshToken(), TokenType.refresh);
+        User user = userRepository.findByEmail(new EmailAddress(claims.subject()))
+                .orElseThrow(() -> new ApplicationException(ErrorCode.UNAUTHORIZED));
+        requireActive(user);
+        return session(user);
     }
 
-    public AuthenticationResult validateToken(String token) {
+    public TokenIntrospectionResult introspect(String token) {
         try {
-            String email = tokenService.extractSubject(token);
-            User user = loadByEmail(email);
-            if (tokenService.isTokenValid(token, user)) {
-                AuthenticationResult response = new AuthenticationResult();
-                response.setValid(true);
-                response.setRole(user.role() == null ? null : user.role().name());
-                return response;
+            TokenClaims claims = tokenService.validate(token, TokenType.access);
+            User user = userRepository.findByEmail(new EmailAddress(claims.subject())).orElse(null);
+            if (user == null || !user.active()) {
+                return TokenIntrospectionResult.inactive();
             }
-        } catch (JwtServiceException | UserNotFoundException e) {
-            return invalidTokenResponse();
+            return new TokenIntrospectionResult(true, claims.subject(), user.id().value(),
+                    user.role().name(), claims.expiresAt());
+        } catch (RuntimeException exception) {
+            return TokenIntrospectionResult.inactive();
         }
-        return invalidTokenResponse();
     }
 
-    private AuthenticationResult signInExistingUser(User user, String rawPassword) {
-        PasswordHash passwordHash = user.passwordHash();
-        if (!passwordHasher.matches(rawPassword, passwordHash)) {
-            return response(401, "Invalid credentials", false);
+    public void logout(String token) {
+        tokenService.validate(token, TokenType.access);
+    }
+
+    private AuthSessionResult session(User user) {
+        requireActive(user);
+        return new AuthSessionResult(
+                tokenService.generateAccessToken(user),
+                tokenService.generateRefreshToken(user),
+                "Bearer",
+                tokenService.accessExpiresInSeconds(),
+                UserResultMapper.toResult(user));
+    }
+
+    private void requireActive(User user) {
+        if (user == null || !user.active()) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN, "User is inactive");
         }
-
-        AuthenticationResult response = response(200, "Successfully Signed In", true);
-        response.setToken(tokenService.generateAccessToken(user));
-        response.setRefreshToken(tokenService.generateRefreshToken(user));
-        response.setExpirationTime("24Hr");
-        response.setRole(user.role() == null ? null : user.role().name());
-        response.setUser(UserResultMapper.toResult(user));
-        return response;
     }
 
-    private User loadByEmail(String email) {
-        return userRepository.findByEmail(new EmailAddress(email))
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    private EmailAddress email(String value) {
+        try {
+            return new EmailAddress(value);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
     }
 
-    private AuthenticationResult invalidTokenResponse() {
-        AuthenticationResult response = new AuthenticationResult();
-        response.setValid(false);
-        return response;
+    private String required(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, message);
+        }
+        return value.trim();
     }
 
-    private AuthenticationResult response(int statusCode, String message, boolean valid) {
-        AuthenticationResult response = new AuthenticationResult();
-        response.setStatusCode(statusCode);
-        response.setMessage(message);
-        response.setValid(valid);
-        return response;
+    private void requirePassword(String password) {
+        if (password == null || password.length() < 8
+                || !password.matches(".*[A-Z].*")
+                || !password.matches(".*[a-z].*")
+                || !password.matches(".*\\d.*")) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST,
+                    "Password must be at least 8 characters and include upper, lower, and digit");
+        }
     }
 }

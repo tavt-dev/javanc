@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "4d0f8c9d-807d-4fd5-9a33-user-service",
-    "name": "Quarkus user-service API",
-    "description": "Postman collection for Quarkus user-service running locally on port 8088.",
+    "_postman_id": "7df5294d-3f3a-49bf-9cb4-user-service",
+    "name": "Quarkus user-service",
+    "description": "Production-ready user-service contract. Public register always creates role user. Admin account provisioning uses /users/admin/accounts. Legacy /auth/signup, /auth/signin, /auth/isValid and query-token endpoints are intentionally removed.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -13,55 +13,27 @@
           "name": "Health",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "health"
-              ]
-            }
-          }
-        },
-        {
-          "name": "OpenAPI",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/q/openapi",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "q",
-                "openapi"
-              ]
-            }
+            "url": "{{baseUrl}}/q/health"
           }
         }
       ]
     },
     {
-      "name": "Auth Flow",
+      "name": "Auth",
       "item": [
         {
-          "name": "Signup",
+          "name": "Register",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('signup returns wrapper', function () {",
-                  "  pm.expect(pm.response.json()).to.have.property('data');",
-                  "});",
-                  "const json = pm.response.json();",
-                  "if (json.data && json.data.user && json.data.user.id) {",
-                  "  pm.environment.set('userId', String(json.data.user.id));",
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
+                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
+                  "  if (body.data.user) pm.environment.set('userId', body.data.user.id);",
                   "}"
                 ]
               }
@@ -77,67 +49,24 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"idEmployee\": \"{{idEmployee}}\",\n  \"role\": \"{{role}}\"\n}"
+              "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/signup",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "signup"
-              ]
-            }
+            "url": "{{baseUrl}}/auth/register"
           }
         },
         {
-          "name": "Signup Duplicate",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"idEmployee\": \"{{idEmployee}}\",\n  \"role\": \"{{role}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/signup",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "signup"
-              ]
-            },
-            "description": "Expected HTTP 409 after Signup has already created this email."
-          }
-        },
-        {
-          "name": "Signin",
+          "name": "Login",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "pm.test('signin returns token', function () {",
-                  "  pm.expect(json.data.token).to.be.a('string');",
-                  "});",
-                  "if (json.data && json.data.token) {",
-                  "  pm.environment.set('token', json.data.token);",
-                  "}",
-                  "if (json.data && json.data.refreshToken) {",
-                  "  pm.environment.set('refreshToken', json.data.refreshToken);",
-                  "}",
-                  "if (json.data && json.data.user && json.data.user.id) {",
-                  "  pm.environment.set('userId', String(json.data.user.id));",
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
+                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
+                  "  if (body.data.user) pm.environment.set('userId', body.data.user.id);",
                   "}"
                 ]
               }
@@ -155,86 +84,21 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/signin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "signin"
-              ]
-            }
+            "url": "{{baseUrl}}/auth/login"
           }
         },
         {
-          "name": "Signin Wrong Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong-password\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/signin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "signin"
-              ]
-            },
-            "description": "Expected HTTP 401 with data.statusCode=401."
-          }
-        },
-        {
-          "name": "Signin Unknown Email",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"unknown.postman@example.com\",\n  \"password\": \"{{password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/signin",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "signin"
-              ]
-            },
-            "description": "Expected HTTP 401 with data.statusCode=404."
-          }
-        },
-        {
-          "name": "Refresh Token",
+          "name": "Refresh",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.data && json.data.token) {",
-                  "  pm.environment.set('token', json.data.token);",
-                  "}",
-                  "if (json.data && json.data.refreshToken) {",
-                  "  pm.environment.set('refreshToken', json.data.refreshToken);",
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
+                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
                   "}"
                 ]
               }
@@ -250,228 +114,112 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"{{refreshToken}}\"\n}"
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "refresh"
-              ]
-            }
+            "url": "{{baseUrl}}/auth/refresh"
           }
         },
         {
-          "name": "Is Valid Token",
+          "name": "Introspect",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
-                "value": "text/plain"
+                "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{{token}}"
+              "raw": "{\n  \"token\": \"{{accessToken}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/isValid",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "isValid"
-              ]
-            }
+            "url": "{{baseUrl}}/auth/introspect"
           }
         },
         {
-          "name": "Is Valid Invalid Token",
+          "name": "Logout",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "text/plain"
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "not-a-jwt"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/isValid",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "isValid"
-              ]
-            },
-            "description": "Expected HTTP 200 with data.vaild=false."
+            "url": "{{baseUrl}}/auth/logout"
           }
         }
       ]
     },
     {
-      "name": "User Endpoints",
+      "name": "Users",
       "item": [
         {
-          "name": "Find By Id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/findbyid?id={{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "findbyid"
-              ],
-              "query": [
-                {
-                  "key": "id",
-                  "value": "{{userId}}"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Find By Missing Id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/findbyid?id=999999999",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "findbyid"
-              ],
-              "query": [
-                {
-                  "key": "id",
-                  "value": "999999999"
-                }
-              ]
-            },
-            "description": "Expected HTTP 404 with ApiResponse<String> error body."
-          }
-        },
-        {
-          "name": "Check Id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/checkId?id={{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "checkId"
-              ],
-              "query": [
-                {
-                  "key": "id",
-                  "value": "{{userId}}"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Get Current User",
+          "name": "Me",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{accessToken}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/getCurrentUser",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "getCurrentUser"
-              ]
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Get By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "List All Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "List By Ids Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/users?ids={{userId}}&ids={{secondUserId}}"
+          }
+        },
+        {
+          "name": "Create Account Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data) pm.environment.set('secondUserId', body.data.id);"
+                ]
+              }
             }
-          }
-        },
-        {
-          "name": "Get All",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/getAll",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "getAll"
-              ]
-            },
-            "description": "Authorization header is preferred. The legacy token query parameter is still accepted for compatibility."
-          }
-        },
-        {
-          "name": "Get List User By Id",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/getlistuserbyid?ids={{userId}}&ids={{secondUserId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "getlistuserbyid"
-              ],
-              "query": [
-                {
-                  "key": "ids",
-                  "value": "{{userId}}"
-                },
-                {
-                  "key": "ids",
-                  "value": "{{secondUserId}}"
-                }
-              ]
-            },
-            "description": "Authorization header is preferred. The legacy token query parameter is still accepted for compatibility."
-          }
-        },
-        {
-          "name": "Update User",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -481,30 +229,20 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": {{userId}},\n  \"name\": \"{{name}} Updated\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Password@456\",\n  \"idEmployee\": \"{{idEmployee}}-UPDATED\",\n  \"role\": \"{{role}}\",\n  \"active\": true\n}"
+              "raw": "{\n  \"name\": \"{{accountName}}\",\n  \"email\": \"{{accountEmail}}\",\n  \"password\": \"{{password}}\",\n  \"employeeId\": \"{{employeeId}}\",\n  \"role\": \"{{role}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/update",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "update"
-              ]
-            },
-            "description": "This changes the password to Password@456. Authorization header is preferred; legacy token query is still accepted."
+            "url": "{{baseUrl}}/users/admin/accounts"
           }
         },
         {
-          "name": "Update Active",
+          "name": "Patch User",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -512,71 +250,69 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{accessToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": {{userId}}\n}"
+              "raw": "{\n  \"name\": \"{{name}} Updated\",\n  \"employeeId\": \"{{employeeId}}\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/updateactive",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "updateactive"
-              ]
-            },
-            "description": "Authorization header is preferred. Unlike the old Spring-compatible baseline, this endpoint now validates the token."
+            "url": "{{baseUrl}}/users/{{userId}}"
           }
         },
         {
-          "name": "Delete User",
+          "name": "Change Role Admin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"{{role}}\"\n}"
+            },
+            "url": "{{baseUrl}}/users/{{userId}}/role"
+          }
+        },
+        {
+          "name": "Change Status Admin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": "{{baseUrl}}/users/{{userId}}/status"
+          }
+        },
+        {
+          "name": "Delete Admin",
           "request": {
             "method": "DELETE",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}"
+                "value": "Bearer {{accessToken}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/delete?id={{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "delete"
-              ],
-              "query": [
-                {
-                  "key": "id",
-                  "value": "{{userId}}"
-                }
-              ]
-            },
-            "description": "Run this last because it removes the test user."
-          }
-        },
-        {
-          "name": "Our User Details Service",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/auth/ourUserDetailsService",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "ourUserDetailsService"
-              ]
-            },
-            "description": "Expected HTTP 501 because the Spring mapping is broken and no new contract is invented."
+            "url": "{{baseUrl}}/users/{{userId}}"
           }
         }
       ]

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javanc.gateway.application.port.TokenValidationPort;
 import com.javanc.gateway.infrastructure.client.dto.ApiResponse;
-import com.javanc.gateway.infrastructure.client.dto.AuthenticationResponse;
+import com.javanc.gateway.infrastructure.client.dto.TokenIntrospectionResponse;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -29,7 +29,7 @@ public class UserTokenValidationClient implements TokenValidationPort {
             @ConfigProperty(name = "gateway.auth-timeout-millis") long timeoutMillis) {
         this.webClient = WebClient.create(vertx);
         this.objectMapper = objectMapper;
-        this.validationUrl = trimTrailingSlash(userServiceUrl) + "/auth/isValid";
+        this.validationUrl = trimTrailingSlash(userServiceUrl) + "/auth/introspect";
         this.timeoutMillis = timeoutMillis;
     }
 
@@ -39,23 +39,23 @@ public class UserTokenValidationClient implements TokenValidationPort {
         return Uni.createFrom().completionStage(
                 webClient.postAbs(validationUrl)
                         .timeout(timeoutMillis)
-                        .putHeader("Content-Type", "text/plain")
-                        .sendBuffer(Buffer.buffer(token))
+                        .putHeader("Content-Type", "application/json")
+                        .sendBuffer(Buffer.buffer("{\"token\":\"" + token + "\"}"))
                         .toCompletionStage())
                 .map(response -> {
                     LOG.debugf("User-service validation response status=%d", response.statusCode());
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
                         return false;
                     }
-                    ApiResponse<AuthenticationResponse> apiResponse = parseResponse(response.bodyAsString());
-                    return apiResponse.getData() != null && apiResponse.getData().isVaild();
+                    ApiResponse<TokenIntrospectionResponse> apiResponse = parseResponse(response.bodyAsString());
+                    return apiResponse.getData() != null && apiResponse.getData().isActive();
                 })
                 .onFailure().recoverWithItem(false);
     }
 
-    private ApiResponse<AuthenticationResponse> parseResponse(String body) {
+    private ApiResponse<TokenIntrospectionResponse> parseResponse(String body) {
         try {
-            return objectMapper.readValue(body, new TypeReference<ApiResponse<AuthenticationResponse>>() {
+            return objectMapper.readValue(body, new TypeReference<ApiResponse<TokenIntrospectionResponse>>() {
             });
         } catch (Exception e) {
             LOG.warn("Could not parse user-service validation response");

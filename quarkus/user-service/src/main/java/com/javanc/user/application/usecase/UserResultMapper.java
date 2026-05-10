@@ -18,6 +18,7 @@ final class UserResultMapper {
                 user.email().value(),
                 user.employeeId() == null ? null : user.employeeId().value(),
                 user.role() == null ? null : user.role().name(),
-                user.active());
+                user.active(),
+                user.status().name());
     }
 }

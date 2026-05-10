@@ -12,7 +12,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     @Override
     public Response toResponse(NotFoundException exception) {
         return Response.status(Response.Status.NOT_FOUND)
-                .entity(new ApiResponse<>(false, ErrorCode.NOT_FOUND.getMessage(), ""))
+                .entity(new ApiResponse<>(false, ErrorCode.NOT_FOUND.getMessage(), null))
                 .build();
     }
 }

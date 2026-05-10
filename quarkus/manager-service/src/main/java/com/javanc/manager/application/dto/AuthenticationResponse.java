@@ -1,13 +1,12 @@
 package com.javanc.manager.application.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AuthenticationResponse {
-    public int statusCode;
-    public String error;
-    public String message;
-    public String token;
+    public String accessToken;
     public String refreshToken;
-    public String expirationTime;
+    public String tokenType;
+    public long expiresInSeconds;
     public UserDTO user;
-    public boolean isVaild;
-    public String role;
 }

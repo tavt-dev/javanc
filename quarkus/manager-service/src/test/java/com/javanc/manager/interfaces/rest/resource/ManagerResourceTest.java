@@ -206,7 +206,7 @@ class ManagerResourceTest {
     @ApplicationScoped
     public static class TestUserAccountPort implements UserAccountPort {
         @Override
-        public Integer signUp(AuthenticationRequest authenticationRequest) {
+        public Integer createAccount(AuthenticationRequest authenticationRequest) {
             return 99;
         }
     }

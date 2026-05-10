@@ -8,7 +8,7 @@ Quarkus migration of the Spring Boot `notification-service`.
 - Port: `8084`
 - Database: MySQL `notification1`
 - Table: `notifications`
-- User validation: `GET /auth/checkId` through `USER_SERVICE_URL`
+- User validation: `GET /users/{id}` through `USER_SERVICE_URL`
 - Kafka is not part of the baseline runtime because the Spring service has no active listener or producer flow.
 
 ## Local Run

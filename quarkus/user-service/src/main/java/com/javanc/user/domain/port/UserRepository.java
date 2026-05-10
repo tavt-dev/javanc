@@ -1,6 +1,7 @@
 package com.javanc.user.domain.port;
 
 import com.javanc.user.domain.model.EmailAddress;
+import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.model.UserId;
 
@@ -18,7 +19,9 @@ public interface UserRepository {
 
     List<User> findUsersByIds(Collection<UserId> ids);
 
-    void save(User user);
+    boolean existsByRole(Role role);
+
+    User save(User user);
 
     void delete(User user);
 }

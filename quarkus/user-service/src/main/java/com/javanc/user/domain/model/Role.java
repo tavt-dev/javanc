@@ -7,6 +7,16 @@ public enum Role {
     manager;
 
     public static Role fromNullable(String value) {
-        return value == null ? user : Role.valueOf(value);
+        if (value == null || value.isBlank()) {
+            return user;
+        }
+        return Role.valueOf(value.trim().toLowerCase());
+    }
+
+    public static Role fromRequired(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Role is required");
+        }
+        return Role.valueOf(value.trim().toLowerCase());
     }
 }

@@ -2,13 +2,14 @@
 
 Quarkus replacement for `microservice/api-gateway`.
 
-The gateway keeps local deployment simple: static service URLs replace Eureka, and user-service remains the owner of token validation.
+The gateway uses static service URLs instead of Eureka. `user-service` remains the owner of token introspection through `POST /auth/introspect`.
 
 ## Routes
 
 | Path | Target env var | Auth |
 |---|---|---|
 | `/auth/**` | `USER_SERVICE_URL` | public |
+| `/users/**` | `USER_SERVICE_URL` | bearer token required |
 | `/profile/**` | `PROFILE_SERVICE_URL` | bearer token required |
 | `/project/**` | `PROJECT_SERVICE_URL` | bearer token required |
 | `/notification/**` | `NOTIFICATION_SERVICE_URL` | public |
@@ -35,10 +36,11 @@ $env:GATEWAY_CORS_ORIGINS='http://localhost:4200,http://127.0.0.1:4200,http://lo
 ## Smoke Checks
 
 - `GET /q/health`
-- `POST /auth/signin`
+- `POST /auth/login`
+- `GET /users/me` with `Authorization: Bearer <accessToken>`
 - `GET /image/getAll`
 - `GET /notification/getAll`
-- `GET /profile/user/getAll` with `Authorization: Bearer <token>`
-- `GET /manager/user/job/getall` with `Authorization: Bearer <token>`
+- `GET /profile/user/getAll` with `Authorization: Bearer <accessToken>`
+- `GET /manager/user/job/getall` with `Authorization: Bearer <accessToken>`
 
-No discovery-server is required.
+No discovery server is required.

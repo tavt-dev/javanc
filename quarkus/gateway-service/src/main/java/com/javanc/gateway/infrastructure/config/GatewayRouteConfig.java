@@ -42,6 +42,7 @@ public class GatewayRouteConfig {
         Set<String> protectedRoutePrefixes = protectedRoutePrefixes();
         return List.of(
                 route("auth-service", "/auth", userUrl, protectedRoutePrefixes),
+                route("user-service", "/users", userUrl, protectedRoutePrefixes),
                 route("profile-service", "/profile", profileUrl, protectedRoutePrefixes),
                 route("project-service", "/project", projectUrl, protectedRoutePrefixes),
                 optionalRoute("profile-hr-service", "/profile-hr", profileHrUrl, protectedRoutePrefixes),

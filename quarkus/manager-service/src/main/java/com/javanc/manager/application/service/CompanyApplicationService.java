@@ -73,8 +73,7 @@ public class CompanyApplicationService {
     }
 
     public CompanyDTO setHRToCompany(AuthenticationRequest request, Integer idCompany) {
-        request.role = "hr";
-        Integer hrId = userAccountPort.signUp(request);
+        Integer hrId = userAccountPort.createAccount(accountRequest(request, "hr"));
         CompanyDTO companyDTO = findById(idCompany);
         if (companyDTO.idHR == null) {
             companyDTO.idHR = new ArrayList<>();
@@ -84,8 +83,7 @@ public class CompanyApplicationService {
     }
 
     public CompanyDTO setManagerToCompany(AuthenticationRequest request, Integer idCompany) {
-        request.role = "manager";
-        Integer managerId = userAccountPort.signUp(request);
+        Integer managerId = userAccountPort.createAccount(accountRequest(request, "manager"));
         CompanyDTO companyDTO = findById(idCompany);
         companyDTO.idManager = managerId;
         return update(companyDTO);
@@ -99,5 +97,15 @@ public class CompanyApplicationService {
     public CompanyDTO findByIdHr(Integer id) {
         return companyMapper.toDto(companyRepository.findByHrId(id)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.COMPANY_NOT_FOUND)));
+    }
+
+    private AuthenticationRequest accountRequest(AuthenticationRequest source, String role) {
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.name = source.name;
+        request.email = source.email;
+        request.password = source.password;
+        request.employeeId = source.employeeId;
+        request.role = role;
+        return request;
     }
 }

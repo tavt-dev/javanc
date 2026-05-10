@@ -13,6 +13,7 @@ public class UserDTO {
     private String password;
     private String idEmployee;
     private String role;
+    private String status;
 
     @JsonProperty("active")
     @JsonAlias("isActive")
@@ -22,7 +23,7 @@ public class UserDTO {
     }
 
     public UserDTO(Integer id, String name, String email, String password, String idEmployee, String role,
-            boolean active) {
+            boolean active, String status) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -30,6 +31,7 @@ public class UserDTO {
         this.idEmployee = idEmployee;
         this.role = role;
         this.active = active;
+        this.status = status;
     }
 
     public Integer getId() {
@@ -79,6 +81,14 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public boolean isActive() {

@@ -12,7 +12,7 @@ public class JwtServiceExceptionMapper implements ExceptionMapper<JwtServiceExce
     public Response toResponse(JwtServiceException exception) {
         ErrorCode errorCode = exception.getErrorCode();
         return Response.status(errorCode.getStatus())
-                .entity(new ApiResponse<>(false, errorCode.getMessage(), ""))
+                .entity(new ApiResponse<>(false, errorCode.getMessage(), null))
                 .build();
     }
 }

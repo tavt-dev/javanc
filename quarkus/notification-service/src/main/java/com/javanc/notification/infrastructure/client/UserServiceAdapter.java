@@ -19,8 +19,8 @@ public class UserServiceAdapter implements UserLookupPort {
 
     @Override
     public boolean checkUserId(Integer id) {
-        ApiResponse<Boolean> response = userClient.checkId(id);
-        return response != null && Boolean.TRUE.equals(response.getData());
+        ApiResponse<UserDTO> response = userClient.findById(id);
+        return response != null && response.getData() != null;
     }
 
     @Override

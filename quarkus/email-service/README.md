@@ -7,7 +7,7 @@ Quarkus replacement for `microservice/email-service`.
 - Port: `8087`
 - Base path: `/email`
 - Main endpoint: `POST /email/create`
-- User lookup: `GET /auth/findbyid` through `USER_SERVICE_URL`
+- User lookup: `GET /users/{id}` through `USER_SERVICE_URL`
 - Mail transport: Quarkus Mailer
 - Health: `/q/health`
 - OpenAPI: `/q/openapi`
