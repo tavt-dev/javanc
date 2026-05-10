@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "7df5294d-3f3a-49bf-9cb4-user-service",
     "name": "Quarkus user-service",
-    "description": "Production-ready user-service contract. Public register always creates role user. Admin account provisioning uses /users/admin/accounts. Legacy /auth/signup, /auth/signin, /auth/isValid and query-token endpoints are intentionally removed.",
+    "description": "Production-ready user-service contract. Public register creates a pending role user and requires email OTP verification before login. Admin account provisioning uses /users/admin/accounts. Legacy /auth/signup, /auth/signin, /auth/isValid and query-token endpoints are intentionally removed.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -31,9 +31,7 @@
                 "exec": [
                   "const body = pm.response.json();",
                   "if (body.data) {",
-                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
-                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
-                  "  if (body.data.user) pm.environment.set('userId', body.data.user.id);",
+                  "  pm.environment.set('email', body.data.email || pm.environment.get('email'));",
                   "}"
                 ]
               }
@@ -52,6 +50,56 @@
               "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
             },
             "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
+                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
+                  "  if (body.data.user) pm.environment.set('userId', body.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-email"
+          }
+        },
+        {
+          "name": "Resend Verification OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/resend-verification-otp"
           }
         },
         {

@@ -60,7 +60,7 @@ coverage/
 
 # Next.js
 .next/
-out/
+/out/
 
 # Angular
 .angular/

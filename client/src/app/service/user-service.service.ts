@@ -15,14 +15,26 @@ export class UserServiceService {
   private authURL = 'http://localhost:8080/auth';
   private usersURL = 'http://localhost:8080/users';
 
-  signUpUser(user: User): Observable<User> {
+  signUpUser(user: User): Observable<any> {
     const payload = {
       name: user.name,
       email: user.email,
       password: user.password
     };
     return this.http.post<Apiresponse<any>>(`${this.authURL}/register`, payload).pipe(
-      map(response => this.unwrap(response).user)
+      map(response => this.unwrap(response))
+    );
+  }
+
+  verifyEmail(email: string, otp: string): Observable<any> {
+    return this.http.post<Apiresponse<any>>(`${this.authURL}/verify-email`, { email, otp }).pipe(
+      map(response => this.unwrap(response))
+    );
+  }
+
+  resendVerificationOtp(email: string): Observable<void> {
+    return this.http.post<Apiresponse<void>>(`${this.authURL}/resend-verification-otp`, { email }).pipe(
+      map(response => this.unwrap(response))
     );
   }
 

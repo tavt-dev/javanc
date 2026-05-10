@@ -2,8 +2,14 @@ package com.javanc.user.resource;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
+import com.javanc.user.domain.port.EmailVerificationNotifier;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -14,11 +20,17 @@ import static org.hamcrest.Matchers.nullValue;
 @QuarkusTest
 class UserServiceContractTest {
 
+    @BeforeEach
+    void resetOtpNotifier() {
+        TestEmailVerificationNotifier.otps.clear();
+        TestEmailVerificationNotifier.sendCount = 0;
+    }
+
     @Test
     void registerLoginRefreshIntrospectAndMeUseProductionContract() {
         String email = "contract.user@example.com";
 
-        Integer userId = given()
+        given()
                 .contentType(ContentType.JSON)
                 .body(registerBody("Contract User", email, "Password1!"))
                 .when()
@@ -26,6 +38,28 @@ class UserServiceContractTest {
                 .then()
                 .statusCode(200)
                 .body("success", equalTo(true))
+                .body("data.email", equalTo(email))
+                .body("data.status", equalTo("PENDING_VERIFICATION"))
+                .body("data.expiresInSeconds", equalTo(600))
+                .body("data.accessToken", nullValue())
+                .body("data.refreshToken", nullValue());
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "password", "Password1!"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(403)
+                .body("message", equalTo("Email verification required"));
+
+        Integer userId = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", TestEmailVerificationNotifier.otps.get(email)))
+                .when()
+                .post("/auth/verify-email")
+                .then()
+                .statusCode(200)
                 .body("data.accessToken", notNullValue())
                 .body("data.refreshToken", notNullValue())
                 .body("data.tokenType", equalTo("Bearer"))
@@ -36,6 +70,15 @@ class UserServiceContractTest {
                 .body("data.user.password", nullValue())
                 .extract()
                 .path("data.user.id");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", TestEmailVerificationNotifier.otps.get(email)))
+                .when()
+                .post("/auth/verify-email")
+                .then()
+                .statusCode(400)
+                .body("data", nullValue());
 
         given()
                 .contentType(ContentType.JSON)
@@ -113,7 +156,7 @@ class UserServiceContractTest {
     @Test
     void usersEndpointsEnforceBearerTokenAndAdminAuthorization() {
         String adminToken = loginToken("test.admin@example.com", "Password1!");
-        String userToken = registerAndToken("contract.basic@example.com");
+        String userToken = registerVerifyAndToken("contract.basic@example.com");
         Integer userId = createAccountAndUserId(adminToken, "contract.target@example.com", "EMP-CONTRACT-TARGET", "user");
 
         given()
@@ -171,6 +214,42 @@ class UserServiceContractTest {
     }
 
     @Test
+    void verificationOtpRejectsWrongCodeAndResendIsRateLimited() {
+        String email = "contract.otp@example.com";
+        given()
+                .contentType(ContentType.JSON)
+                .body(registerBody("OTP User", email, "Password1!"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(200);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", "000000"))
+                .when()
+                .post("/auth/verify-email")
+                .then()
+                .statusCode(400);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email))
+                .when()
+                .post("/auth/resend-verification-otp")
+                .then()
+                .statusCode(429);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "unknown@example.com"))
+                .when()
+                .post("/auth/resend-verification-otp")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
     void publicRegisterRejectsRoleAndEmployeeId() {
         given()
                 .contentType(ContentType.JSON)
@@ -205,12 +284,20 @@ class UserServiceContractTest {
         given().when().get("/auth/ourUserDetailsService").then().statusCode(404);
     }
 
-    private String registerAndToken(String email) {
-        return given()
+    private String registerVerifyAndToken(String email) {
+        given()
                 .contentType(ContentType.JSON)
                 .body(registerBody("Contract User", email, "Password1!"))
                 .when()
                 .post("/auth/register")
+                .then()
+                .statusCode(200);
+
+        return given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", TestEmailVerificationNotifier.otps.get(email)))
+                .when()
+                .post("/auth/verify-email")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -257,5 +344,19 @@ class UserServiceContractTest {
                 "password", password,
                 "employeeId", employeeId,
                 "role", role);
+    }
+
+    @Alternative
+    @Priority(1)
+    @ApplicationScoped
+    public static class TestEmailVerificationNotifier implements EmailVerificationNotifier {
+        private static final Map<String, String> otps = new HashMap<>();
+        private static int sendCount;
+
+        @Override
+        public void sendOtp(String email, String name, String otp, long expiresInMinutes) {
+            otps.put(email, otp);
+            sendCount++;
+        }
     }
 }

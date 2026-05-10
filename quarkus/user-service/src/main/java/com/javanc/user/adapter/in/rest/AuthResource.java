@@ -3,10 +3,13 @@ package com.javanc.user.adapter.in.rest;
 import com.javanc.user.adapter.in.rest.dto.ApiResponse;
 import com.javanc.user.adapter.in.rest.dto.AuthSession;
 import com.javanc.user.adapter.in.rest.dto.LoginRequest;
+import com.javanc.user.adapter.in.rest.dto.RegistrationPending;
 import com.javanc.user.adapter.in.rest.dto.RefreshTokenRequest;
+import com.javanc.user.adapter.in.rest.dto.ResendVerificationOtpRequest;
 import com.javanc.user.adapter.in.rest.dto.RegisterRequest;
 import com.javanc.user.adapter.in.rest.dto.TokenIntrospection;
 import com.javanc.user.adapter.in.rest.dto.TokenIntrospectionRequest;
+import com.javanc.user.adapter.in.rest.dto.VerifyEmailRequest;
 import com.javanc.user.application.command.RefreshSessionCommand;
 import com.javanc.user.application.usecase.AuthUseCase;
 import jakarta.inject.Inject;
@@ -35,9 +38,23 @@ public class AuthResource {
 
     @POST
     @Path("/register")
-    public ApiResponse<AuthSession> register(RegisterRequest request) {
-        return new ApiResponse<>(true, "User registered successfully",
+    public ApiResponse<RegistrationPending> register(RegisterRequest request) {
+        return new ApiResponse<>(true, "Verification OTP sent",
                 mapper.toDto(authUseCase.register(mapper.toCommand(request))));
+    }
+
+    @POST
+    @Path("/verify-email")
+    public ApiResponse<AuthSession> verifyEmail(VerifyEmailRequest request) {
+        return new ApiResponse<>(true, "Email verified successfully",
+                mapper.toDto(authUseCase.verifyEmail(mapper.toCommand(request))));
+    }
+
+    @POST
+    @Path("/resend-verification-otp")
+    public ApiResponse<Void> resendVerificationOtp(ResendVerificationOtpRequest request) {
+        authUseCase.resendVerificationOtp(mapper.toCommand(request));
+        return new ApiResponse<>(true, "If the account is pending, a verification OTP has been sent", null);
     }
 
     @POST

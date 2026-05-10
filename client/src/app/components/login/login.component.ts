@@ -76,6 +76,8 @@ export class LoginComponent {
         if (error.status === 401) {
           this.userForm.get('password')?.setErrors({ invalidCredentials: true });
           console.error('Invalid email or password');
+        } else if (error.status === 403 && error?.error?.message === 'Email verification required') {
+          this.router.navigate(['/register'], { queryParams: { verify: true, email: this.userForm.value.email } });
         } else if (error.status === 400) {
           this.userForm.get('email')?.setErrors({ invalidCredentials: true });
           console.error('Invalid login request');

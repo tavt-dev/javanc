@@ -110,6 +110,30 @@ class GatewayResourceTest {
     }
 
     @Test
+    void authOtpRoutesRemainPublic() {
+        given()
+                .contentType("application/json")
+                .body("{\"email\":\"user@example.test\",\"otp\":\"123456\"}")
+                .when().post("/auth/verify-email")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("auth-service"));
+
+        assertEquals("/auth/verify-email", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+    }
+
+    @Test
+    void internalEmailRouteIsNotExposed() {
+        given()
+                .contentType("application/json")
+                .body("{\"to\":\"user@example.test\",\"otp\":\"123456\"}")
+                .when().post("/internal/emails/verification-otp")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
     void healthEndpointRemainsAvailable() {
         given()
                 .when().get("/q/health")

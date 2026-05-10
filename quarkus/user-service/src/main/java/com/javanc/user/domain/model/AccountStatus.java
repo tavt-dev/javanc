@@ -1,6 +1,7 @@
 package com.javanc.user.domain.model;
 
 public enum AccountStatus {
+    PENDING_VERIFICATION,
     ACTIVE,
     DISABLED,
     DELETED,

@@ -50,6 +50,35 @@ class EmailResourceTest {
         org.junit.jupiter.api.Assertions.assertEquals("message", TestMailSenderPort.sentMessage.getMailContent());
     }
 
+    @Test
+    void internalVerificationOtpSendsTemplatedMail() {
+        given()
+                .contentType("application/json")
+                .body("{\"to\":\"verify@example.test\",\"name\":\"Verify User\",\"otp\":\"123456\",\"expiresInMinutes\":10}")
+                .when().post("/internal/emails/verification-otp")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("message", equalTo("Verification OTP email sent"));
+
+        org.junit.jupiter.api.Assertions.assertEquals("verify@example.test", TestMailSenderPort.sentMessage.getMailTo());
+        org.junit.jupiter.api.Assertions.assertEquals("Verify your Javanc account",
+                TestMailSenderPort.sentMessage.getMailSubject());
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("123456"));
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("10"));
+    }
+
+    @Test
+    void internalVerificationOtpRejectsInvalidRequest() {
+        given()
+                .contentType("application/json")
+                .body("{\"to\":\"verify@example.test\"}")
+                .when().post("/internal/emails/verification-otp")
+                .then()
+                .statusCode(400)
+                .body("success", equalTo(false));
+    }
+
     @Alternative
     @Priority(1)
     @ApplicationScoped

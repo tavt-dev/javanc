@@ -30,6 +30,10 @@ public class User {
         return id;
     }
 
+    public static User registerPending(String name, EmailAddress email, PasswordHash passwordHash) {
+        return new User(null, name, email, null, passwordHash, AccountStatus.PENDING_VERIFICATION, Role.user);
+    }
+
     public String name() {
         return name;
     }
@@ -78,6 +82,13 @@ public class User {
 
     public void changeStatus(AccountStatus status) {
         this.status = status == null ? AccountStatus.DISABLED : status;
+    }
+
+    public void verifyEmail() {
+        if (status != AccountStatus.PENDING_VERIFICATION) {
+            throw new IllegalStateException("Only pending users can verify email");
+        }
+        this.status = AccountStatus.ACTIVE;
     }
 
     public void assignRole(Role actorRole, Role newRole) {
