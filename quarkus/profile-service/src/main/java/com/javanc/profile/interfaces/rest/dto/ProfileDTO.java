@@ -2,6 +2,8 @@ package com.javanc.profile.interfaces.rest.dto;
 
 import com.javanc.profile.domain.model.Contact;
 
+import java.time.Instant;
+
 public class ProfileDTO {
 
     private Integer id;
@@ -14,6 +16,9 @@ public class ProfileDTO {
     private Integer idUser;
     private String url;
     private String title;
+    private String status;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public ProfileDTO() {
     }
@@ -110,5 +115,29 @@ public class ProfileDTO {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

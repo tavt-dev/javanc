@@ -25,6 +25,9 @@ public class ProfileMapper {
         dto.setIdUser(profile.getIdUser());
         dto.setUrl(profile.getUrl());
         dto.setTitle(profile.getTitle());
+        dto.setStatus(profile.getStatus() == null ? null : profile.getStatus().name());
+        dto.setCreatedAt(profile.getCreatedAt());
+        dto.setUpdatedAt(profile.getUpdatedAt());
         return dto;
     }
 
@@ -43,6 +46,8 @@ public class ProfileMapper {
         profile.setIdUser(dto.getIdUser());
         profile.setUrl(dto.getUrl());
         profile.setTitle(dto.getTitle());
+        profile.setCreatedAt(dto.getCreatedAt());
+        profile.setUpdatedAt(dto.getUpdatedAt());
         return profile;
     }
 
@@ -68,7 +73,7 @@ public class ProfileMapper {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
-        return TypeProfile.valueOf(value);
+        return TypeProfile.valueOf(value.trim().toUpperCase());
     }
 
     private Contact toContact(ProfileMultipartForm form) {

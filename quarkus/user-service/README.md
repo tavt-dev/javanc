@@ -62,7 +62,7 @@ $env:USER_ADMIN_NAME='System Admin'
 ```
 
 Flyway runs at startup by default. Use SQL migrations under `src/main/resources/db/migration`.
-Admin bootstrap is disabled by default and should only be enabled for the first deployment or local setup. It creates the first `admin` account only when no admin exists.
+Admin bootstrap is disabled by default and should only be enabled for the first deployment or local setup. It creates the first `ACTIVE` `admin` account only when no active admin exists. When enabled, missing admin config, weak passwords, or a configured email that already belongs to a non-active-admin user fail startup instead of silently skipping or promoting an existing account.
 
 ## API Contract
 

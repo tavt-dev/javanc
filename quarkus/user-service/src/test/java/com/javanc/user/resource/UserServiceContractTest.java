@@ -214,6 +214,46 @@ class UserServiceContractTest {
     }
 
     @Test
+    void profileUpdatesRejectDuplicateEmailAndEmployeeId() {
+        String adminToken = loginToken("test.admin@example.com", "Password1!");
+        createAccountAndUserId(adminToken, "contract.unique.first@example.com", "EMP-CONTRACT-UNIQUE-1", "user");
+        Integer secondUserId = createAccountAndUserId(adminToken, "contract.unique.second@example.com",
+                "EMP-CONTRACT-UNIQUE-2", "user");
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "contract.unique.first@example.com"))
+                .when()
+                .patch("/users/" + secondUserId)
+                .then()
+                .statusCode(409)
+                .body("message", equalTo("User already exists"));
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("employeeId", "EMP-CONTRACT-UNIQUE-1"))
+                .when()
+                .patch("/users/" + secondUserId)
+                .then()
+                .statusCode(409)
+                .body("message", equalTo("Employee ID already exists"));
+
+        Map<String, Object> clearEmployeeId = new HashMap<>();
+        clearEmployeeId.put("employeeId", "");
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(clearEmployeeId)
+                .when()
+                .patch("/users/" + secondUserId)
+                .then()
+                .statusCode(200)
+                .body("data.idEmployee", nullValue());
+    }
+
+    @Test
     void verificationOtpRejectsWrongCodeAndResendIsRateLimited() {
         String email = "contract.otp@example.com";
         given()

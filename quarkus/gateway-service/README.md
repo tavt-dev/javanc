@@ -10,7 +10,7 @@ The gateway uses static service URLs instead of Eureka. `user-service` remains t
 |---|---|---|
 | `/auth/**` | `USER_SERVICE_URL` | public |
 | `/users/**` | `USER_SERVICE_URL` | bearer token required |
-| `/profile/**` | `PROFILE_SERVICE_URL` | bearer token required |
+| `/profiles/**` | `PROFILE_SERVICE_URL` | bearer token required |
 | `/project/**` | `PROJECT_SERVICE_URL` | bearer token required |
 | `/notification/**` | `NOTIFICATION_SERVICE_URL` | public |
 | `/manager/**` | `MANAGER_SERVICE_URL` | bearer token required |
@@ -40,7 +40,7 @@ $env:GATEWAY_CORS_ORIGINS='http://localhost:4200,http://127.0.0.1:4200,http://lo
 - `GET /users/me` with `Authorization: Bearer <accessToken>`
 - `GET /image/getAll`
 - `GET /notification/getAll`
-- `GET /profile/user/getAll` with `Authorization: Bearer <accessToken>`
+- `GET /profiles` with `Authorization: Bearer <accessToken>`
 - `GET /manager/user/job/getall` with `Authorization: Bearer <accessToken>`
 
 No discovery server is required.

@@ -64,6 +64,9 @@ class EmailResourceTest {
         org.junit.jupiter.api.Assertions.assertEquals("verify@example.test", TestMailSenderPort.sentMessage.getMailTo());
         org.junit.jupiter.api.Assertions.assertEquals("Verify your Javanc account",
                 TestMailSenderPort.sentMessage.getMailSubject());
+        org.junit.jupiter.api.Assertions.assertEquals("text/html", TestMailSenderPort.sentMessage.getContentType());
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("<!doctype html>"));
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("Verify your email"));
         org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("123456"));
         org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("10"));
     }

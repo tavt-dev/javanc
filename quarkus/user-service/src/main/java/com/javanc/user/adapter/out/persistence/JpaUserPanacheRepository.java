@@ -2,6 +2,7 @@ package com.javanc.user.adapter.out.persistence;
 
 import com.javanc.user.domain.model.AccountStatus;
 import com.javanc.user.domain.model.EmailAddress;
+import com.javanc.user.domain.model.EmployeeId;
 import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.model.UserId;
@@ -35,6 +36,14 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
     }
 
     @Override
+    public Optional<User> findByEmployeeId(EmployeeId employeeId) {
+        if (employeeId == null) {
+            return Optional.empty();
+        }
+        return find("idEmployee", employeeId.value()).firstResultOptional().map(mapper::toDomain);
+    }
+
+    @Override
     public List<User> findAllUsers() {
         return listAll().stream().map(mapper::toDomain).toList();
     }
@@ -51,6 +60,11 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
     @Override
     public boolean existsByRole(Role role) {
         return count("role", role) > 0;
+    }
+
+    @Override
+    public boolean existsActiveByRole(Role role) {
+        return count("role = ?1 and status = ?2", role, AccountStatus.ACTIVE) > 0;
     }
 
     @Override

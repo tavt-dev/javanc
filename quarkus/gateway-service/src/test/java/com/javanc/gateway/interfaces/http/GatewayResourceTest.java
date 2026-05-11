@@ -49,7 +49,7 @@ class GatewayResourceTest {
     @Test
     void protectedRouteRejectsMissingToken() {
         given()
-                .when().get("/profile/user/getAll")
+                .when().get("/profiles")
                 .then()
                 .statusCode(401)
                 .body("statusCode", equalTo(1041))
@@ -148,7 +148,7 @@ class GatewayResourceTest {
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "POST")
                 .header("Access-Control-Request-Headers", "authorization,content-type")
-                .when().options("/profile/user/getAll")
+                .when().options("/profiles")
                 .then()
                 .statusCode(anyOf(is(200), is(204)))
                 .header("Access-Control-Allow-Origin", "http://localhost:3000")

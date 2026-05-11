@@ -19,7 +19,7 @@ public class UserPersistenceMapper {
                 new UserId(entity.getId()),
                 entity.getName(),
                 new EmailAddress(entity.getEmail()),
-                new EmployeeId(entity.getIdEmployee()),
+                EmployeeId.optional(entity.getIdEmployee()),
                 new PasswordHash(entity.getPassword()),
                 entity.getStatus() == null ? AccountStatus.fromActive(entity.isActive()) : entity.getStatus(),
                 entity.getRole());

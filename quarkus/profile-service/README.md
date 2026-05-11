@@ -17,14 +17,15 @@ The module is organized with a small DDD-style boundary:
 - `application/mapper`: explicit DTO/domain mapping.
 - `infrastructure/persistence`: MongoDB Panache repository adapter.
 - `infrastructure/client`: MicroProfile REST clients and outbound adapters.
-- `interfaces/rest`: HTTP resource, multipart form model, response DTOs, and exception mappers.
+- `interfaces/rest`: HTTP resource, avatar multipart form model, response DTOs, and exception mappers.
 
 ## Requirements
 
 - JDK 21
 - Maven wrapper from this module: `mvnw.cmd`
 - MongoDB running locally or reachable from the configured connection string
-- Optional reachable `image-service` for profile image upload
+- Reachable `user-service` for token introspection
+- Optional reachable `image-service` for profile avatar upload
 
 Default service port:
 
@@ -61,7 +62,7 @@ Useful URLs:
 - Health: `http://localhost:8085/q/health`
 - OpenAPI: `http://localhost:8085/q/openapi`
 - Dev UI: `http://localhost:8085/q/dev`
-- Profile base path: `http://localhost:8085/profile`
+- Profile base path: `http://localhost:8085/profiles`
 
 ## Package And Run
 
@@ -85,10 +86,14 @@ The packaged app still requires the same MongoDB and downstream service URL envi
 After `quarkus:dev` starts on port `8085`, verify:
 
 - `GET /q/health`
-- `GET /profile/user/getAll`
-- `POST /profile/user/save` with multipart form fields
-- `POST /profile/user/update` with multipart form fields
-- `GET /profile/user/findByUserId?userId=<id>`
+- `GET /profiles/me` with `Authorization: Bearer <accessToken>`
+- `POST /profiles/me` with JSON body `{ "title", "typeProfile", ... }`
+- `PATCH /profiles/me` with JSON fields to update
+- `POST /profiles/me/avatar` with multipart field `image`
+- `GET /profiles?type=JAVA&page=0&size=20`
+- `GET /profiles/{id}`
+- `GET /profiles/by-user/{userId}`
+- `GET /profiles/batch?ids=1&ids=2`
 
 ## Postman
 
@@ -97,7 +102,7 @@ Import these files into Postman:
 - `postman/profile-service.postman_collection.json`
 - `postman/profile-service.postman_environment.json`
 
-Select the `Quarkus profile-service local` environment before running requests. Set `authToken` if requests go through the gateway or another protected route. Direct local service calls to `http://localhost:8085` do not validate JWT in the profile service.
+Select the `Quarkus profile-service local` environment before running requests. Set `authToken`; profile-service validates Bearer tokens through user-service even when called directly.
 
 ## Commit Hygiene
 

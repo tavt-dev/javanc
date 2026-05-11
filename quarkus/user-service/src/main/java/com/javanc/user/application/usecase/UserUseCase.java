@@ -71,10 +71,19 @@ public class UserUseCase {
         User target = loadById(command.userId());
         requireCanUpdateProfile(actor, target);
 
+        EmailAddress email = command.email() == null || command.email().isBlank()
+                ? target.email()
+                : parseEmail(command.email());
+        EmployeeId employeeId = command.employeeId() == null
+                ? target.employeeId()
+                : parseOptionalEmployeeId(command.employeeId());
+        ensureEmailAvailable(email, target.id());
+        ensureEmployeeIdAvailable(employeeId, target.id());
+
         target.updateProfile(
                 command.name() == null || command.name().isBlank() ? target.name() : command.name().trim(),
-                command.email() == null || command.email().isBlank() ? target.email() : parseEmail(command.email()),
-                command.employeeId() == null ? target.employeeId() : new EmployeeId(command.employeeId()));
+                email,
+                employeeId);
         if (command.password() != null && !command.password().isBlank()) {
             requirePassword(command.password());
             target.changePassword(passwordHasher.hash(command.password()));
@@ -109,12 +118,13 @@ public class UserUseCase {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new ApplicationException(ErrorCode.USER_ALREADY_EXISTS);
         }
+        EmployeeId employeeId = parseOptionalEmployeeId(command.employeeId());
+        ensureEmployeeIdAvailable(employeeId, null);
         User user = new User(
                 null,
                 required(command.name(), "Name is required"),
                 email,
-                command.employeeId() == null || command.employeeId().isBlank() ? null
-                        : new EmployeeId(command.employeeId()),
+                employeeId,
                 passwordHasher.hash(command.password()),
                 AccountStatus.ACTIVE,
                 parseRequiredRole(command.role()));
@@ -171,6 +181,37 @@ public class UserUseCase {
         } catch (IllegalArgumentException exception) {
             throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
         }
+    }
+
+    private EmployeeId parseOptionalEmployeeId(String employeeId) {
+        try {
+            return EmployeeId.optional(employeeId);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private void ensureEmailAvailable(EmailAddress email, UserId currentUserId) {
+        userRepository.findByEmail(email)
+                .filter(existing -> !sameUser(existing.id(), currentUserId))
+                .ifPresent(existing -> {
+                    throw new ApplicationException(ErrorCode.USER_ALREADY_EXISTS);
+                });
+    }
+
+    private void ensureEmployeeIdAvailable(EmployeeId employeeId, UserId currentUserId) {
+        if (employeeId == null) {
+            return;
+        }
+        userRepository.findByEmployeeId(employeeId)
+                .filter(existing -> !sameUser(existing.id(), currentUserId))
+                .ifPresent(existing -> {
+                    throw new ApplicationException(ErrorCode.CONFLICT, "Employee ID already exists");
+                });
+    }
+
+    private boolean sameUser(UserId left, UserId right) {
+        return left != null && right != null && left.value().equals(right.value());
     }
 
     private Role parseRequiredRole(String role) {

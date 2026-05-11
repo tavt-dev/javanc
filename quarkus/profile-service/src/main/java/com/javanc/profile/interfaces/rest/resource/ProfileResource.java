@@ -1,100 +1,114 @@
 package com.javanc.profile.interfaces.rest.resource;
 
-import com.javanc.profile.application.mapper.ProfileMapper;
+import com.javanc.profile.application.security.CurrentUser;
+import com.javanc.profile.application.security.ProfileAuthService;
 import com.javanc.profile.application.service.ProfileApplicationService;
-import com.javanc.profile.domain.model.TypeProfile;
 import com.javanc.profile.interfaces.rest.dto.ApiResponse;
 import com.javanc.profile.interfaces.rest.dto.ProfileDTO;
 import com.javanc.profile.interfaces.rest.form.ProfileMultipartForm;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
 
-@Path("/profile")
+@Path("/profiles")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProfileResource {
 
     private final ProfileApplicationService profileService;
-    private final ProfileMapper profileMapper;
+    private final ProfileAuthService authService;
 
     @Inject
-    public ProfileResource(ProfileApplicationService profileService, ProfileMapper profileMapper) {
+    public ProfileResource(ProfileApplicationService profileService, ProfileAuthService authService) {
         this.profileService = profileService;
-        this.profileMapper = profileMapper;
+        this.authService = authService;
+    }
+
+    @GET
+    @Path("/me")
+    public ApiResponse<ProfileDTO> me(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Current profile retrieved successfully", profileService.getMyProfile(actor));
     }
 
     @POST
-    @Path("/user/save")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public ApiResponse<ProfileDTO> save(@BeanParam ProfileMultipartForm form) {
-        ProfileDTO resultProfileDTO = profileService.saveProfile(profileMapper.toDto(form), form.getImage());
-        return new ApiResponse<>(true, "Profile saved successfully", resultProfileDTO);
+    @Path("/me")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ApiResponse<ProfileDTO> createMe(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            ProfileDTO request) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profile created successfully", profileService.createProfile(actor, request));
+    }
+
+    @PATCH
+    @Path("/me")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ApiResponse<ProfileDTO> updateMe(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            ProfileDTO request) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profile updated successfully", profileService.updateMyProfile(actor, request));
     }
 
     @POST
-    @Path("/user/update")
+    @Path("/me/avatar")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public ApiResponse<ProfileDTO> update(@BeanParam ProfileMultipartForm form) {
-        ProfileDTO resultProfileDTO = profileService.updateProfile(profileMapper.toDto(form), form.getImage());
-        return new ApiResponse<>(true, "Profile update successfully", resultProfileDTO);
+    public ApiResponse<ProfileDTO> updateAvatar(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @BeanParam ProfileMultipartForm form) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profile avatar updated successfully",
+                profileService.updateMyAvatar(actor, form == null ? null : form.getImage()));
+    }
+
+    @DELETE
+    @Path("/me")
+    public ApiResponse<Void> deleteMe(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        profileService.deleteMyProfile(actor);
+        return new ApiResponse<>(true, "Profile deleted successfully", null);
     }
 
     @GET
-    @Path("/user/findProfileByType")
-    public ApiResponse<List<ProfileDTO>> findProfilesByType(@QueryParam("typeProfile") String typeProfile) {
-        List<ProfileDTO> resultProfiles = profileService.findProfilesByType(TypeProfile.valueOf(typeProfile));
-        return new ApiResponse<>(true, "Find Profile By Type", resultProfiles);
+    public ApiResponse<List<ProfileDTO>> search(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @QueryParam("type") String type, @QueryParam("title") String title, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profiles retrieved successfully",
+                profileService.search(actor, type, title, page, size));
     }
 
     @GET
-    @Path("/user/getAll")
-    public ApiResponse<List<ProfileDTO>> getAll() {
-        List<ProfileDTO> resultProfiles = profileService.getAllProfile();
-        return new ApiResponse<>(true, "Get all is successfully", resultProfiles);
+    @Path("/by-user/{userId}")
+    public ApiResponse<ProfileDTO> findByUserId(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @PathParam("userId") Integer userId) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findByUserId(actor, userId));
     }
 
     @GET
-    @Path("/user/findById")
-    public ApiResponse<ProfileDTO> getProfileById(@QueryParam("id") Integer id) {
-        ProfileDTO profileDTO = profileService.findById(id);
-        return new ApiResponse<>(true, "Find by id is successfully", profileDTO);
+    @Path("/batch")
+    public ApiResponse<List<ProfileDTO>> batch(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @QueryParam("ids") List<Integer> ids) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profiles retrieved successfully", profileService.findByIds(actor, ids));
     }
 
     @GET
-    @Path("/user/findByUserId")
-    public ApiResponse<ProfileDTO> findByUserId(@QueryParam("userId") Integer userId) {
-        ProfileDTO resultProfiles = profileService.findByIdUser(userId);
-        if (resultProfiles != null) {
-            return new ApiResponse<>(true, "Find by user id is successfully", resultProfiles);
-        }
-        return new ApiResponse<>(false, "Profile not found", null);
-    }
-
-    @GET
-    @Path("/user/findByTitle")
-    public ApiResponse<List<ProfileDTO>> findByTitle(@QueryParam("title") String title) {
-        List<ProfileDTO> resultProfiles = profileService.findByTitle(title);
-        return new ApiResponse<>(true, "Find by title is successfully", resultProfiles);
-    }
-
-    @GET
-    @Path("/user/checkIdProfile")
-    public ApiResponse<String> checkIdProfile(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "Check id profile", "true");
-    }
-
-    @GET
-    @Path("/manager/getProfileByIdPendingJob")
-    public ApiResponse<List<ProfileDTO>> getProfileByIdPendingJob(@QueryParam("ids") List<Integer> ids) {
-        List<ProfileDTO> resultProfiles = profileService.findListProfileByIdPendingJob(ids);
-        return new ApiResponse<>(true, "Profiles retrieved successfully by pending job id", resultProfiles);
+    @Path("/{id}")
+    public ApiResponse<ProfileDTO> findById(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @PathParam("id") Integer id) {
+        CurrentUser actor = authService.authenticate(authorizationHeader);
+        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findById(actor, id));
     }
 }

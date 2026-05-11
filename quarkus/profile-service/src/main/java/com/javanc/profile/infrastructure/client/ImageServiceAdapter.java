@@ -1,6 +1,8 @@
 package com.javanc.profile.infrastructure.client;
 
 import com.javanc.profile.application.port.ImageStoragePort;
+import com.javanc.profile.application.exception.ApplicationException;
+import com.javanc.profile.application.exception.ErrorCode;
 import com.javanc.profile.interfaces.rest.dto.ApiResponse;
 import com.javanc.profile.interfaces.rest.dto.ImageDTO;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,6 +31,10 @@ public class ImageServiceAdapter implements ImageStoragePort {
             return "";
         }
         ApiResponse<ImageDTO> response = imageClient.save(uploadedFile(imageFile));
+        if (response == null || response.getData() == null || response.getData().getUrl() == null
+                || response.getData().getUrl().isBlank()) {
+            throw new ApplicationException(ErrorCode.IMAGE_UPLOAD_FAILED);
+        }
         return response.getData().getUrl();
     }
 
@@ -38,9 +44,10 @@ public class ImageServiceAdapter implements ImageStoragePort {
             return "";
         }
         ApiResponse<ImageDTO> response = imageClient.save(uploadedFile(imageFile));
-        if (response == null || response.getData() == null) {
+        if (response == null || response.getData() == null || response.getData().getUrl() == null
+                || response.getData().getUrl().isBlank()) {
             LOG.info("Image was not saved or image-service returned an empty response");
-            return "";
+            throw new ApplicationException(ErrorCode.IMAGE_UPLOAD_FAILED);
         }
         return response.getData().getUrl();
     }

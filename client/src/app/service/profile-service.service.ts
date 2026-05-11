@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Profile } from '../model/profile';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { Apiresponse } from '../apiresponse';
 import { Router } from '@angular/router'; 
 
@@ -11,12 +11,12 @@ import { Router } from '@angular/router';
 export class ProfileServiceService {
 
   constructor(private httpClient:HttpClient,private router:Router) { }
-  private baseURL = 'http://localhost:8080/profile/';
+  private baseURL = 'http://localhost:8080/profiles';
 
   
   getProfilesList(): Observable<Profile[]> {
     const headers = this.createAuthorizationHeader();
-    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}user/getAll`,{headers}).pipe(
+    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}?page=0&size=100`,{headers}).pipe(
       map(response => {
         if (response.success) {
           return response.data.map(this.mapToProfile);
@@ -29,8 +29,7 @@ export class ProfileServiceService {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -41,7 +40,7 @@ export class ProfileServiceService {
 
   getListProfileByIdPendingJob(id:number[]): Observable<Profile[]> {
     const headers = this.createAuthorizationHeader();
-    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}manager/getProfileByIdPendingJob?ids=${id}`, {headers}).pipe(
+    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}/batch?ids=${id}`, {headers}).pipe(
       map(response => {
         if (response.success) {
           return response.data.map(this.mapToProfile);
@@ -54,8 +53,7 @@ export class ProfileServiceService {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -65,22 +63,27 @@ export class ProfileServiceService {
   }
 
   createProfile(profile: FormData):Observable<Profile> {
-    console.log('Creating profile:', profile);
-    let headers = new HttpHeaders();
-    console.log("profile",profile);
-    const authHeaders = this.createAuthorizationHeader();
-    if (authHeaders.has('Authorization')) {
-        headers = headers.set('Authorization', authHeaders.get('Authorization')!);
-    }
-    return this.httpClient.post<any>(`${this.baseURL}user/save`, profile, { headers }).pipe(
-      map(this.mapToProfile),
+    const headers = this.createAuthorizationHeader();
+    const image = profile.get('image') as File | null;
+    return this.httpClient.post<Apiresponse<Profile>>(`${this.baseURL}/me`, this.formDataToProfilePayload(profile), { headers }).pipe(
+      switchMap(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        if (image) {
+          const avatarData = new FormData();
+          avatarData.append('image', image);
+          return this.httpClient.post<Apiresponse<Profile>>(`${this.baseURL}/me/avatar`, avatarData, { headers })
+            .pipe(map(avatarResponse => this.mapWrappedProfile(avatarResponse)));
+        }
+        return of(this.mapToProfile(response.data));
+      }),
       catchError(
         error => {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -92,22 +95,27 @@ export class ProfileServiceService {
   updateProfile(profile: FormData): Observable<Profile> {
    
     const headers = this.createAuthorizationHeader();
+    const image = profile.get('image') as File | null;
    
-    return this.httpClient.post<Apiresponse<Profile>>(`${this.baseURL}user/update`, profile, { headers }).pipe(
-      map(response => {
+    return this.httpClient.patch<Apiresponse<Profile>>(`${this.baseURL}/me`, this.formDataToProfilePayload(profile), { headers }).pipe(
+      switchMap(response => {
         if (response.success) {
-          return this.mapToProfile(response.data);
-        } else {
-          throw new Error(response.message);
+          if (image) {
+            const avatarData = new FormData();
+            avatarData.append('image', image);
+            return this.httpClient.post<Apiresponse<Profile>>(`${this.baseURL}/me/avatar`, avatarData, { headers })
+              .pipe(map(avatarResponse => this.mapWrappedProfile(avatarResponse)));
+          }
+          return of(this.mapToProfile(response.data));
         }
+        throw new Error(response.message);
       }),
       catchError(
         error => {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -118,7 +126,7 @@ export class ProfileServiceService {
 
   getProfileByType(type: string): Observable<Profile[]> {
     const headers = this.createAuthorizationHeader();
-    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}user/findProfileByType?typeProfile=${type}`, {headers}).pipe(
+    return this.httpClient.get<Apiresponse<Profile[]>>(`${this.baseURL}?type=${type}&page=0&size=100`, {headers}).pipe(
       map(response => {
         if (response.success) {
           return response.data.map(this.mapToProfile);
@@ -131,8 +139,7 @@ export class ProfileServiceService {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -143,7 +150,7 @@ export class ProfileServiceService {
 
   getProfileById(id:number):Observable<Profile>{
     const headers = this.createAuthorizationHeader();
-    return this.httpClient.get<any>(`${this.baseURL}user/findById?id=${id}`, {headers})
+    return this.httpClient.get<any>(`${this.baseURL}/${id}`, {headers})
    .pipe(map(response=>{
      if(response.success){
        return this.mapToProfile(response.data);
@@ -157,8 +164,7 @@ export class ProfileServiceService {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         console.error('Unauthorized:', error);
         this.router.navigate(['/login']);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userCurrent');
+        this.clearAuthState();
       }
       console.error('Error fetching profiles:', error);
       return throwError(() => new Error('Something went wrong!'));
@@ -169,7 +175,7 @@ export class ProfileServiceService {
 
   getProfileByUserId(userId:number): Observable<Profile>{
     const headers = this.createAuthorizationHeader();
-    return this.httpClient.get<Apiresponse<Profile>>(`${this.baseURL}user/findByUserId?userId=${userId}`, { headers }).pipe(
+    return this.httpClient.get<Apiresponse<Profile>>(`${this.baseURL}/by-user/${userId}`, { headers }).pipe(
       map(response => {
         if (response.success) {
           return this.mapToProfile(response.data);
@@ -182,8 +188,7 @@ export class ProfileServiceService {
           if (error instanceof HttpErrorResponse && error.status === 401) {
             console.error('Unauthorized:', error);
             this.router.navigate(['/login']);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userCurrent');
+            this.clearAuthState();
           }
           console.error('Error fetching profiles:', error);
           return throwError(() => new Error('Something went wrong!'));
@@ -192,8 +197,14 @@ export class ProfileServiceService {
     );
   }
 
+  getProfileByUser(userId: number): Observable<Profile> {
+    return this.getProfileByUserId(userId);
+  }
 
   private createAuthorizationHeader(): HttpHeaders {
+    if (typeof localStorage === 'undefined') {
+      return new HttpHeaders();
+    }
     const token = localStorage.getItem('authToken');
     if(token){
       console.log('Token found in local store:', token);
@@ -205,6 +216,48 @@ export class ProfileServiceService {
     }
     return new HttpHeaders();
   }
+
+  private clearAuthState(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userCurrent');
+  }
+
+  private mapWrappedProfile(response: Apiresponse<Profile>): Profile {
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+    return this.mapToProfile(response.data);
+  }
+
+  private formDataToProfilePayload(formData: FormData): any {
+    const contact = {
+      address: this.formValue(formData, 'contact.address'),
+      phone: this.formValue(formData, 'contact.phone'),
+      email: this.formValue(formData, 'contact.email')
+    };
+    return {
+      title: this.formValue(formData, 'title'),
+      objective: this.formValue(formData, 'objective'),
+      education: this.formValue(formData, 'education'),
+      workExperience: this.formValue(formData, 'workExperience'),
+      skills: this.formValue(formData, 'skills'),
+      typeProfile: this.formValue(formData, 'typeProfile'),
+      contact
+    };
+  }
+
+  private formValue(formData: FormData, key: string): string | null {
+    const value = formData.get(key);
+    if (value === null || value instanceof File) {
+      return null;
+    }
+    const text = value.toString().trim();
+    return text.length > 0 ? text : null;
+  }
+
   private mapToProfile(profileDTO: any): Profile {
     return {
       id: profileDTO.id,
