@@ -16,10 +16,11 @@ public enum ErrorCode {
     IMAGE_UNABLE_TO_SAVE(7003, "Unable to save image", 500),
     IMAGE_UNABLE_TO_UPDATE(7004, "Unable to update image", 500),
     IMAGE_UNABLE_TO_DELETE(7005, "Unable to delete image", 500),
-    UPLOAD_FAILED(10001, "Failed to upload file", 500),
+    UPLOAD_FAILED(10001, "Failed to upload file", 502),
     DELETE_FAILED(10002, "Failed to delete file", 500),
     CONVERSION_FAILED(10003, "Failed to convert file", 500),
-    FILE_DELETION_FAILED(10004, "Failed to delete temporary file", 500);
+    FILE_DELETION_FAILED(10004, "Failed to delete temporary file", 500),
+    CLOUDINARY_CONFIG_MISSING(10005, "Cloudinary configuration is missing", 500);
 
     private final int code;
     private final String message;

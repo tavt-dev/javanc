@@ -25,6 +25,7 @@ $env:IMAGE_MYSQL_JDBC_URL='jdbc:mysql://localhost:3306/image?createDatabaseIfNot
 $env:CLOUDINARY_CLOUD_NAME='<local-cloudinary-cloud-name>'
 $env:CLOUDINARY_API_KEY='<local-cloudinary-api-key>'
 $env:CLOUDINARY_API_SECRET='<local-cloudinary-api-secret>'
+$env:CLOUDINARY_FOLDER='javanc/profile'
 
 .\mvnw.cmd quarkus:dev
 ```
@@ -47,17 +48,28 @@ mvn -pl image-service quarkus:dev
 - `GET http://localhost:8083/image/getAll`
 - `POST http://localhost:8083/image/save` as `multipart/form-data` with file field `image`
 
-The `POST /image/save` response preserves the Spring wrapper:
+The `POST /image/save` response uses the service wrapper and stores only Cloudinary metadata:
 
 ```json
 {
   "success": true,
-  "message": "Get all is successfully",
+  "message": "Image uploaded successfully",
   "data": {
     "id": 123,
-    "url": "http://res.cloudinary.com/..."
+    "url": "https://res.cloudinary.com/...",
+    "publicId": "javanc/profile/avatar",
+    "secureUrl": "https://res.cloudinary.com/...",
+    "format": "png",
+    "resourceType": "image",
+    "bytes": 2048,
+    "width": 300,
+    "height": 300,
+    "createdAt": "2026-05-11T00:00:00Z"
   }
 }
 ```
+
+Only `image/jpeg`, `image/png`, and `image/webp` uploads are accepted. Cloudinary credentials stay in
+`image-service`; callers such as `profile-service` receive only the returned URL/metadata.
 
 Do not commit `.env`, real Cloudinary credentials, or generated `target/` output.

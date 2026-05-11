@@ -70,9 +70,11 @@
               "pm.test('image response is compatible', function () {",
               "  const json = pm.response.json();",
               "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.message).to.eql('Get all is successfully');",
+              "  pm.expect(json.message).to.eql('Image uploaded successfully');",
               "  pm.expect(json.data).to.have.property('id');",
               "  pm.expect(json.data).to.have.property('url');",
+              "  pm.expect(json.data).to.have.property('publicId');",
+              "  pm.expect(json.data.url).to.match(/^https:\\/\\//);",
               "});"
             ],
             "type": "text/javascript"
@@ -113,8 +115,10 @@
           "script": {
             "exec": [
               "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
-              "pm.test('body is empty for Spring compatibility', function () {",
-              "  pm.expect(pm.response.text()).to.eql('');",
+              "pm.test('error wrapper is returned', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(false);",
+              "  pm.expect(json.data).to.eql(null);",
               "});"
             ],
             "type": "text/javascript"
