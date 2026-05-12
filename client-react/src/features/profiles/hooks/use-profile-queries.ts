@@ -16,6 +16,7 @@ export const profileKeys = {
   search: (params: ProfileSearchParams) =>
     ["profiles", "search", params] as const,
   detail: (id: number) => ["profiles", "detail", id] as const,
+  batch: (ids: number[]) => ["profiles", "batch", ids] as const,
 };
 
 export function isProfileMissingError(error: unknown) {
@@ -58,6 +59,20 @@ export function useProfileDetailQuery(id: number | null) {
       return (await profilesApi.findById(id)).data;
     },
     enabled: Boolean(id),
+  });
+}
+
+export function useApplicantProfilesQuery(ids: number[]) {
+  const stableIds = [...new Set(ids)].sort((a, b) => a - b);
+  return useQuery({
+    queryKey: stableIds.length
+      ? profileKeys.batch(stableIds)
+      : ["profiles", "batch", "empty"],
+    queryFn: async () => {
+      if (!stableIds.length) return [];
+      return (await profilesApi.batch(stableIds)).data;
+    },
+    enabled: stableIds.length > 0,
   });
 }
 

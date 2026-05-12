@@ -31,3 +31,11 @@ export function filterCompanies(
     return matchesQuery && matchesType && matchesLocation;
   });
 }
+
+export function formatCompanyLocation(company: {
+  street?: string;
+  city?: string;
+  country?: string;
+}) {
+  return [company.street, company.city, company.country].filter(Boolean).join(", ");
+}

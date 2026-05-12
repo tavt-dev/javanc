@@ -6,6 +6,7 @@
 > **Phase 2:** DONE - Auth module implemented and verified on 2026-05-12  
 > **Phase 3:** DONE - Core user area implemented and verified on 2026-05-12  
 > **Phase 4:** DONE - Jobs, companies, and notifications implemented and verified on 2026-05-12  
+> **Phase 5:** DONE - Role workspaces implemented and verified on 2026-05-13  
 > **Frontend:** New React app in `client-react/`  
 > **Backend:** Quarkus 3.33.1 microservices through gateway `http://localhost:8080`  
 > **Out of scope:** Existing Angular `client/` is not reused, migrated, or modified.
@@ -1153,9 +1154,40 @@ Senior review notes:
 
 ### Phase 5: Role Workspaces
 
-- HR: manage jobs, review applicants, accept/reject.
-- Manager: my company, create HR account and assign.
-- Admin: user management, company management, create company, create manager account and assign.
+**Status:** DONE on 2026-05-13.
+
+Verification:
+
+- `npm run lint` passed.
+- `npm run test:run` passed: 19 test files, 46 tests.
+- `npm run build` passed.
+- Build warning remains: the generated JS chunk is larger than 500 kB. This is acceptable for Phase 5 and should be handled with route-level code splitting in Phase 6/7.
+
+Completed:
+
+- HR workspace:
+  - `/hr/jobs` now loads the company assigned to the HR account.
+  - HR can create, edit, and delete jobs for that company.
+  - `/hr/jobs/:id/applicants` reviews pending/accepted applicants.
+  - HR can accept/reject applicants through backend endpoints.
+  - Foreign-company job review renders a permission state.
+
+- Manager workspace:
+  - `/manager/company` now loads and edits the manager-owned company.
+  - `/manager/hr` creates HR accounts and assigns them to the manager company.
+  - HR user ids are displayed because the backend only allows admin to read user lists.
+
+- Admin workspace:
+  - `/admin/users` now lists users, filters users, creates internal accounts, edits profile fields, changes roles, and deactivates accounts.
+  - Self-deactivation is blocked in UI.
+  - `/admin/companies` now lists companies, creates companies with multipart `image`, edits companies, deletes companies, and creates/assigns manager accounts.
+
+Senior notes:
+
+- Backend typo query names such as `jobDTO` and `setmaanagertocompany` are hidden behind clean frontend function names.
+- Company/job update flows preserve relationship fields such as `idManager`, `idHR`, `idJobs`, `idCompany`, `idProfiePending`, and `idProfile`.
+- `/settings` intentionally remains a placeholder.
+- Company logo display remains out of scope because `CompanyDTO` still does not expose a stable `url`.
 
 ### Phase 6: UI/UX and Animation Polish
 

@@ -26,10 +26,10 @@ import type { Role } from "@/types/auth";
 import type { ProfileDTO } from "@/types/profile";
 
 const roleCopy: Record<Role, { label: string; value: string }> = {
-  user: { label: "Applications", value: "Phase 4" },
-  hr: { label: "Hiring workspace", value: "Phase 5" },
-  manager: { label: "Company workspace", value: "Phase 5" },
-  admin: { label: "Admin tools", value: "Phase 5" },
+  user: { label: "Applications", value: "Active" },
+  hr: { label: "Hiring workspace", value: "Active" },
+  manager: { label: "Company workspace", value: "Active" },
+  admin: { label: "Admin tools", value: "Active" },
 };
 
 export function DashboardPage() {
@@ -93,7 +93,7 @@ export function DashboardPage() {
         <StatCard
           label={roleStat.label}
           value={roleStat.value}
-          detail="Planned workspace"
+          detail="Role workspace"
           icon={Shield}
         />
       </StaggerList>

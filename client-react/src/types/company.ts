@@ -12,3 +12,15 @@ export interface CompanyDTO {
   idHR?: number[];
   idJobs?: number[];
 }
+
+export interface CompanyFormValues {
+  name: string;
+  type?: string;
+  description?: string;
+  street?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  country?: string;
+  image?: File | null;
+}

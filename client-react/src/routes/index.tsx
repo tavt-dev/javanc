@@ -18,14 +18,13 @@ import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { JobBoardPage } from "@/features/jobs/pages/JobBoardPage";
 import { JobDetailPage } from "@/features/jobs/pages/JobDetailPage";
 import { MyApplicationsPage } from "@/features/jobs/pages/MyApplicationsPage";
-import {
-  ManageJobsPage,
-  MyCompanyPage,
-  ManageHRPage,
-  UserManagementPage,
-  CompanyManagementPage,
-  SettingsPage,
-} from "@/features/placeholders/pages";
+import { ManageJobsPage } from "@/features/jobs/pages/ManageJobsPage";
+import { JobApplicantsPage } from "@/features/jobs/pages/JobApplicantsPage";
+import { MyCompanyPage } from "@/features/companies/pages/MyCompanyPage";
+import { ManageHRPage } from "@/features/companies/pages/ManageHRPage";
+import { UserManagementPage } from "@/features/users/pages/UserManagementPage";
+import { CompanyManagementPage } from "@/features/companies/pages/CompanyManagementPage";
+import { SettingsPage } from "@/features/placeholders/pages";
 
 export const router = createBrowserRouter([
   // Root redirect
@@ -88,6 +87,14 @@ export const router = createBrowserRouter([
         element: (
           <RoleGuard allow={["hr"]}>
             <ManageJobsPage />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "/hr/jobs/:id/applicants",
+        element: (
+          <RoleGuard allow={["hr"]}>
+            <JobApplicantsPage />
           </RoleGuard>
         ),
       },

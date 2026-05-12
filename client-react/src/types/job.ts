@@ -16,3 +16,10 @@ export type JobApplicationState =
   | "pending"
   | "closed"
   | "open";
+
+export interface JobFormValues {
+  title: string;
+  description?: string;
+  typeJob: TypeJob;
+  size: number;
+}

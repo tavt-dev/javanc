@@ -5,6 +5,7 @@ import { jobsApi } from "./jobs-api";
 vi.mock("@/lib/api-client", () => ({
   default: {
     get: vi.fn(),
+    post: vi.fn(),
     put: vi.fn(),
   },
 }));
@@ -43,6 +44,47 @@ describe("jobsApi", () => {
       2,
       "/manager/user/job/getjobaccepted",
       { params: { id: 7 } },
+    );
+  });
+
+  it("creates, updates, deletes, accepts, and rejects through HR endpoints", async () => {
+    const job = { id: 3, title: "Java", idCompany: 8 };
+    mockedApiClient.post.mockResolvedValue({ data: { data: job } });
+    mockedApiClient.put.mockResolvedValue({ data: { data: job } });
+
+    await jobsApi.create(job as never);
+    await jobsApi.update(job as never);
+    await jobsApi.delete(3);
+    await jobsApi.accept({ jobId: 3, profileId: 9 });
+    await jobsApi.reject({ jobId: 3, profileId: 9 });
+
+    expect(mockedApiClient.post).toHaveBeenNthCalledWith(
+      1,
+      "/manager/hr/job/create",
+      job,
+    );
+    expect(mockedApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      "/manager/hr/job/update",
+      job,
+    );
+    expect(mockedApiClient.post).toHaveBeenNthCalledWith(
+      3,
+      "/manager/hr/job/delete",
+      null,
+      { params: { id: 3 } },
+    );
+    expect(mockedApiClient.put).toHaveBeenNthCalledWith(
+      1,
+      "/manager/hr/job/accept",
+      null,
+      { params: { jobDTO: 3, idProfile: 9 } },
+    );
+    expect(mockedApiClient.put).toHaveBeenNthCalledWith(
+      2,
+      "/manager/hr/job/reject",
+      null,
+      { params: { jobDTO: 3, idProfile: 9 } },
     );
   });
 });

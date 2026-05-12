@@ -14,6 +14,14 @@ export function isJobOpen(job: JobDTO) {
   return (job.size ?? 0) > 0;
 }
 
+export function getPendingApplicantCount(job: JobDTO) {
+  return job.idProfiePending?.length ?? 0;
+}
+
+export function getAcceptedApplicantCount(job: JobDTO) {
+  return job.idProfile?.length ?? 0;
+}
+
 export function filterJobs(
   jobs: JobDTO[],
   filters: {

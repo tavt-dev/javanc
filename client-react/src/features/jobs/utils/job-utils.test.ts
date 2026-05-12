@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   filterJobs,
+  getAcceptedApplicantCount,
+  getPendingApplicantCount,
   getJobApplicationState,
   isJobOpen,
 } from "@/features/jobs/utils/job-utils";
@@ -30,6 +32,12 @@ describe("job-utils", () => {
   it("detects open jobs by positive size", () => {
     expect(isJobOpen(baseJob)).toBe(true);
     expect(isJobOpen({ ...baseJob, size: 0 })).toBe(false);
+  });
+
+  it("counts pending and accepted applicants safely", () => {
+    expect(getPendingApplicantCount({ ...baseJob, idProfiePending: [1, 2] })).toBe(2);
+    expect(getAcceptedApplicantCount({ ...baseJob, idProfile: [3] })).toBe(1);
+    expect(getPendingApplicantCount(baseJob)).toBe(0);
   });
 
   it("filters jobs by query, type, company, and open state", () => {

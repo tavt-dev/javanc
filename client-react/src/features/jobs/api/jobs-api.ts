@@ -64,4 +64,59 @@ export const jobsApi = {
     );
     return response.data;
   },
+
+  async create(job: JobDTO) {
+    const response = await apiClient.post<ApiResponse<JobDTO>>(
+      "/manager/hr/job/create",
+      job,
+    );
+    return response.data;
+  },
+
+  async update(job: JobDTO) {
+    const response = await apiClient.post<ApiResponse<JobDTO>>(
+      "/manager/hr/job/update",
+      job,
+    );
+    return response.data;
+  },
+
+  async delete(jobId: number) {
+    const response = await apiClient.post<ApiResponse<string>>(
+      "/manager/hr/job/delete",
+      null,
+      { params: { id: jobId } },
+    );
+    return response.data;
+  },
+
+  async accept({
+    jobId,
+    profileId,
+  }: {
+    jobId: number;
+    profileId: number;
+  }) {
+    const response = await apiClient.put<ApiResponse<JobDTO>>(
+      "/manager/hr/job/accept",
+      null,
+      { params: { jobDTO: jobId, idProfile: profileId } },
+    );
+    return response.data;
+  },
+
+  async reject({
+    jobId,
+    profileId,
+  }: {
+    jobId: number;
+    profileId: number;
+  }) {
+    const response = await apiClient.put<ApiResponse<JobDTO>>(
+      "/manager/hr/job/reject",
+      null,
+      { params: { jobDTO: jobId, idProfile: profileId } },
+    );
+    return response.data;
+  },
 };

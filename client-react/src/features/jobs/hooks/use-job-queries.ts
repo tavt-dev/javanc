@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { jobsApi } from "@/features/jobs/api/jobs-api";
+import type { JobDTO } from "@/types/job";
 
 export const jobKeys = {
   all: ["jobs", "all"] as const,
@@ -83,5 +84,72 @@ export function useApplyJobMutation(profileId: number) {
     onError: (error) => {
       toast.error(extractErrorMessage(error));
     },
+  });
+}
+
+export function useCreateJobMutation(companyId: number) {
+  return useMutation({
+    mutationFn: (job: JobDTO) => jobsApi.create(job),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Job created");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+export function useUpdateJobMutation(companyId: number) {
+  return useMutation({
+    mutationFn: (job: JobDTO) => jobsApi.update(job),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Job updated");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+export function useDeleteJobMutation(companyId: number) {
+  return useMutation({
+    mutationFn: (jobId: number) => jobsApi.delete(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Job deleted");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+export function useAcceptApplicantMutation(jobId: number) {
+  return useMutation({
+    mutationFn: (profileId: number) => jobsApi.accept({ jobId, profileId }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(jobId) });
+      queryClient.invalidateQueries({
+        queryKey: jobKeys.company(response.data.idCompany),
+      });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Applicant accepted");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+export function useRejectApplicantMutation(jobId: number) {
+  return useMutation({
+    mutationFn: (profileId: number) => jobsApi.reject({ jobId, profileId }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(jobId) });
+      queryClient.invalidateQueries({
+        queryKey: jobKeys.company(response.data.idCompany),
+      });
+      toast.success("Applicant rejected");
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
