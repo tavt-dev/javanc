@@ -1,30 +1,132 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense, type ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { GuestRoute } from "./GuestRoute";
 import { RootRedirect } from "./RootRedirect";
 import { RoleGuard } from "./RoleGuard";
-import { LoginPage } from "@/features/auth/pages/LoginPage";
-import { RegisterPage } from "@/features/auth/pages/RegisterPage";
-import { VerifyEmailPage } from "@/features/auth/pages/VerifyEmailPage";
-import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
-import { MyProfilePage } from "@/features/profiles/pages/MyProfilePage";
-import { ProfileSearchPage } from "@/features/profiles/pages/ProfileSearchPage";
-import { ProfileDetailPage } from "@/features/profiles/pages/ProfileDetailPage";
-import { ProjectsPage } from "@/features/projects/pages/ProjectsPage";
-import { NotificationsPage } from "@/features/notifications/pages/NotificationsPage";
-import { CompaniesPage } from "@/features/companies/pages/CompaniesPage";
-import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage";
-import { JobBoardPage } from "@/features/jobs/pages/JobBoardPage";
-import { JobDetailPage } from "@/features/jobs/pages/JobDetailPage";
-import { MyApplicationsPage } from "@/features/jobs/pages/MyApplicationsPage";
-import { ManageJobsPage } from "@/features/jobs/pages/ManageJobsPage";
-import { JobApplicantsPage } from "@/features/jobs/pages/JobApplicantsPage";
-import { MyCompanyPage } from "@/features/companies/pages/MyCompanyPage";
-import { ManageHRPage } from "@/features/companies/pages/ManageHRPage";
-import { UserManagementPage } from "@/features/users/pages/UserManagementPage";
-import { CompanyManagementPage } from "@/features/companies/pages/CompanyManagementPage";
-import { SettingsPage } from "@/features/placeholders/pages";
+
+const LoginPage = lazy(() =>
+  import("@/features/auth/pages/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+const RegisterPage = lazy(() =>
+  import("@/features/auth/pages/RegisterPage").then((module) => ({
+    default: module.RegisterPage,
+  })),
+);
+const VerifyEmailPage = lazy(() =>
+  import("@/features/auth/pages/VerifyEmailPage").then((module) => ({
+    default: module.VerifyEmailPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  import("@/features/dashboard/pages/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+const MyProfilePage = lazy(() =>
+  import("@/features/profiles/pages/MyProfilePage").then((module) => ({
+    default: module.MyProfilePage,
+  })),
+);
+const ProfileSearchPage = lazy(() =>
+  import("@/features/profiles/pages/ProfileSearchPage").then((module) => ({
+    default: module.ProfileSearchPage,
+  })),
+);
+const ProfileDetailPage = lazy(() =>
+  import("@/features/profiles/pages/ProfileDetailPage").then((module) => ({
+    default: module.ProfileDetailPage,
+  })),
+);
+const ProjectsPage = lazy(() =>
+  import("@/features/projects/pages/ProjectsPage").then((module) => ({
+    default: module.ProjectsPage,
+  })),
+);
+const NotificationsPage = lazy(() =>
+  import("@/features/notifications/pages/NotificationsPage").then((module) => ({
+    default: module.NotificationsPage,
+  })),
+);
+const CompaniesPage = lazy(() =>
+  import("@/features/companies/pages/CompaniesPage").then((module) => ({
+    default: module.CompaniesPage,
+  })),
+);
+const CompanyDetailPage = lazy(() =>
+  import("@/features/companies/pages/CompanyDetailPage").then((module) => ({
+    default: module.CompanyDetailPage,
+  })),
+);
+const JobBoardPage = lazy(() =>
+  import("@/features/jobs/pages/JobBoardPage").then((module) => ({
+    default: module.JobBoardPage,
+  })),
+);
+const JobDetailPage = lazy(() =>
+  import("@/features/jobs/pages/JobDetailPage").then((module) => ({
+    default: module.JobDetailPage,
+  })),
+);
+const MyApplicationsPage = lazy(() =>
+  import("@/features/jobs/pages/MyApplicationsPage").then((module) => ({
+    default: module.MyApplicationsPage,
+  })),
+);
+const ManageJobsPage = lazy(() =>
+  import("@/features/jobs/pages/ManageJobsPage").then((module) => ({
+    default: module.ManageJobsPage,
+  })),
+);
+const JobApplicantsPage = lazy(() =>
+  import("@/features/jobs/pages/JobApplicantsPage").then((module) => ({
+    default: module.JobApplicantsPage,
+  })),
+);
+const MyCompanyPage = lazy(() =>
+  import("@/features/companies/pages/MyCompanyPage").then((module) => ({
+    default: module.MyCompanyPage,
+  })),
+);
+const ManageHRPage = lazy(() =>
+  import("@/features/companies/pages/ManageHRPage").then((module) => ({
+    default: module.ManageHRPage,
+  })),
+);
+const UserManagementPage = lazy(() =>
+  import("@/features/users/pages/UserManagementPage").then((module) => ({
+    default: module.UserManagementPage,
+  })),
+);
+const CompanyManagementPage = lazy(() =>
+  import("@/features/companies/pages/CompanyManagementPage").then((module) => ({
+    default: module.CompanyManagementPage,
+  })),
+);
+const SettingsPage = lazy(() =>
+  import("@/features/settings/pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+
+function lazyPage(page: ReactNode) {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <LoadingSkeleton variant="detail" />
+        </div>
+      }
+    >
+      {page}
+    </Suspense>
+  );
+}
 
 export const router = createBrowserRouter([
   // Root redirect
@@ -35,7 +137,7 @@ export const router = createBrowserRouter([
     path: "/login",
     element: (
       <GuestRoute>
-        <LoginPage />
+        {lazyPage(<LoginPage />)}
       </GuestRoute>
     ),
   },
@@ -43,7 +145,7 @@ export const router = createBrowserRouter([
     path: "/register",
     element: (
       <GuestRoute>
-        <RegisterPage />
+        {lazyPage(<RegisterPage />)}
       </GuestRoute>
     ),
   },
@@ -51,7 +153,7 @@ export const router = createBrowserRouter([
     path: "/verify-email",
     element: (
       <GuestRoute>
-        <VerifyEmailPage />
+        {lazyPage(<VerifyEmailPage />)}
       </GuestRoute>
     ),
   },
@@ -64,21 +166,21 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: "/dashboard", element: <DashboardPage /> },
-      { path: "/profile", element: <MyProfilePage /> },
-      { path: "/profiles", element: <ProfileSearchPage /> },
-      { path: "/profiles/:id", element: <ProfileDetailPage /> },
-      { path: "/projects", element: <ProjectsPage /> },
-      { path: "/notifications", element: <NotificationsPage /> },
-      { path: "/companies", element: <CompaniesPage /> },
-      { path: "/companies/:id", element: <CompanyDetailPage /> },
-      { path: "/jobs", element: <JobBoardPage /> },
-      { path: "/jobs/:id", element: <JobDetailPage /> },
+      { path: "/dashboard", element: lazyPage(<DashboardPage />) },
+      { path: "/profile", element: lazyPage(<MyProfilePage />) },
+      { path: "/profiles", element: lazyPage(<ProfileSearchPage />) },
+      { path: "/profiles/:id", element: lazyPage(<ProfileDetailPage />) },
+      { path: "/projects", element: lazyPage(<ProjectsPage />) },
+      { path: "/notifications", element: lazyPage(<NotificationsPage />) },
+      { path: "/companies", element: lazyPage(<CompaniesPage />) },
+      { path: "/companies/:id", element: lazyPage(<CompanyDetailPage />) },
+      { path: "/jobs", element: lazyPage(<JobBoardPage />) },
+      { path: "/jobs/:id", element: lazyPage(<JobDetailPage />) },
       {
         path: "/my-applications",
         element: (
           <RoleGuard allow={["user"]}>
-            <MyApplicationsPage />
+            {lazyPage(<MyApplicationsPage />)}
           </RoleGuard>
         ),
       },
@@ -86,7 +188,7 @@ export const router = createBrowserRouter([
         path: "/hr/jobs",
         element: (
           <RoleGuard allow={["hr"]}>
-            <ManageJobsPage />
+            {lazyPage(<ManageJobsPage />)}
           </RoleGuard>
         ),
       },
@@ -94,7 +196,7 @@ export const router = createBrowserRouter([
         path: "/hr/jobs/:id/applicants",
         element: (
           <RoleGuard allow={["hr"]}>
-            <JobApplicantsPage />
+            {lazyPage(<JobApplicantsPage />)}
           </RoleGuard>
         ),
       },
@@ -102,7 +204,7 @@ export const router = createBrowserRouter([
         path: "/manager/company",
         element: (
           <RoleGuard allow={["manager"]}>
-            <MyCompanyPage />
+            {lazyPage(<MyCompanyPage />)}
           </RoleGuard>
         ),
       },
@@ -110,7 +212,7 @@ export const router = createBrowserRouter([
         path: "/manager/hr",
         element: (
           <RoleGuard allow={["manager"]}>
-            <ManageHRPage />
+            {lazyPage(<ManageHRPage />)}
           </RoleGuard>
         ),
       },
@@ -118,7 +220,7 @@ export const router = createBrowserRouter([
         path: "/admin/users",
         element: (
           <RoleGuard allow={["admin"]}>
-            <UserManagementPage />
+            {lazyPage(<UserManagementPage />)}
           </RoleGuard>
         ),
       },
@@ -126,11 +228,11 @@ export const router = createBrowserRouter([
         path: "/admin/companies",
         element: (
           <RoleGuard allow={["admin"]}>
-            <CompanyManagementPage />
+            {lazyPage(<CompanyManagementPage />)}
           </RoleGuard>
         ),
       },
-      { path: "/settings", element: <SettingsPage /> },
+      { path: "/settings", element: lazyPage(<SettingsPage />) },
     ],
   },
 ]);

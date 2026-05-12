@@ -1191,6 +1191,11 @@ Senior notes:
 
 ### Phase 6: UI/UX and Animation Polish
 
+- 2026-05-13 follow-up completed:
+  - Replaced `/settings` placeholder with a real settings page.
+  - Added route-level lazy loading and Suspense fallback.
+  - Removed the production chunk-size warning by splitting page bundles.
+
 - Apply motion spec across route transitions, modals, drawers, dropdowns, lists.
 - Responsive pass for 320, 390, 768, 1024, and 1440 widths.
 - Accessibility pass: focus order, labels, keyboard navigation, contrast.
