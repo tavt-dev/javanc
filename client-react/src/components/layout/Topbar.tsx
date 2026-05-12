@@ -8,7 +8,7 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
@@ -24,6 +24,8 @@ export function Topbar() {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuId = useId();
+  const themeMenuId = useId();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -40,8 +42,18 @@ export function Topbar() {
         setThemeMenuOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setUserMenuOpen(false);
+        setThemeMenuOpen(false);
+      }
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -55,7 +67,7 @@ export function Topbar() {
       {/* Mobile hamburger */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors"
+        className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label="Toggle menu"
       >
         <Menu size={20} />
@@ -76,13 +88,20 @@ export function Topbar() {
         <button
           onClick={() => setThemeMenuOpen(!themeMenuOpen)}
           className="p-2 rounded-md hover:bg-accent text-muted-foreground
-                     hover:text-foreground transition-colors"
+                     hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Change theme"
+          aria-expanded={themeMenuOpen}
+          aria-controls={themeMenuId}
+          aria-haspopup="menu"
         >
           <ThemeIcon size={18} />
         </button>
         {themeMenuOpen && (
-          <div className="absolute right-0 mt-1 w-36 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+          <div
+            id={themeMenuId}
+            role="menu"
+            className="absolute right-0 mt-1 w-36 bg-popover border border-border rounded-lg shadow-lg py-1 z-50"
+          >
             {(["light", "dark", "system"] as const).map((t) => (
               <button
                 key={t}
@@ -92,9 +111,10 @@ export function Topbar() {
                 }}
                 className={cn(
                   "w-full text-left px-3 py-2 text-sm flex items-center gap-2",
-                  "hover:bg-accent transition-colors capitalize",
+                  "hover:bg-accent transition-colors capitalize focus-visible:outline-none focus-visible:bg-accent",
                   theme === t && "text-primary font-medium",
                 )}
+                role="menuitem"
               >
                 {t === "light" && <Sun size={14} />}
                 {t === "dark" && <Moon size={14} />}
@@ -112,7 +132,11 @@ export function Topbar() {
       <div className="relative" ref={userMenuRef}>
         <button
           onClick={() => setUserMenuOpen(!userMenuOpen)}
-          className="flex items-center gap-2 p-1.5 pr-2 rounded-md hover:bg-accent transition-colors"
+          className="flex min-w-0 items-center gap-2 p-1.5 pr-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Open user menu"
+          aria-expanded={userMenuOpen}
+          aria-controls={userMenuId}
+          aria-haspopup="menu"
         >
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-primary text-sm font-semibold">
@@ -131,7 +155,11 @@ export function Topbar() {
         </button>
 
         {userMenuOpen && (
-          <div className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+          <div
+            id={userMenuId}
+            role="menu"
+            className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-lg shadow-lg py-1 z-50"
+          >
             <div className="px-3 py-2 border-b border-border">
               <p className="text-sm font-medium truncate">{user?.name}</p>
               <p className="text-xs text-muted-foreground truncate">
@@ -143,7 +171,9 @@ export function Topbar() {
               disabled={logoutMutation.isPending}
               className="w-full text-left px-3 py-2 text-sm text-destructive
                          hover:bg-accent transition-colors flex items-center gap-2
+                         focus-visible:outline-none focus-visible:bg-accent
                          disabled:cursor-not-allowed disabled:opacity-70"
+              role="menuitem"
             >
               <LogOut size={14} />
               {logoutMutation.isPending ? "Logging out..." : "Logout"}

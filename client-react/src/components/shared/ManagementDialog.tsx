@@ -16,11 +16,12 @@ export function ManagementDialog({
   onClose: () => void;
 }) {
   return (
-    <MotionDialog open={open}>
+    <MotionDialog open={open} onClose={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="management-dialog-title"
+        aria-describedby={description ? "management-dialog-description" : undefined}
         className="max-h-[88vh] overflow-y-auto rounded-lg border border-border bg-popover p-5 shadow-xl"
       >
         <div className="flex items-start justify-between gap-4">
@@ -29,13 +30,18 @@ export function ManagementDialog({
               {title}
             </h2>
             {description && (
-              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+              <p
+                id="management-dialog-description"
+                className="mt-1 text-sm text-muted-foreground"
+              >
+                {description}
+              </p>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Close dialog"
           >
             <X size={18} />

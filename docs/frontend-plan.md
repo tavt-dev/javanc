@@ -7,6 +7,7 @@
 > **Phase 3:** DONE - Core user area implemented and verified on 2026-05-12  
 > **Phase 4:** DONE - Jobs, companies, and notifications implemented and verified on 2026-05-12  
 > **Phase 5:** DONE - Role workspaces implemented and verified on 2026-05-13  
+> **Phase 6:** DONE - UI/UX, accessibility, and animation polish implemented and verified on 2026-05-13  
 > **Frontend:** New React app in `client-react/`  
 > **Backend:** Quarkus 3.33.1 microservices through gateway `http://localhost:8080`  
 > **Out of scope:** Existing Angular `client/` is not reused, migrated, or modified.
@@ -1191,15 +1192,36 @@ Senior notes:
 
 ### Phase 6: UI/UX and Animation Polish
 
-- 2026-05-13 follow-up completed:
-  - Replaced `/settings` placeholder with a real settings page.
-  - Added route-level lazy loading and Suspense fallback.
-  - Removed the production chunk-size warning by splitting page bundles.
+**Status:** DONE on 2026-05-13.
 
-- Apply motion spec across route transitions, modals, drawers, dropdowns, lists.
-- Responsive pass for 320, 390, 768, 1024, and 1440 widths.
-- Accessibility pass: focus order, labels, keyboard navigation, contrast.
-- Copy pass for empty/error/toast text.
+Verification:
+
+- `npm run lint` passed.
+- `npm run test:run` passed.
+- `npm run build` passed.
+
+Completed:
+
+- Replaced `/settings` placeholder with a real settings page.
+- Added route-level lazy loading and Suspense fallback.
+- Removed the production chunk-size warning by splitting page bundles.
+- Centralized motion presets for page, dialog, dropdown, fade, and stagger behavior.
+- Updated app route transitions to respect reduced-motion preferences.
+- Added skip-to-content navigation and focus target support for the app shell.
+- Improved dialog accessibility with Escape close, overlay close, focus restore, and aria description wiring.
+- Improved topbar menus with `aria-expanded`, `aria-controls`, menu roles, and Escape close.
+- Improved notification dropdown semantics and reduced-motion animation handling.
+- Improved mobile sidebar keyboard close behavior and reduced-motion handling.
+- Persisted desktop sidebar collapsed preference in localStorage.
+- Updated system theme behavior so OS theme changes are reflected while the app is in `system` mode.
+- Improved shared table accessibility with sortable column labels, `aria-sort`, and a stronger empty state.
+- Added focused tests for dialog keyboard behavior, DataTable accessibility, Topbar menu accessibility, and Settings theme/sidebar behavior.
+
+Senior notes:
+
+- Phase 6 is a polish and hardening pass, not a backend feature phase.
+- The frontend still does not promise company logos or project image upload because backend DTOs do not expose stable fields.
+- Full browser screenshot regression and E2E automation remain Phase 7 work.
 
 ### Phase 7: Hardening
 

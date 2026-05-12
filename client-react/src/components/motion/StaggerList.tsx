@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
+import { motionPresets } from "./motion-presets";
 
 export function StaggerList({
   children,
@@ -18,7 +19,7 @@ export function StaggerList({
         hidden: {},
         show: {
           transition: {
-            staggerChildren: reduceMotion ? 0 : 0.035,
+            staggerChildren: reduceMotion ? 0 : motionPresets.list.staggerChildren,
           },
         },
       }}
@@ -41,10 +42,13 @@ export function StaggerItem({
   return (
     <motion.div
       variants={{
-        hidden: reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 },
-        show: { opacity: 1, y: 0 },
+        hidden: reduceMotion ? { opacity: 1 } : motionPresets.list.itemEnter,
+        show: motionPresets.list.itemCenter,
       }}
-      transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
+      transition={{
+        ...motionPresets.list.itemTransition,
+        duration: reduceMotion ? 0 : motionPresets.list.itemTransition.duration,
+      }}
       className={className}
     >
       {children}

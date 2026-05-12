@@ -93,6 +93,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
 .form-input {
   width: 100%;
   border-radius: var(--radius-md);

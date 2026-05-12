@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { motionPresets } from "@/components/motion/motion-presets";
 import { NotificationItem } from "@/features/notifications/components/NotificationItem";
 import {
   useMarkNotificationReadMutation,
@@ -14,6 +15,7 @@ export function NotificationBell() {
   const user = useAuthStore((s) => s.user);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const dropdownId = "notification-dropdown";
   const reduceMotion = useReducedMotion();
   const notificationsQuery = useNotificationsQuery(user?.id);
   const markReadMutation = useMarkNotificationReadMutation(user?.id ?? 0);
@@ -43,6 +45,9 @@ export function NotificationBell() {
         onClick={() => setOpen((value) => !value)}
         className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         aria-label="Notifications"
+        aria-expanded={open}
+        aria-controls={dropdownId}
+        aria-haspopup="dialog"
       >
         <Bell size={18} />
         {notificationsQuery.unreadCount > 0 && (
@@ -57,10 +62,16 @@ export function NotificationBell() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
-            transition={{ duration: reduceMotion ? 0 : 0.15, ease: "easeOut" }}
+            id={dropdownId}
+            role="dialog"
+            aria-label="Notifications"
+            initial={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.enter}
+            animate={motionPresets.dropdown.center}
+            exit={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.exit}
+            transition={{
+              ...motionPresets.dropdown.transition,
+              duration: reduceMotion ? 0 : motionPresets.dropdown.transition.duration,
+            }}
             className="absolute right-0 z-50 mt-2 w-[min(360px,calc(100vw-2rem))] origin-top-right rounded-lg border border-border bg-popover p-3 shadow-xl"
           >
             <div className="mb-3 flex items-center justify-between gap-3 px-1">

@@ -1,14 +1,40 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { motionPresets } from "./motion-presets";
 
 export function MotionDialog({
   open,
   children,
+  onClose,
+  closeOnOverlayClick = true,
 }: {
   open: boolean;
   children: ReactNode;
+  onClose?: () => void;
+  closeOnOverlayClick?: boolean;
 }) {
   const reduceMotion = useReducedMotion();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    window.setTimeout(() => panelRef.current?.focus(), 0);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose?.();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [onClose, open]);
 
   return (
     <AnimatePresence>
@@ -17,14 +43,28 @@ export function MotionDialog({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.15 }}
+          transition={{
+            duration: reduceMotion ? 0 : motionPresets.dialog.overlayTransition.duration,
+          }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={(event) => {
+            if (closeOnOverlayClick && event.target === event.currentTarget) {
+              onClose?.();
+            }
+          }}
         >
           <motion.div
-            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
+            ref={panelRef}
+            tabIndex={-1}
+            initial={reduceMotion ? { opacity: 1 } : motionPresets.dialog.panelEnter}
+            animate={motionPresets.dialog.panelCenter}
+            exit={reduceMotion ? { opacity: 1 } : motionPresets.dialog.panelExit}
+            transition={{
+              ...motionPresets.dialog.panelTransition,
+              duration: reduceMotion
+                ? 0
+                : motionPresets.dialog.panelTransition.duration,
+            }}
             className="w-full max-w-lg"
           >
             {children}

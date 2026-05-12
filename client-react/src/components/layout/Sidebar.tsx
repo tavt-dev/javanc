@@ -170,7 +170,7 @@ function SidebarLink({
       to={item.path}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        "hover:bg-accent hover:text-accent-foreground",
+        "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active
           ? "bg-primary/10 text-primary"
           : "text-muted-foreground",

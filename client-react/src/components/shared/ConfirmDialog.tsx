@@ -23,11 +23,12 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   return (
-    <MotionDialog open={open}>
+    <MotionDialog open={open} onClose={onCancel}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
+        aria-describedby="confirm-dialog-description"
         className="rounded-lg border border-border bg-popover p-6 shadow-xl"
       >
         <div className="flex gap-3">
@@ -41,7 +42,12 @@ export function ConfirmDialog({
             >
               {title}
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+            <p
+              id="confirm-dialog-description"
+              className="mt-2 text-sm text-muted-foreground"
+            >
+              {description}
+            </p>
           </div>
         </div>
 
@@ -50,7 +56,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-70"
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70"
           >
             {cancelLabel}
           </button>

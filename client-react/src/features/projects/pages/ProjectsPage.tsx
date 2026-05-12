@@ -147,7 +147,7 @@ export function ProjectsPage() {
         </StaggerList>
       )}
 
-      <MotionDialog open={formOpen}>
+      <MotionDialog open={formOpen} onClose={closeForm}>
         <ProjectForm
           project={editingProject}
           loading={saveMutation.isPending || updateMutation.isPending}

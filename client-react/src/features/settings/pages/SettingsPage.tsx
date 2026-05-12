@@ -172,6 +172,7 @@ function PreferenceRow({
         disabled={disabled}
         onClick={onToggle}
         aria-pressed={enabled}
+        aria-label={`Toggle ${title}`}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-70",
           enabled ? "bg-primary" : "bg-muted",

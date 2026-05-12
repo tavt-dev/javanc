@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 type Theme = "light" | "dark" | "system";
+const THEME_KEY = "theme";
+const SIDEBAR_COLLAPSED_KEY = "sidebar_collapsed";
 
 interface UIState {
   sidebarOpen: boolean;
@@ -12,6 +14,9 @@ interface UIState {
   closeSidebar: () => void;
 }
 
+let currentTheme: Theme = (localStorage.getItem(THEME_KEY) as Theme) || "system";
+const systemThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+
 function applyThemeToDocument(theme: Theme) {
   const root = document.documentElement;
   if (theme === "dark") {
@@ -19,29 +24,40 @@ function applyThemeToDocument(theme: Theme) {
   } else if (theme === "light") {
     root.classList.remove("dark");
   } else {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    root.classList.toggle("dark", prefersDark);
+    root.classList.toggle("dark", systemThemeMedia.matches);
   }
 }
 
-const savedTheme = (localStorage.getItem("theme") as Theme) || "system";
-applyThemeToDocument(savedTheme);
+applyThemeToDocument(currentTheme);
+
+systemThemeMedia.addEventListener("change", () => {
+  if (currentTheme === "system") {
+    applyThemeToDocument("system");
+  }
+});
+
+function readSidebarCollapsed() {
+  return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+}
 
 export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: false,
-  sidebarCollapsed: false,
-  theme: savedTheme,
+  sidebarCollapsed: readSidebarCollapsed(),
+  theme: currentTheme,
 
   setTheme: (theme) => {
-    localStorage.setItem("theme", theme);
+    currentTheme = theme;
+    localStorage.setItem(THEME_KEY, theme);
     applyThemeToDocument(theme);
     set({ theme });
   },
 
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   toggleSidebarCollapsed: () =>
-    set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+    set((s) => {
+      const sidebarCollapsed = !s.sidebarCollapsed;
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
+      return { sidebarCollapsed };
+    }),
   closeSidebar: () => set({ sidebarOpen: false }),
 }));

@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
+import { motionPresets } from "./motion-presets";
 
 export function FadeIn({
   children,
@@ -14,12 +15,12 @@ export function FadeIn({
 
   return (
     <motion.div
-      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={reduceMotion ? { opacity: 1 } : motionPresets.fadeIn.enter}
+      animate={motionPresets.fadeIn.center}
       transition={{
-        duration: reduceMotion ? 0 : 0.18,
+        ...motionPresets.fadeIn.transition,
+        duration: reduceMotion ? 0 : motionPresets.fadeIn.transition.duration,
         delay: reduceMotion ? 0 : delay,
-        ease: "easeOut",
       }}
       className={className}
     >

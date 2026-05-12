@@ -2,7 +2,8 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect } from "react";
 import {
   LayoutDashboard,
   User,
@@ -54,6 +55,18 @@ export function MobileSidebar() {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
   const role = user?.role;
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") close();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [close, isOpen]);
 
   const visibleRoleItems = roleNavItems.filter(
     (item) => role && item.roles?.includes(role),
@@ -69,7 +82,7 @@ export function MobileSidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
             onClick={close}
           />
 
@@ -77,10 +90,17 @@ export function MobileSidebar() {
           <motion.aside
             className="fixed inset-y-0 left-0 w-[280px] bg-card border-r border-border z-50 lg:hidden
                        flex flex-col shadow-xl"
-            initial={{ x: "-100%" }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            initial={reduceMotion ? { opacity: 1 } : { x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            exit={reduceMotion ? { opacity: 1 } : { x: "-100%" }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 300, damping: 30 }
+            }
           >
             {/* Header */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-border">
@@ -92,7 +112,7 @@ export function MobileSidebar() {
               </div>
               <button
                 onClick={close}
-                className="p-2 rounded-md hover:bg-accent transition-colors"
+                className="p-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label="Close menu"
               >
                 <X size={18} />
@@ -111,7 +131,7 @@ export function MobileSidebar() {
                     onClick={close}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                      "hover:bg-accent hover:text-accent-foreground",
+                      "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                       active ? "bg-primary/10 text-primary" : "text-muted-foreground",
                     )}
                   >
@@ -134,7 +154,7 @@ export function MobileSidebar() {
                         onClick={close}
                         className={cn(
                           "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                          "hover:bg-accent hover:text-accent-foreground",
+                          "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                           active ? "bg-primary/10 text-primary" : "text-muted-foreground",
                         )}
                       >
