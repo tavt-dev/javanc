@@ -1,0 +1,74 @@
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { beforeEach, describe, expect, it } from "vitest";
+import { GuestRoute } from "@/routes/GuestRoute";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { useAuthStore } from "@/stores/auth-store";
+
+describe("route guards", () => {
+  beforeEach(() => {
+    useAuthStore.setState({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      expiresInSeconds: null,
+      isAuthenticated: false,
+      hasHydrated: true,
+    });
+  });
+
+  it("redirects guests away from protected routes", () => {
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <div>Dashboard</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<div>Login</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Login")).toBeInTheDocument();
+  });
+
+  it("redirects authenticated users away from guest routes", () => {
+    useAuthStore.setState({
+      user: {
+        id: 1,
+        name: "User",
+        email: "user@example.com",
+        role: "user",
+        active: true,
+      },
+      accessToken: "token",
+      refreshToken: "refresh",
+      expiresInSeconds: 3600,
+      isAuthenticated: true,
+      hasHydrated: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/login"]}>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <div>Login</div>
+              </GuestRoute>
+            }
+          />
+          <Route path="/dashboard" element={<div>Dashboard</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  });
+});

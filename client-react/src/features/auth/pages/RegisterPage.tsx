@@ -1,0 +1,211 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, useReducedMotion } from "framer-motion";
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { useForm, useWatch } from "react-hook-form";
+import { Check, Mail, UserRound } from "lucide-react";
+import { AuthLayout } from "@/features/auth/components/AuthLayout";
+import { AuthSubmitButton } from "@/features/auth/components/AuthSubmitButton";
+import { PasswordField } from "@/features/auth/components/PasswordField";
+import { useRegisterMutation } from "@/features/auth/hooks/use-auth-mutations";
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "@/features/auth/schemas/auth-schemas";
+import { extractErrorMessage } from "@/lib/api-error";
+import { cn } from "@/lib/utils";
+
+export function RegisterPage() {
+  const registerMutation = useRegisterMutation();
+  const reducedMotion = useReducedMotion();
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const password = useWatch({ control, name: "password" }) ?? "";
+  const submitError = registerMutation.isError
+    ? extractErrorMessage(registerMutation.error)
+    : null;
+
+  return (
+    <AuthLayout
+      title="Create your account"
+      subtitle="Verify your email before entering the workspace"
+    >
+      <form
+        onSubmit={handleSubmit((values) =>
+          registerMutation.mutate({
+            name: values.name,
+            email: values.email,
+            password: values.password,
+          }),
+        )}
+        className="space-y-4"
+        noValidate
+      >
+        <FieldShell index={0} reducedMotion={reducedMotion}>
+          <label htmlFor="name" className="text-sm font-medium text-foreground">
+            Full name
+          </label>
+          <div className="relative">
+            <UserRound
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              id="name"
+              type="text"
+              autoComplete="name"
+              placeholder="Nguyen Van A"
+              className={inputClass(Boolean(errors.name), "pl-9")}
+              {...register("name")}
+            />
+          </div>
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name.message}</p>
+          )}
+        </FieldShell>
+
+        <FieldShell index={1} reducedMotion={reducedMotion}>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email
+          </label>
+          <div className="relative">
+            <Mail
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              className={inputClass(Boolean(errors.email), "pl-9")}
+              {...register("email")}
+            />
+          </div>
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </FieldShell>
+
+        <FieldShell index={2} reducedMotion={reducedMotion}>
+          <PasswordField
+            label="Password"
+            placeholder="Create a strong password"
+            autoComplete="new-password"
+            error={errors.password?.message}
+            {...register("password")}
+          />
+        </FieldShell>
+
+        <PasswordChecklist password={password} />
+
+        <FieldShell index={3} reducedMotion={reducedMotion}>
+          <PasswordField
+            label="Confirm password"
+            placeholder="Repeat your password"
+            autoComplete="new-password"
+            error={errors.confirmPassword?.message}
+            {...register("confirmPassword")}
+          />
+        </FieldShell>
+
+        {submitError && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {submitError}
+          </div>
+        )}
+
+        <FieldShell index={4} reducedMotion={reducedMotion}>
+          <AuthSubmitButton loading={registerMutation.isPending}>
+            Create account
+          </AuthSubmitButton>
+        </FieldShell>
+      </form>
+
+      <p className="mt-5 text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link to="/login" className="font-medium text-primary hover:underline">
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
+  );
+}
+
+function PasswordChecklist({ password }: { password: string }) {
+  const rules = [
+    ["8 characters", password.length >= 8],
+    ["Uppercase letter", /[A-Z]/.test(password)],
+    ["Lowercase letter", /[a-z]/.test(password)],
+    ["Number", /\d/.test(password)],
+  ] as const;
+
+  return (
+    <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-3">
+      {rules.map(([label, valid]) => (
+        <div
+          key={label}
+          className={cn(
+            "flex items-center gap-2 text-xs",
+            valid ? "text-success" : "text-muted-foreground",
+          )}
+        >
+          <span
+            className={cn(
+              "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+              valid
+                ? "border-success bg-success text-white"
+                : "border-muted-foreground/40",
+            )}
+          >
+            {valid && <Check size={11} />}
+          </span>
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function inputClass(hasError: boolean, extra?: string) {
+  return cn(
+    "h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-shadow",
+    "placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-ring",
+    hasError && "border-destructive focus:ring-destructive",
+    extra,
+  );
+}
+
+function FieldShell({
+  children,
+  index,
+  reducedMotion,
+}: {
+  children: ReactNode;
+  index: number;
+  reducedMotion: boolean | null;
+}) {
+  return (
+    <motion.div
+      className="space-y-1.5"
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: reducedMotion ? 0 : 0.18, delay: index * 0.035 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
