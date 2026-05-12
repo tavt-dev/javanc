@@ -8,17 +8,17 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { VerifyEmailPage } from "@/features/auth/pages/VerifyEmailPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+import { MyProfilePage } from "@/features/profiles/pages/MyProfilePage";
+import { ProfileSearchPage } from "@/features/profiles/pages/ProfileSearchPage";
+import { ProfileDetailPage } from "@/features/profiles/pages/ProfileDetailPage";
+import { ProjectsPage } from "@/features/projects/pages/ProjectsPage";
+import { NotificationsPage } from "@/features/notifications/pages/NotificationsPage";
+import { CompaniesPage } from "@/features/companies/pages/CompaniesPage";
+import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage";
+import { JobBoardPage } from "@/features/jobs/pages/JobBoardPage";
+import { JobDetailPage } from "@/features/jobs/pages/JobDetailPage";
+import { MyApplicationsPage } from "@/features/jobs/pages/MyApplicationsPage";
 import {
-  ProfilePage,
-  ProfileSearchPage,
-  ProfileDetailPage,
-  ProjectsPage,
-  NotificationsPage,
-  CompaniesPage,
-  CompanyDetailPage,
-  JobBoardPage,
-  JobDetailPage,
-  MyApplicationsPage,
   ManageJobsPage,
   MyCompanyPage,
   ManageHRPage,
@@ -66,7 +66,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: "/dashboard", element: <DashboardPage /> },
-      { path: "/profile", element: <ProfilePage /> },
+      { path: "/profile", element: <MyProfilePage /> },
       { path: "/profiles", element: <ProfileSearchPage /> },
       { path: "/profiles/:id", element: <ProfileDetailPage /> },
       { path: "/projects", element: <ProjectsPage /> },

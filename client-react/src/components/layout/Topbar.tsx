@@ -2,7 +2,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import {
   Menu,
-  Bell,
   Sun,
   Moon,
   Monitor,
@@ -12,6 +11,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth-mutations";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
@@ -106,14 +106,7 @@ export function Topbar() {
         )}
       </div>
 
-      {/* Notifications placeholder */}
-      <button
-        className="p-2 rounded-md hover:bg-accent text-muted-foreground
-                   hover:text-foreground transition-colors relative"
-        aria-label="Notifications"
-      >
-        <Bell size={18} />
-      </button>
+      <NotificationBell />
 
       {/* User menu */}
       <div className="relative" ref={userMenuRef}>

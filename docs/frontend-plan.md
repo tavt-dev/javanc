@@ -4,6 +4,8 @@
 > **Created:** 2026-05-12  
 > **Phase 1:** DONE - Foundation audited and completed on 2026-05-12  
 > **Phase 2:** DONE - Auth module implemented and verified on 2026-05-12  
+> **Phase 3:** DONE - Core user area implemented and verified on 2026-05-12  
+> **Phase 4:** DONE - Jobs, companies, and notifications implemented and verified on 2026-05-12  
 > **Frontend:** New React app in `client-react/`  
 > **Backend:** Quarkus 3.33.1 microservices through gateway `http://localhost:8080`  
 > **Out of scope:** Existing Angular `client/` is not reused, migrated, or modified.
@@ -1062,18 +1064,92 @@ Senior review notes:
 
 ### Phase 3: Core User Area
 
-- Dashboard with role-aware quick actions and status cards.
-- My Profile CRUD and avatar upload.
-- Profile search/detail.
-- Projects create/update/list.
-- Shared skeleton, empty, retry, and confirm components.
+**Status: DONE.**
+
+Acceptance date: `2026-05-12`.
+
+Verification commands:
+
+```powershell
+cd client-react
+npm run lint
+npm run test:run
+npm run build
+```
+
+Verification result:
+
+- `npm run lint` passed.
+- `npm run test:run` passed: 10 test files, 25 tests.
+- `npm run build` passed after rerunning outside the sandbox because the Windows sandbox blocks the Tailwind native binary with `spawn EPERM`.
+- Build warning remains acceptable for this phase: the current app chunk is still over `500 kB`; route-level code splitting belongs to Phase 6/7 hardening.
+
+Completed scope:
+
+- Replaced Phase 3 placeholders with real `/dashboard`, `/profile`, `/profiles`, `/profiles/:id`, and `/projects` pages.
+- Added Profile DTO/types, Project DTO/types, Zod schemas, API wrappers, TanStack Query hooks, and mutations.
+- Implemented `/profiles/me` create/update/delete, `/profiles/me/avatar` multipart upload with field `image`, profile search, and profile detail.
+- Implemented project list/create/update through `/project/user/getProject`, `/project/user/save`, and `/project/user/update`.
+- Kept project delete and project image upload out of scope because the backend does not expose stable product endpoints for them.
+- Added shared `PageHeader`, `LoadingSkeleton`, `EmptyState`, `RetryState`, `ConfirmDialog`, `StatusBadge`, `AvatarUpload`, and motion helpers.
+- Upgraded dashboard to use real session/profile/project data, profile completion, role-aware stats, quick actions, and recent activity.
+- Added missing-profile onboarding so `PROFILE_NOT_FOUND` from `/profiles/me` becomes a normal create-profile flow.
+- Added responsive card/grid UI for profile search, profile detail projects, and my projects.
+- Added controlled Framer Motion transitions with reduced-motion support.
+- Added focused tests for Phase 3 schemas, API wrapper contracts, and shared state components.
+
+Senior review notes:
+
+- Phase 3 is sufficient to start Phase 4. The authenticated user area now has real profile/project data flows and reusable UX primitives.
+- `PROFILE_NOT_FOUND` is intentionally handled as "profile not created yet" for self-profile screens.
+- The project service still has no delete endpoint; do not add a fake UI delete action until backend support exists.
+- Project image compatibility endpoints remain unused because normal project save/update does not persist project images reliably.
+- Profile and project pages are implemented as card/grid experiences rather than tables because the current backend returns simple lists without total-count metadata.
 
 ### Phase 4: Jobs, Companies, Notifications
 
-- Notification bell, dropdown, page, polling every 30 seconds.
-- Job board, job detail, apply flow, my applications.
-- Company list/detail and company jobs.
-- Client-side pagination/filtering where backend returns simple lists.
+**Status: DONE.**
+
+Acceptance date: `2026-05-12`.
+
+Verification commands:
+
+```powershell
+cd client-react
+npm run lint
+npm run test:run
+npm run build
+```
+
+Verification result:
+
+- `npm run lint` passed.
+- `npm run test:run` passed: 17 test files, 39 tests.
+- `npm run build` passed after rerunning outside the sandbox because the Windows sandbox blocks the Tailwind native binary with `spawn EPERM`.
+- Build warning remains acceptable for this phase: the current app chunk is over `500 kB`; route-level code splitting belongs to Phase 6/7 hardening.
+
+Completed scope:
+
+- Replaced Phase 4 placeholders with real `/notifications`, `/jobs`, `/jobs/:id`, `/my-applications`, `/companies`, and `/companies/:id` pages.
+- Added Notification, Job, and Company DTO types, API wrappers, TanStack Query hooks, cache keys, and helper utilities.
+- Added notification bell in the topbar with unread badge, latest-notifications dropdown, mark-read action, and 30-second polling.
+- Added full notifications page with All/Unread/Read filters, mark-read actions, loading/empty/retry states.
+- Added job board with client-side search, type filter, company filter, open-only filter, and card grid.
+- Added job detail page with company summary and role/profile-aware apply panel.
+- Added real apply mutation through `/manager/user/job/apply?jobDTO=&idProfile=`.
+- Added user-only my applications page with pending and accepted tabs.
+- Added company list with client-side search, type filter, location filter, and company cards.
+- Added company detail page with company contact/location summary and jobs loaded by company id.
+- Kept HR accept/reject, job management, company management, and manager/admin assignment flows for Phase 5.
+- Added focused tests for Phase 4 API wrapper contracts, notification/job/company helpers, and job card status rendering.
+
+Senior review notes:
+
+- Phase 4 is sufficient to start Phase 5. Marketplace browsing, user applications, company discovery, and notifications are now real frontend flows.
+- `idProfiePending` remains isolated to the DTO/helper boundary; UI copy uses normal "pending application" language.
+- Notification security remains a backend concern because the gateway currently exposes `/notification` publicly. The frontend still sends auth headers.
+- Company logos remain out of scope because `CompanyDTO` does not expose a stable `url`.
+- Job withdraw/cancel remains out of scope because backend does not expose an endpoint.
 
 ### Phase 5: Role Workspaces
 
