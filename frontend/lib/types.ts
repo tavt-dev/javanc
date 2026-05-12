@@ -27,6 +27,15 @@ export type AuthenticationResponse = {
   role?: string;
 };
 
+export type SavedAccount = {
+  key: string;
+  label: string;
+  email?: string;
+  role?: string;
+  auth: AuthenticationResponse;
+  savedAt: string;
+};
+
 export type Contact = {
   id?: number;
   address?: string;

@@ -6,10 +6,12 @@ import { profileApi } from "@/lib/api";
 import { Button, Field, inputClass } from "@/components/ui";
 import { ErrorState } from "@/components/data-state";
 import { useAuth } from "@/features/auth/auth-provider";
+import { useLanguage } from "@/lib/i18n";
 
 export function ProfileForm() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -37,50 +39,49 @@ export function ProfileForm() {
     <form onSubmit={onSubmit} className="grid gap-4 rounded-md border border-line bg-white p-5 shadow-soft">
       {error ? <ErrorState message={error} /> : null}
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Title">
+        <Field label={t("profile.titleLabel")}>
           <input name="title" className={inputClass} placeholder="Senior Java Developer" />
         </Field>
-        <Field label="Profile type">
+        <Field label={t("profile.typeLabel")}>
           <select name="typeProfile" className={inputClass}>
             <option value="JAVA">Java</option>
+            <option value="PYTHON">Python</option>
             <option value="C">C</option>
-            <option value="FULLSTACK">Fullstack</option>
-            <option value="MANAGER">Manager</option>
           </select>
         </Field>
       </div>
-      <Field label="Objective">
+      <Field label={t("profile.objectiveLabel")}>
         <textarea name="objective" className={inputClass} rows={3} placeholder="Professional objective" />
       </Field>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Education">
+        <Field label={t("profile.educationLabel")}>
           <textarea name="education" className={inputClass} rows={3} />
         </Field>
-        <Field label="Work experience">
+        <Field label={t("profile.workExperienceLabel")}>
           <textarea name="workExperience" className={inputClass} rows={3} />
         </Field>
       </div>
-      <Field label="Skills">
+      <Field label={t("profile.skillsLabel")}>
         <input name="skills" className={inputClass} placeholder="Java, React, teamwork, leadership" />
       </Field>
       <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Contact email">
+        <Field label={t("profile.contactEmailLabel")}>
           <input name="contact.email" className={inputClass} type="email" />
         </Field>
-        <Field label="Phone">
+        <Field label={t("profile.phoneLabel")}>
           <input name="contact.phone" className={inputClass} />
         </Field>
-        <Field label="Address">
+        <Field label={t("profile.addressLabel")}>
           <input name="contact.address" className={inputClass} />
         </Field>
       </div>
-      <Field label="Profile image">
+      <Field label={t("profile.imageLabel")}>
         <input name="image" className={inputClass} type="file" accept="image/*" />
       </Field>
       <input name="idUser" type="hidden" value={user?.id ?? ""} readOnly />
       <div className="flex justify-end">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save profile"}
+          {saving ? t("profile.saving") : t("profile.save")}
         </Button>
       </div>
     </form>

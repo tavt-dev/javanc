@@ -5,8 +5,10 @@ import { PageHeader } from "@/components/page-header";
 import { ErrorState } from "@/components/data-state";
 import { Button, Field, inputClass } from "@/components/ui";
 import { companyApi } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export default function ManagerHrPage() {
+  const { t } = useLanguage();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -23,11 +25,11 @@ export default function ManagerHrPage() {
           email: String(form.get("email") ?? ""),
           password: String(form.get("password") ?? ""),
           name: String(form.get("name") ?? ""),
-          role: "HR"
+          role: "hr"
         },
         Number(form.get("idCompany"))
       );
-      setMessage("HR assigned to company.");
+      setMessage(t("manager.hrAssigned"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to assign HR");
     } finally {
@@ -37,28 +39,28 @@ export default function ManagerHrPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="HR" title="Assign HR to company" description="Creates or assigns HR through `/manager/sethrtocompany`." />
+      <PageHeader eyebrow={t("manager.hrEyebrow")} title={t("manager.assignHrTitle")} description={t("manager.assignHrDescription")} />
       <form onSubmit={assign} className="grid max-w-2xl gap-4 rounded-md border border-line bg-white p-5 shadow-soft">
         {error ? <ErrorState message={error} /> : null}
         {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Company ID">
+          <Field label={t("manager.companyId")}>
             <input name="idCompany" className={inputClass} type="number" required />
           </Field>
-          <Field label="HR name">
+          <Field label={t("manager.hrName")}>
             <input name="name" className={inputClass} required />
           </Field>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="HR email">
+          <Field label={t("manager.hrEmail")}>
             <input name="email" className={inputClass} type="email" required />
           </Field>
-          <Field label="Temporary password">
+          <Field label={t("manager.temporaryPassword")}>
             <input name="password" className={inputClass} type="password" required />
           </Field>
         </div>
         <Button type="submit" disabled={saving}>
-          {saving ? "Assigning..." : "Assign HR"}
+          {saving ? t("manager.assigning") : t("manager.assignHr")}
         </Button>
       </form>
     </div>

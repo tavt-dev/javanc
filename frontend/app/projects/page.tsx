@@ -7,8 +7,10 @@ import { ProjectForm } from "@/features/projects/project-form";
 import { projectApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { Project } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n";
 
 export default function ProjectsPage() {
+  const { t } = useLanguage();
   const [profileId, setProfileId] = useState("");
   const [created, setCreated] = useState<Project[]>([]);
   const projects = useApi(() => projectApi.byProfile(profileId ? Number(profileId) : undefined), [profileId]);
@@ -16,24 +18,24 @@ export default function ProjectsPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <section>
-        <PageHeader eyebrow="Projects" title="Create project" description="Save projects through `/project/user/save`." />
+        <PageHeader eyebrow={t("projects.eyebrow")} title={t("projects.createTitle")} description={t("projects.createDescription")} />
         <ProjectForm onSaved={(project) => setCreated((items) => [project, ...items])} />
       </section>
       <section>
-        <PageHeader eyebrow="Directory" title="Projects by profile" />
+        <PageHeader eyebrow={t("projects.directoryEyebrow")} title={t("projects.byProfileTitle")} />
         <div className="mb-4 rounded-md border border-line bg-white p-3">
           <input
             value={profileId}
             onChange={(event) => setProfileId(event.target.value)}
             className="focus-ring w-full rounded-md border border-line px-3 py-2 text-sm"
             type="number"
-            placeholder="Enter profile id"
+            placeholder={t("projects.profilePlaceholder")}
           />
         </div>
         {projects.loading ? <LoadingState /> : null}
         {projects.error ? <ErrorState message={projects.error} /> : null}
         {!projects.loading && projects.data?.length === 0 && created.length === 0 ? (
-          <EmptyState title="No projects loaded" description="Enter a profile id or create a project." />
+          <EmptyState title={t("projects.emptyTitle")} description={t("projects.emptyDescription")} />
         ) : null}
         <div className="grid gap-4">
           {[...created, ...(projects.data ?? [])].map((project, index) => (

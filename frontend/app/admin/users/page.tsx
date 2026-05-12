@@ -8,8 +8,10 @@ import { Button, Pill } from "@/components/ui";
 import { authApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { User } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n";
 
 export default function AdminUsersPage() {
+  const { t } = useLanguage();
   const { data, error, loading } = useApi(() => authApi.getAll(), []);
   const [users, setUsers] = useState<User[] | null>(null);
   const visibleUsers = users ?? data ?? [];
@@ -29,10 +31,10 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Admin" title="User management" description="Review accounts, manage access, and keep the user directory up to date." />
+      <PageHeader eyebrow={t("nav.admin")} title={t("admin.usersTitle")} description={t("admin.usersDescription")} />
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} /> : null}
-      {!loading && visibleUsers.length === 0 ? <EmptyState title="No users" description="New accounts will appear here after registration." /> : null}
+      {!loading && visibleUsers.length === 0 ? <EmptyState title={t("admin.noUsers")} description={t("admin.noUsersDescription")} /> : null}
       {visibleUsers.length > 0 ? (
         <div className="overflow-hidden rounded-md border border-line bg-white shadow-soft">
           <table className="w-full border-collapse text-left text-sm">
@@ -52,7 +54,7 @@ export default function AdminUsersPage() {
                     <p className="text-muted">{user.email}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <Pill tone="blue">{user.role || "USER"}</Pill>
+                    <Pill tone="blue">{user.role || "user"}</Pill>
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1 text-muted">

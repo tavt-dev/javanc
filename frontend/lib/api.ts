@@ -21,13 +21,13 @@ export const authApi = {
     apiRequest<AuthenticationResponse>("/auth/signup", {
       method: "POST",
       auth: false,
-      ...jsonBody(user)
+      ...jsonBody(authPayload(user))
     }),
   signin: (user: User) =>
     apiRequest<AuthenticationResponse>("/auth/signin", {
       method: "POST",
       auth: false,
-      ...jsonBody(user)
+      ...jsonBody(authPayload(user))
     }),
   currentUser: () => apiRequest<User>("/auth/getCurrentUser"),
   getAll: () => apiRequest<User[]>(`/auth/getAll?${tokenParam()}`),
@@ -47,6 +47,16 @@ export const authApi = {
       method: "DELETE"
     })
 };
+
+function authPayload(user: User) {
+  return {
+    name: user.name,
+    email: user.email,
+    password: user.password,
+    role: user.role?.toLowerCase(),
+    idEmployee: user.idEmployee
+  };
+}
 
 export const profileApi = {
   list: () => apiRequest<Profile[]>("/profile/user/getAll"),

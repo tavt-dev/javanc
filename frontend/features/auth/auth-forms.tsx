@@ -10,6 +10,7 @@ import { authApi } from "@/lib/api";
 import { Button, Field, inputClass } from "@/components/ui";
 import { ErrorState } from "@/components/data-state";
 import { useAuth } from "@/features/auth/auth-provider";
+import { useLanguage } from "@/lib/i18n";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -32,7 +33,8 @@ type RegisterInput = z.infer<typeof registerSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, savedAccounts, switchAccount } = useAuth();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -51,22 +53,48 @@ export function LoginForm() {
     }
   }
 
+  function continueWithSavedAccount(accountKey: string) {
+    switchAccount(accountKey);
+    router.push("/");
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error ? <ErrorState message={error} /> : null}
-      <Field label="Email" error={errors.email?.message}>
+      {savedAccounts.length ? (
+        <div className="border-b border-line pb-4">
+          <p className="text-xs font-semibold uppercase text-muted">{t("auth.savedAccounts")}</p>
+          <div className="mt-3 grid gap-2">
+            {savedAccounts.map((account) => (
+              <button
+                key={account.key}
+                type="button"
+                onClick={() => continueWithSavedAccount(account.key)}
+                className="focus-ring flex min-h-12 items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-left text-sm transition hover:border-brand hover:text-brand"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-ink">{account.label}</span>
+                  <span className="block truncate text-xs text-muted">{account.email ?? account.role ?? t("account.signedIn")}</span>
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-brand">{t("auth.continue")}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <Field label={t("auth.email")} error={errors.email?.message}>
         <input className={inputClass} type="email" placeholder="you@company.com" {...register("email")} />
       </Field>
-      <Field label="Password" error={errors.password?.message}>
-        <input className={inputClass} type="password" placeholder="Enter your password" {...register("password")} />
+      <Field label={t("auth.password")} error={errors.password?.message}>
+        <input className={inputClass} type="password" placeholder={t("auth.passwordPlaceholder")} {...register("password")} />
       </Field>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in..." : "Login"}
+        {isSubmitting ? t("auth.signingIn") : t("auth.loginButton")}
       </Button>
       <p className="text-center text-sm text-muted">
-        New here?{" "}
+        {t("auth.newHere")}{" "}
         <Link href="/register" className="font-semibold text-brand">
-          Create an account
+          {t("auth.createAccount")}
         </Link>
       </p>
     </form>
@@ -76,6 +104,7 @@ export function LoginForm() {
 export function RegisterForm() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -83,13 +112,14 @@ export function RegisterForm() {
     formState: { errors, isSubmitting }
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: "USER" }
+    defaultValues: { role: "user" }
   });
 
   async function onSubmit(values: RegisterInput) {
     setError(null);
     try {
-      const auth = await authApi.signup(values);
+      await authApi.signup(values);
+      const auth = await authApi.signin({ email: values.email, password: values.password });
       login(auth);
       router.push("/");
     } catch (err) {
@@ -100,29 +130,29 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error ? <ErrorState message={error} /> : null}
-      <Field label="Name" error={errors.name?.message}>
-        <input className={inputClass} placeholder="Full name" {...register("name")} />
+      <Field label={t("auth.name")} error={errors.name?.message}>
+        <input className={inputClass} placeholder={t("auth.namePlaceholder")} {...register("name")} />
       </Field>
-      <Field label="Email" error={errors.email?.message}>
+      <Field label={t("auth.email")} error={errors.email?.message}>
         <input className={inputClass} type="email" placeholder="you@company.com" {...register("email")} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Password" error={errors.password?.message}>
-          <input className={inputClass} type="password" placeholder="Password" {...register("password")} />
+        <Field label={t("auth.password")} error={errors.password?.message}>
+          <input className={inputClass} type="password" placeholder={t("auth.password")} {...register("password")} />
         </Field>
-        <Field label="Confirm password" error={errors.confirmPassword?.message}>
-          <input className={inputClass} type="password" placeholder="Confirm password" {...register("confirmPassword")} />
+        <Field label={t("auth.confirmPassword")} error={errors.confirmPassword?.message}>
+          <input className={inputClass} type="password" placeholder={t("auth.confirmPassword")} {...register("confirmPassword")} />
         </Field>
       </div>
-      <Field label="Role" error={errors.role?.message}>
+      <Field label={t("auth.role")} error={errors.role?.message}>
         <select className={inputClass} {...register("role")}>
-          <option value="USER">User</option>
-          <option value="HR">HR</option>
-          <option value="MANAGER">Manager</option>
+          <option value="user">{t("auth.userRole")}</option>
+          <option value="hr">{t("auth.hrRole")}</option>
+          <option value="manager">{t("auth.managerRole")}</option>
         </select>
       </Field>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Creating account..." : "Register"}
+        {isSubmitting ? t("auth.creatingAccount") : t("auth.registerButton")}
       </Button>
     </form>
   );

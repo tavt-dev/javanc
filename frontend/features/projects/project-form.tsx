@@ -5,8 +5,10 @@ import { projectApi } from "@/lib/api";
 import type { Project } from "@/lib/types";
 import { Button, Field, inputClass } from "@/components/ui";
 import { ErrorState } from "@/components/data-state";
+import { useLanguage } from "@/lib/i18n";
 
 export function ProjectForm({ idProfile, onSaved }: { idProfile?: number; onSaved?: (project: Project) => void }) {
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -37,26 +39,26 @@ export function ProjectForm({ idProfile, onSaved }: { idProfile?: number; onSave
   return (
     <form onSubmit={onSubmit} className="grid gap-4 rounded-md border border-line bg-white p-5">
       {error ? <ErrorState message={error} /> : null}
-      <Field label="Project title">
+      <Field label={t("projects.titleLabel")}>
         <input className={inputClass} name="title" placeholder="Portfolio platform" required />
       </Field>
-      <Field label="Description">
+      <Field label={t("projects.descriptionLabel")}>
         <textarea className={inputClass} name="description" rows={3} required />
       </Field>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="URL">
+        <Field label={t("projects.urlLabel")}>
           <input className={inputClass} name="url" placeholder="https://..." />
         </Field>
-        <Field label="Profile ID">
+        <Field label={t("projects.profileIdLabel")}>
           <input className={inputClass} name="idProfile" type="number" defaultValue={idProfile} />
         </Field>
       </div>
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
         <input name="display" type="checkbox" defaultChecked />
-        Display publicly
+        {t("projects.displayLabel")}
       </label>
       <Button type="submit" disabled={saving}>
-        {saving ? "Saving..." : "Create project"}
+        {saving ? t("projects.saving") : t("projects.create")}
       </Button>
     </form>
   );
