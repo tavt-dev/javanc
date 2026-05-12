@@ -28,4 +28,5 @@ public class EmailResource {
         emailApplicationService.send(messageDTO);
         return new ApiResponse<>(true, "Check user id successfully", "true");
     }
+
 }

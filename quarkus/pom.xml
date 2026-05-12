@@ -11,6 +11,7 @@
 
     <modules>
         <module>user-service</module>
+        <module>gateway-service</module>
         <module>profile-service</module>
         <module>image-service</module>
         <module>manager-service</module>

@@ -143,8 +143,7 @@ export class HrLayoutComponent implements OnInit {
   updateUser(): void {
     // Lấy dữ liệu từ form
     const updatedUser: User = this.userForm.value;
-    updatedUser.role = 'hr';
-  
+
     // Tìm dữ liệu hiện tại của người dùng
     const currentUser = this.users.find(user => user.idEmployee === this.userForm.get('idEmployee')?.value);
     console.log(JSON.stringify(this.users));

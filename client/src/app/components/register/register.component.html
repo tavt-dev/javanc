@@ -3,7 +3,7 @@
         <p>REGISTER</p>
     </div>
 
-    <form [formGroup]="userForm" (ngSubmit)="submitForm()">
+    <form *ngIf="!verificationPending" [formGroup]="userForm" (ngSubmit)="submitForm()">
         <div class="user_details">
             <!-- User Name -->
             <div class="input_box">
@@ -69,4 +69,26 @@
             <button type="submit" [disabled]="userForm.invalid">Register</button>
         </div>
     </form>
+
+    <div *ngIf="verificationPending" class="verification_box">
+        <div class="input_box">
+            <label for="otp">Verification code</label>
+            <input type="text" id="otp" name="otp" maxlength="6" [(ngModel)]="otp"
+                [ngModelOptions]="{standalone: true}" placeholder="Enter the 6-digit code">
+            <div class="alert" *ngIf="otpError">
+                <div class="text-danger">{{ otpError }}</div>
+            </div>
+            <p>A verification code was sent to {{ pendingEmail }}.</p>
+        </div>
+
+        <div class="reg_btn">
+            <button type="button" (click)="verifyEmail()">Verify email</button>
+        </div>
+        <div class="reg_btn">
+            <button type="button" (click)="resendOtp()" [disabled]="resendCooldown > 0">
+                {{ resendCooldown > 0 ? 'Resend in ' + resendCooldown + 's' : 'Resend code' }}
+            </button>
+        </div>
+        <p *ngIf="resendMessage">{{ resendMessage }}</p>
+    </div>
 </div>

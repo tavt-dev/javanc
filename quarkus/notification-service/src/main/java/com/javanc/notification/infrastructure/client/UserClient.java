@@ -4,17 +4,19 @@ import com.javanc.notification.interfaces.rest.dto.ApiResponse;
 import com.javanc.notification.interfaces.rest.dto.UserDTO;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.PathParam;
+import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "user-service")
+@RegisterClientHeaders(AuthorizationPropagationHeadersFactory.class)
 public interface UserClient {
 
     @GET
-    @Path("/auth/checkId")
-    ApiResponse<Boolean> checkId(@QueryParam("id") Integer id);
+    @Path("/users/{id}")
+    ApiResponse<UserDTO> findById(@PathParam("id") Integer id);
 
     @GET
-    @Path("/auth/getCurrentUser")
+    @Path("/users/me")
     ApiResponse<UserDTO> getCurrentUser();
 }

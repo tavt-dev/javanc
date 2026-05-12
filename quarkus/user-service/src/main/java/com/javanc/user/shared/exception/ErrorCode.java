@@ -6,6 +6,8 @@ public enum ErrorCode {
     UNAUTHORIZED(401, "Unauthorized", 401),
     FORBIDDEN(403, "Forbidden", 403),
     CONFLICT(409, "Conflict", 409),
+    TOO_MANY_REQUESTS(429, "Too many requests", 429),
+    EMAIL_DELIVERY_FAILED(1201, "Email delivery failed", 503),
     UNCATEGORIZED_EXCEPTION(9999, "Unclassified error", 500),
     DATABASE_ACCESS_ERROR(9998, "Database access error", 500),
     DUPLICATE_KEY(9996, "Duplicate key found", 409),

@@ -12,13 +12,27 @@ public interface ProfileRepository {
 
     void replace(Profile profile);
 
+    void delete(Profile profile);
+
+    Integer nextProfileId();
+
     Optional<Profile> findByProfileId(Integer id);
+
+    Optional<Profile> findByUserId(Integer idUser);
+
+    List<Profile> findAllByUserId(Integer idUser);
+
+    List<Profile> findAnyByUserId(Integer idUser);
+
+    boolean existsByUserId(Integer idUser);
 
     List<Profile> findByType(TypeProfile typeProfile);
 
     List<Profile> findAllLimited();
 
     List<Profile> findByTitleRegex(String title);
+
+    List<Profile> search(TypeProfile typeProfile, String title, int page, int size);
 
     Profile findByIdUser(Integer idUser);
 

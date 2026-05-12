@@ -11,7 +11,7 @@ public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
     @Override
     public Response toResponse(Throwable exception) {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ApiResponse<>(false, ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage(), ""))
+                .entity(new ApiResponse<>(false, ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage(), null))
                 .build();
     }
 }

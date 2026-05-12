@@ -9,7 +9,6 @@ public class AuthenticationRequest {
     public String name;
     public String email;
     public String role;
-    public String token;
     public String password;
-    public String idEmployee;
+    public String employeeId;
 }

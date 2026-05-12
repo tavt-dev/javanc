@@ -4,5 +4,5 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface ImageStoragePort {
 
-    String upload(FileUpload imageFile);
+    ImageUploadResult upload(FileUpload imageFile);
 }

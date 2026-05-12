@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProfileMapperTest {
 
@@ -46,8 +45,8 @@ class ProfileMapperTest {
     }
 
     @Test
-    void rejectsLowercaseTypeProfileLikeSpringValueOf() {
-        assertThrows(IllegalArgumentException.class, () -> mapper.toTypeProfile("java"));
+    void mapsTypeProfileCaseInsensitive() {
+        assertEquals(TypeProfile.JAVA, mapper.toTypeProfile("java"));
     }
 
     @Test

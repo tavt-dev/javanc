@@ -3,6 +3,8 @@ package com.javanc.profile.domain.model;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import org.bson.codecs.pojo.annotations.BsonId;
 
+import java.time.Instant;
+
 @MongoEntity(collection = "profile")
 public class Profile {
 
@@ -18,6 +20,9 @@ public class Profile {
     private String title;
     private Integer idUser;
     private String url;
+    private ProfileStatus status;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public Profile() {
     }
@@ -108,5 +113,29 @@ public class Profile {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public ProfileStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ProfileStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

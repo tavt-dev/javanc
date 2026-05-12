@@ -1,8 +1,17 @@
 import { CommonModule, JsonPipe } from '@angular/common';
 import { Component, EventEmitter, Output } from '@angular/core';
-import { AbstractControl, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UserServiceService } from '../../service/user-service.service';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -14,9 +23,21 @@ import { Router } from '@angular/router';
 export class RegisterComponent {
 
   userForm: FormGroup;
+  verificationPending = false;
+  pendingEmail = '';
+  otp = '';
+  otpError = '';
+  resendMessage = '';
+  resendCooldown = 0;
+
   @Output() registerSuccess = new EventEmitter<void>();
 
-  constructor(private fb: FormBuilder, private userService: UserServiceService, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserServiceService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
     this.userForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       name: ['', [Validators.required]],
@@ -25,32 +46,35 @@ export class RegisterComponent {
     }, {
       validators: this.passwordsMatchValidator.bind(this)
     });
+
+    this.route.queryParams.subscribe(params => {
+      if (params['verify'] === 'true' && params['email']) {
+        this.verificationPending = true;
+        this.pendingEmail = params['email'];
+        this.userForm.patchValue({ email: params['email'] });
+      }
+    });
   }
 
-  // Kiểm tra password có chứa ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt hay không
   passwordValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const value = control.value;
-      if (!value) return null; // Nếu giá trị của control là rỗng thì trả về null
-
-      // Kiểm tra xem password có chứa ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt hay không
-      const hasLetter = /[a-zA-Z]/.test(value);
-      const hasDigit = /\d/.test(value);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
-      const isValidLength = value.length >= 8;
-
-      // Tạo đổi tượng errors để chứa các lỗi của form
-      const errors: ValidationErrors = {};// ValidationError là 1 đối tượng chứa các lỗi của form và là đối tượng JavaScript với các cặp key-value tương ứng với tên lỗi và giá trị lỗi
-
-      // Check each condition
-      if (!hasLetter) errors['noLetter'] = true;
-      if (!hasDigit) errors['noDigit'] = true;
-      if (!hasSpecialChar) errors['noSpecialChar'] = true;
-      if (!isValidLength) errors['invalidLength'] = true;
-
-      console.log(Object.keys(errors)); // trả về mảng các key của object errors
-
-      // Nếu có lỗi thì trả về object errors, ngược lại trả về null
+      if (!value) {
+        return null;
+      }
+      const errors: ValidationErrors = {};
+      if (!/[a-zA-Z]/.test(value)) {
+        errors['noLetter'] = true;
+      }
+      if (!/\d/.test(value)) {
+        errors['noDigit'] = true;
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+        errors['noSpecialChar'] = true;
+      }
+      if (value.length < 8) {
+        errors['invalidLength'] = true;
+      }
       return Object.keys(errors).length ? errors : null;
     };
   }
@@ -61,13 +85,11 @@ export class RegisterComponent {
     return password === confirmPassword ? null : { passwordsMismatch: true };
   }
 
-  // Lấy thông báo lỗi của email
   getPasswordErrorMessage(): string {
     const control = this.userForm.get('password');
     const errors = [];
-
     if (control?.hasError('required')) {
-      errors.push(' is required');
+      errors.push('is required');
     }
     if (control?.hasError('invalidLength')) {
       errors.push('must be at least 8 characters long');
@@ -81,40 +103,81 @@ export class RegisterComponent {
     if (control?.hasError('noSpecialChar')) {
       errors.push('must contain at least one special character');
     }
-
-    // Nếu có lỗi thì trả về chuỗi thông báo lỗi, ngược lại trả về chuỗi rỗng
     return errors.length ? `Password ${errors.join(' and ')}` : '';
   }
 
   submitForm() {
     if (this.userForm.valid) {
-      console.log(this.userForm.value + " submitForm");
-      // // Phát tín hiệu thành công sau khi đăng ký
-      // this.registerSuccess.emit();  
       this.signUpUser();
-    }
-    else {
-      console.log("Form is invalid");
     }
   }
 
   signUpUser() {
     this.userService.signUpUser(this.userForm.value).subscribe(
       (data: any) => {
-        console.log("Người dùng đăng ký thành công", data);
-
-        // Phát tín hiệu thành công sau khi đăng ký
-        this.registerSuccess.emit();
-        this.router.navigateByUrl('/login');
+        this.pendingEmail = data.email || this.userForm.value.email;
+        this.verificationPending = true;
+        this.otp = '';
+        this.otpError = '';
+        this.resendMessage = 'Verification code sent';
+        this.startResendCooldown();
       },
       (error) => {
-        console.error('Lỗi khi đăng ký người dùng:', error);
-        if (error.status === 409 || error.error.message === 'Email đã tồn tại') { // Xử lý lỗi email đã tồn tại
+        if (error.status === 409 || error.error?.message === 'Email already exists') {
           this.userForm.get('email')?.setErrors({ emailExists: true });
-        } else {
-          // Xử lý lỗi khác nếu cần
         }
       }
     );
+  }
+
+  verifyEmail() {
+    this.otpError = '';
+    if (!this.pendingEmail || !this.otp || this.otp.trim().length !== 6) {
+      this.otpError = 'Enter the 6-digit verification code';
+      return;
+    }
+
+    this.userService.verifyEmail(this.pendingEmail, this.otp.trim()).subscribe(
+      (response: any) => {
+        localStorage.setItem('authToken', response.accessToken);
+        localStorage.setItem('userCurrent', JSON.stringify(response.user));
+        this.registerSuccess.emit();
+        if (response.user.role === 'admin') {
+          this.router.navigateByUrl('/admin');
+        } else if (response.user.role === 'hr' || response.user.role === 'manager') {
+          this.router.navigateByUrl('/manager/about');
+        } else {
+          this.router.navigateByUrl('/home');
+        }
+      },
+      (error) => {
+        this.otpError = error?.error?.message || 'Verification code is invalid or expired';
+      }
+    );
+  }
+
+  resendOtp() {
+    if (!this.pendingEmail || this.resendCooldown > 0) {
+      return;
+    }
+    this.userService.resendVerificationOtp(this.pendingEmail).subscribe(
+      () => {
+        this.resendMessage = 'Verification code sent';
+        this.startResendCooldown();
+      },
+      (error) => {
+        this.resendMessage = error?.error?.message || 'Please wait before requesting another code';
+      }
+    );
+  }
+
+  private startResendCooldown() {
+    this.resendCooldown = 60;
+    const interval = setInterval(() => {
+      this.resendCooldown -= 1;
+      if (this.resendCooldown <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
   }
 }

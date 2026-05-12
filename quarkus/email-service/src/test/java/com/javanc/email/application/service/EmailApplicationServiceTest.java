@@ -1,6 +1,7 @@
 package com.javanc.email.application.service;
 
 import com.javanc.email.application.dto.MessageDTO;
+import com.javanc.email.application.dto.VerificationOtpEmailDTO;
 import com.javanc.email.application.exception.ApplicationException;
 import com.javanc.email.application.exception.ErrorCode;
 import com.javanc.email.application.port.MailSenderPort;
@@ -47,6 +48,28 @@ class EmailApplicationServiceTest {
                 () -> service.send(new MessageDTO("message", 1)));
 
         assertEquals(ErrorCode.MAIL_SEND_FAILED, exception.getErrorCode());
+    }
+
+    @Test
+    void verificationOtpBuildsModernHtmlTemplate() {
+        FakeMailSenderPort mailSenderPort = new FakeMailSenderPort();
+        EmailApplicationService service = new EmailApplicationService(new FakeUserLookupPort(), mailSenderPort);
+        VerificationOtpEmailDTO request = new VerificationOtpEmailDTO();
+        request.setTo(" verify@example.test ");
+        request.setName("Verify <User>");
+        request.setOtp("123456");
+        request.setExpiresInMinutes(10);
+
+        service.sendVerificationOtp(request);
+
+        assertEquals("verify@example.test", mailSenderPort.sentMessage.getMailTo());
+        assertEquals("Verify your Javanc account", mailSenderPort.sentMessage.getMailSubject());
+        assertEquals("text/html", mailSenderPort.sentMessage.getContentType());
+        assertEquals(true, mailSenderPort.sentMessage.getMailContent().contains("<!doctype html>"));
+        assertEquals(true, mailSenderPort.sentMessage.getMailContent().contains("Verify your email"));
+        assertEquals(true, mailSenderPort.sentMessage.getMailContent().contains("123456"));
+        assertEquals(true, mailSenderPort.sentMessage.getMailContent().contains("10 minutes"));
+        assertEquals(true, mailSenderPort.sentMessage.getMailContent().contains("Verify &lt;User&gt;"));
     }
 
     private static class FakeUserLookupPort implements UserLookupPort {

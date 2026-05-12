@@ -1,5 +1,8 @@
 package com.javanc.profile.interfaces.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ImageDTO {
 
     private Integer id;

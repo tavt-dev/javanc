@@ -1,6 +1,8 @@
 package com.javanc.user.domain.port;
 
 import com.javanc.user.domain.model.EmailAddress;
+import com.javanc.user.domain.model.EmployeeId;
+import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.model.UserId;
 
@@ -14,11 +16,17 @@ public interface UserRepository {
 
     Optional<User> findByEmail(EmailAddress email);
 
+    Optional<User> findByEmployeeId(EmployeeId employeeId);
+
     List<User> findAllUsers();
 
     List<User> findUsersByIds(Collection<UserId> ids);
 
-    void save(User user);
+    boolean existsByRole(Role role);
+
+    boolean existsActiveByRole(Role role);
+
+    User save(User user);
 
     void delete(User user);
 }

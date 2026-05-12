@@ -1,66 +1,159 @@
 # user-service
 
-Quarkus migration target for the current Spring Boot `user-service`.
+Production-ready Quarkus user and authentication service for the `quarkus/` backend.
 
-This module does not have a Spring Boot-style `public static void main` application class. Quarkus owns the runtime bootstrap. The main HTTP entrypoint for the migrated auth/user contract is:
+The service owns:
 
-- `src/main/java/com/javanc/user/adapter/in/rest/AuthResource.java`
+- Authentication: `/auth/**`
+- User management: `/users/**`
+- Admin account provisioning: `/users/admin/accounts`
+- JWT access/refresh token issuance and introspection
+- Email OTP verification for public self-registration
+- User persistence in MySQL table `user`
+
+Legacy Spring-style endpoints such as `/auth/signup`, `/auth/signin`, `/auth/isValid`, `/auth/findbyid`, `/auth/checkId`, and query-token access are intentionally removed.
 
 ## Architecture
 
-The module is organized as a Hexagonal DDD service:
-
-- `domain/model`: pure user aggregate, value objects, and role enum.
-- `domain/port`: repository, password, token, and id generation ports.
-- `application/usecase`: auth and user use cases with transaction boundaries.
-- `application/command` and `application/result`: framework-free inputs and outputs.
-- `adapter/in/rest`: Jakarta REST resource, wire DTOs, token resolver, and REST mapper.
-- `adapter/out/persistence`: Panache/JPA adapter mapped to MySQL table `user`.
-- `adapter/out/security`: BCrypt, JWT, and random integer id adapters.
-- `shared/exception`: exception types and API-compatible exception mappers.
-
-Domain and application code do not depend on REST DTOs, Panache entities, BCrypt, or JWT implementation classes.
+- `domain/model`: user aggregate, value objects, role and token type enums.
+- `domain/model/UserAuthorizationPolicy`: domain authorization policy for self/admin and account management rules.
+- `domain/port`: repository, password, token, OTP and notification ports.
+- `application/usecase`: auth and user-management rules with transaction boundaries.
+- `application/command` and `application/result`: framework-free application inputs and outputs.
+- `adapter/in/rest`: Jakarta REST resources, request DTOs, response mapping and token resolution.
+- `adapter/out/persistence`: Panache/JPA adapter mapped to MySQL.
+- `adapter/out/security`: BCrypt, JWT and OTP hashing/generation implementation.
+- `adapter/out/email`: REST client adapter for `email-service` verification mail.
+- `shared/exception`: application exceptions and API response mappers.
 
 ## Requirements
 
 - JDK 21
-- Maven wrapper from this module: `mvnw.cmd`
-- MySQL running locally or reachable from the configured JDBC URL
+- Maven
+- MySQL reachable from `USER_MYSQL_JDBC_URL`
 - Database target: `portfolio`
-- Runtime JWT secret from environment, not source code
+- Strong `JWT_SECRET` supplied by environment
 
-Default service port:
+Default port: `8088`.
 
-- `8088`
-
-## Local Environment
-
-Use `.env.example` as the local template. Do not commit `.env`.
-
-Required runtime values:
+## Environment
 
 ```powershell
 $env:USER_SERVICE_PORT='8088'
 $env:MYSQL_USERNAME='root'
 $env:MYSQL_PASSWORD='<local-mysql-password>'
 $env:USER_MYSQL_JDBC_URL='jdbc:mysql://localhost:3306/portfolio?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
-$env:USER_DB_GENERATION='update'
+$env:USER_DB_SCHEMA_STRATEGY='validate'
+$env:USER_DB_MIGRATE='true'
 $env:JWT_SECRET='local-dev-secret-with-at-least-32-bytes-1234567890'
-$env:JWT_EXPIRATION_MILLIS='86400000'
+$env:JWT_ISSUER='javanc-user-service'
+$env:JWT_ACCESS_EXPIRATION_SECONDS='3600'
+$env:JWT_REFRESH_EXPIRATION_SECONDS='604800'
+$env:OTP_VERIFICATION_LENGTH='6'
+$env:OTP_VERIFICATION_TTL_SECONDS='600'
+$env:OTP_VERIFICATION_MAX_ATTEMPTS='5'
+$env:OTP_VERIFICATION_RESEND_COOLDOWN_SECONDS='60'
+$env:OTP_HASH_SECRET='local-dev-otp-secret-with-at-least-32-bytes'
+$env:EMAIL_SERVICE_URL='http://localhost:8087'
+$env:USER_ADMIN_BOOTSTRAP_ENABLED='true'
+$env:USER_ADMIN_EMAIL='admin@example.com'
+$env:USER_ADMIN_PASSWORD='Password1!'
+$env:USER_ADMIN_NAME='System Admin'
 ```
 
-`JWT_SECRET` is intentionally blank by default in `application.properties`. Signup/signin/refresh token flows require this variable at runtime.
+Flyway runs at startup by default. Use SQL migrations under `src/main/resources/db/migration`.
+Admin bootstrap is disabled by default and should only be enabled for the first deployment or local setup. It creates the first `ACTIVE` `admin` account only when no active admin exists. When enabled, missing admin config, weak passwords, or a configured email that already belongs to a non-active-admin user fail startup instead of silently skipping or promoting an existing account.
 
-## API Compatibility Notes
+## API Contract
 
-- Auth routes remain under `/auth/**` and keep the `ApiResponse(success,message,data)` wrapper.
-- `AuthenticationResponse` still serializes the legacy field `vaild`; `isVaild` is accepted as an input alias.
-- User responses no longer serialize `password` or password hashes. Requests may still include `password` where the existing contract allows password updates.
-- Protected user endpoints prefer `Authorization: Bearer <token>`.
-- Legacy query `token` remains accepted for `/auth/getAll`, `/auth/getlistuserbyid`, `/auth/update`, `/auth/updateactive`, and `/auth/delete` during the compatibility window.
-- `/auth/ourUserDetailsService` intentionally returns `501` because the Spring mapping was broken and no new contract is invented.
+All normal responses use:
 
-## Run In Dev Mode
+```json
+{
+  "success": true,
+  "message": "string",
+  "data": {}
+}
+```
+
+Errors use the correct HTTP status and:
+
+```json
+{
+  "success": false,
+  "message": "string",
+  "data": null
+}
+```
+
+### Auth
+
+- `POST /auth/register`
+  - Body: `{ "name", "email", "password" }`
+  - Always creates role `user`
+  - Rejects public `role` and `employeeId`
+  - Creates status `PENDING_VERIFICATION`
+  - Sends verification OTP through `email-service`
+  - Returns: `{ "email", "status", "expiresInSeconds" }`
+- `POST /auth/verify-email`
+  - Body: `{ "email", "otp" }`
+  - Activates the pending account and returns `AuthSession`
+- `POST /auth/resend-verification-otp`
+  - Body: `{ "email" }`
+  - Returns a neutral success message unless resend cooldown is still active
+- `POST /auth/login`
+  - Body: `{ "email", "password" }`
+  - Returns: `AuthSession`
+  - Pending accounts return `403 Email verification required`
+- `POST /auth/refresh`
+  - Body: `{ "refreshToken" }`
+  - Returns: `AuthSession`
+- `POST /auth/introspect`
+  - Body: `{ "token" }`
+  - Returns: `{ "active", "subject", "userId", "role", "expiresAt" }`
+- `POST /auth/logout`
+  - Header: `Authorization: Bearer <accessToken>`
+
+`AuthSession` shape:
+
+```json
+{
+  "accessToken": "string",
+  "refreshToken": "string",
+  "tokenType": "Bearer",
+  "expiresInSeconds": 3600,
+  "user": {}
+}
+```
+
+### Users
+
+All `/users/**` endpoints require `Authorization: Bearer <accessToken>`.
+
+- `GET /users/me`: any active authenticated user.
+- `GET /users/{id}`: self or `admin`.
+- `GET /users?ids=1&ids=2`: `admin`.
+- `GET /users`: `admin`.
+- `PATCH /users/{id}`: self or `admin` can update profile fields only.
+- `PATCH /users/{id}/role`: `admin`, body `{ "role": "admin|user|hr|manager" }`.
+- `PATCH /users/{id}/status`: `admin`, body `{ "active": false }` or `{ "status": "PENDING_VERIFICATION|ACTIVE|DISABLED|DELETED|LOCKED" }`.
+- `POST /users/admin/accounts`: `admin`, creates internal `admin|user|hr|manager` accounts.
+- `DELETE /users/{id}`: `admin`, soft-deletes the user with status `DELETED`.
+
+User responses never include password or password hash.
+
+## Security Rules
+
+- Access token claims: `sub=email`, `userId`, `role`, `typ=access`, `iss`, `iat`, `exp`.
+- Refresh token claims: same claims with `typ=refresh`.
+- `/auth/refresh` accepts only refresh tokens.
+- Login, refresh, introspection and protected user operations reject inactive users.
+- Public registration users cannot login or use protected APIs until email OTP verification changes status to `ACTIVE`.
+- Public registration cannot create `admin`, `hr`, or `manager`; only admin account APIs can assign those roles.
+- Duplicate email returns `409 Conflict`.
+- Bad credentials return `401 Unauthorized` without revealing whether the email exists.
+
+## Run
 
 From `quarkus/user-service`:
 
@@ -76,70 +169,44 @@ Useful URLs:
 - Health: `http://localhost:8088/q/health`
 - OpenAPI: `http://localhost:8088/q/openapi`
 - Dev UI: `http://localhost:8088/q/dev`
-- Auth base path: `http://localhost:8088/auth`
 
-## Package And Run
+## Test And Package
 
-```powershell
-.\mvnw.cmd -DskipTests package
-java -jar target\quarkus-app\quarkus-run.jar
-```
-
-The packaged app still requires the same MySQL and JWT environment variables.
-
-## Test
-
-Automated tests use the Quarkus test profile with H2 in MySQL mode. They do not require local MySQL or real secrets.
+Automated tests use H2 in MySQL mode and do not require local MySQL.
 
 ```powershell
 .\mvnw.cmd test
-.\mvnw.cmd -f ..\pom.xml test
 .\mvnw.cmd -DskipTests package
 ```
 
-Expected baseline:
+From the parent reactor:
 
-- DTO wire compatibility tests pass.
-- Persistence mapping tests pass against H2 MySQL mode.
-- Auth, password, JWT, REST, exception, and security boundary tests pass.
-- Package build produces `target/quarkus-app/quarkus-run.jar`.
+```powershell
+cd ..
+mvn test
+mvn -DskipTests package
+```
 
 ## Manual Smoke
 
-After `quarkus:dev` starts on port `8088`, verify:
+1. `GET /q/health`
+2. `POST /auth/register`
+3. Read OTP from local mail inbox or mocked mailer log.
+4. `POST /auth/verify-email`
+5. `POST /auth/login`
+6. `POST /auth/introspect`
+7. `POST /auth/refresh`
+8. `GET /users/me` with `Authorization: Bearer <accessToken>`
+9. Login with bootstrapped admin.
+10. Admin-only checks: `POST /users/admin/accounts`, `PATCH /users/{id}/role`, `PATCH /users/{id}/status`, `DELETE /users/{id}`.
 
-- `GET /q/health`
-- `POST /auth/signup`
-- `POST /auth/signin`
-- `POST /auth/isValid`
-- `GET /auth/getCurrentUser` with `Authorization: Bearer <token>`
+Protected endpoints do not accept `?token=`.
 
 ## Postman
 
-Import these files into Postman:
+Import:
 
 - `postman/user-service.postman_collection.json`
 - `postman/user-service.postman_environment.json`
 
-Select the `Quarkus user-service local` environment before running requests.
-
-Recommended order:
-
-1. `System / Health`
-2. `Auth Flow / Signup`
-3. `Auth Flow / Signin`
-4. `Auth Flow / Is Valid Token`
-5. User endpoint requests
-6. `User Endpoints / Delete User` last
-
-`Signin` stores `token`, `refreshToken`, and `userId` into the selected Postman environment. `Signup` also stores `userId` when the response contains a user.
-
-## Commit Hygiene
-
-Do not commit:
-
-- `.env`
-- `.idea/`
-- `target/`
-
-`.env.example` is safe to commit because it contains placeholders only.
+Select `Quarkus user-service local`. Run `Auth / Register`, verify the OTP with `Auth / Verify Email`, or run `Auth / Login` after verification to store `accessToken`, `refreshToken`, and `userId`.

@@ -29,8 +29,9 @@ public class QuarkusMailerAdapter implements MailSenderPort {
     public void send(MailMessage mailMessage) {
         try {
             LOG.infof("Sending email to user address for recipient: %s", mailMessage.getMailTo());
-            Mail mail = Mail.withText(mailMessage.getMailTo(), mailMessage.getMailSubject(),
-                    mailMessage.getMailContent());
+            Mail mail = html(mailMessage)
+                    ? Mail.withHtml(mailMessage.getMailTo(), mailMessage.getMailSubject(), mailMessage.getMailContent())
+                    : Mail.withText(mailMessage.getMailTo(), mailMessage.getMailSubject(), mailMessage.getMailContent());
             String from = firstNonBlank(mailMessage.getMailFrom(), configuredFrom);
             if (from != null) {
                 mail.setFrom(from);
@@ -39,6 +40,10 @@ public class QuarkusMailerAdapter implements MailSenderPort {
         } catch (RuntimeException exception) {
             throw new ApplicationException(ErrorCode.MAIL_SEND_FAILED, exception);
         }
+    }
+
+    private boolean html(MailMessage mailMessage) {
+        return "text/html".equalsIgnoreCase(mailMessage.getContentType());
     }
 
     private String firstNonBlank(String preferred, String fallback) {

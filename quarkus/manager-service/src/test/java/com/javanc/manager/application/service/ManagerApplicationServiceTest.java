@@ -223,7 +223,7 @@ class ManagerApplicationServiceTest {
         }
 
         @Override
-        public Integer signUp(AuthenticationRequest authenticationRequest) {
+        public Integer createAccount(AuthenticationRequest authenticationRequest) {
             request = authenticationRequest;
             return id;
         }

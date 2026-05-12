@@ -42,7 +42,8 @@ public class GatewayRouteConfig {
         Set<String> protectedRoutePrefixes = protectedRoutePrefixes();
         return List.of(
                 route("auth-service", "/auth", userUrl, protectedRoutePrefixes),
-                route("profile-service", "/profile", profileUrl, protectedRoutePrefixes),
+                route("user-service", "/users", userUrl, protectedRoutePrefixes),
+                route("profile-service", "/profiles", profileUrl, protectedRoutePrefixes),
                 route("project-service", "/project", projectUrl, protectedRoutePrefixes),
                 optionalRoute("profile-hr-service", "/profile-hr", profileHrUrl, protectedRoutePrefixes),
                 route("notification-service", "/notification", notificationUrl, protectedRoutePrefixes),
@@ -60,6 +61,9 @@ public class GatewayRouteConfig {
     }
 
     private RoutePolicy policy(String prefix, Set<String> protectedRoutePrefixes) {
+        if ("/profiles".equals(prefix) && protectedRoutePrefixes.contains("/profile")) {
+            return RoutePolicy.PROTECTED;
+        }
         return protectedRoutePrefixes.contains(prefix) ? RoutePolicy.PROTECTED : RoutePolicy.PUBLIC;
     }
 

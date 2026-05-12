@@ -12,7 +12,7 @@ public class BadRequestExceptionMapper implements ExceptionMapper<BadRequestExce
     @Override
     public Response toResponse(BadRequestException exception) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ApiResponse<>(false, exception.getMessage(), ""))
+                .entity(new ApiResponse<>(false, exception.getMessage(), null))
                 .build();
     }
 }

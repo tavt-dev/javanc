@@ -16,8 +16,9 @@ class RouteMatcherTest {
     void matchesEnabledRouteByPrefixBoundary() {
         RouteMatcher matcher = new RouteMatcher(new TestRouteConfig());
 
-        assertEquals("profile-service", matcher.match("/profile/user/getAll").orElseThrow().id());
-        assertTrue(matcher.match("/profileabc").isEmpty());
+        assertEquals("profile-service", matcher.match("/profiles").orElseThrow().id());
+        assertEquals("profile-service", matcher.match("/profiles/me").orElseThrow().id());
+        assertTrue(matcher.match("/profilesabc").isEmpty());
     }
 
     @Test
@@ -32,7 +33,7 @@ class RouteMatcherTest {
         @Override
         public List<GatewayRoute> routes() {
             return List.of(
-                    new GatewayRoute("profile-service", "/profile", "http://profile", RoutePolicy.PROTECTED, true),
+                    new GatewayRoute("profile-service", "/profiles", "http://profile", RoutePolicy.PROTECTED, true),
                     new GatewayRoute("profile-hr-service", "/profile-hr", "http://profile-hr", RoutePolicy.PUBLIC, true),
                     new GatewayRoute("disabled-service", "/disabled", "", RoutePolicy.PUBLIC, false));
         }

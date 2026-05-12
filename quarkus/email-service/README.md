@@ -7,7 +7,8 @@ Quarkus replacement for `microservice/email-service`.
 - Port: `8087`
 - Base path: `/email`
 - Main endpoint: `POST /email/create`
-- User lookup: `GET /auth/findbyid` through `USER_SERVICE_URL`
+- Internal OTP endpoint: `POST /internal/emails/verification-otp`
+- User lookup: `GET /users/{id}` through `USER_SERVICE_URL`
 - Mail transport: Quarkus Mailer
 - Health: `/q/health`
 - OpenAPI: `/q/openapi`
@@ -46,6 +47,7 @@ mvn -pl email-service quarkus:dev
 
 - `GET http://localhost:8087/q/health`
 - `POST http://localhost:8087/email/create`
+- `POST http://localhost:8087/internal/emails/verification-otp`
 
 Example request:
 
@@ -65,5 +67,18 @@ Successful response preserves the Spring wrapper:
   "data": "true"
 }
 ```
+
+Internal verification OTP request:
+
+```json
+{
+  "to": "user@example.com",
+  "name": "User",
+  "otp": "123456",
+  "expiresInMinutes": 10
+}
+```
+
+`/internal/emails/verification-otp` is intended for `user-service` only and is not exposed through `gateway-service`.
 
 Use `MAIL_MOCK=true` for local endpoint testing without sending real email. Do not commit `.env`, real SMTP credentials, or generated `target/` output.

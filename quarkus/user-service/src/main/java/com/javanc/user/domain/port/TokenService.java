@@ -1,6 +1,8 @@
 package com.javanc.user.domain.port;
 
+import com.javanc.user.application.result.TokenClaims;
 import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.TokenType;
 
 public interface TokenService {
 
@@ -8,7 +10,7 @@ public interface TokenService {
 
     String generateRefreshToken(User user);
 
-    String extractSubject(String token);
+    TokenClaims validate(String token, TokenType expectedType);
 
-    boolean isTokenValid(String token, User user);
+    long accessExpiresInSeconds();
 }
