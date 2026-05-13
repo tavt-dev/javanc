@@ -14,8 +14,8 @@ export function SideNav({
   const pathname = usePathname();
 
   return (
-    <aside className="rounded-md border border-line bg-white p-3 shadow-soft">
-      <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">{title}</p>
+    <aside className="rounded-md border border-white/10 bg-[#201b52]/80 p-3 text-white shadow-soft backdrop-blur">
+      <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-white/55">{title}</p>
       <nav className="space-y-1">
         {items.map((item) => {
           const active = pathname === item.href;
@@ -23,8 +23,8 @@ export function SideNav({
             <Link
               key={item.href}
               href={item.href}
-              className={`focus-ring flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
-                active ? "bg-ink text-white" : "text-muted hover:bg-canvas hover:text-ink"
+              className={`focus-ring pressable flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${
+                active ? "bg-accent text-ink shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
               <item.icon className="h-4 w-4" />

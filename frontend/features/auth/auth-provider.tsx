@@ -3,13 +3,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AuthenticationResponse, SavedAccount, User } from "@/lib/types";
+import { authApi } from "@/lib/api";
 import {
-  activateSavedAccount,
   clearAuth,
   getActiveAccountKey,
+  getSavedAccountCredentials,
   getSavedAccounts,
   getStoredUser,
   getToken,
+  markActiveSavedAccount,
+  removeSavedAccount as removeSavedAccountFromStorage,
   saveAuth
 } from "@/lib/storage";
 
@@ -19,9 +22,10 @@ type AuthContextValue = {
   signedIn: boolean;
   savedAccounts: SavedAccount[];
   activeAccountKey: string | null;
-  login: (auth: AuthenticationResponse) => void;
+  login: (auth: AuthenticationResponse, saveAccount?: boolean, credentials?: { email?: string; password?: string }) => void;
   logout: () => void;
-  switchAccount: (accountKey: string) => void;
+  switchAccount: (accountKey: string) => Promise<void>;
+  removeSavedAccount: (accountKey: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,11 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signedIn: Boolean(token),
       savedAccounts,
       activeAccountKey,
-      login(auth) {
-        saveAuth(auth);
+      login(auth, saveAccount = false, credentials) {
+        saveAuth(auth, saveAccount, credentials);
         setUser(auth.user ?? null);
-        setToken(auth.token ?? null);
+        setToken(authToken(auth));
         syncAccounts();
+        applyAuthNavigation(router);
       },
       logout() {
         clearAuth();
@@ -65,22 +70,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncAccounts();
         router.push("/login");
       },
-      switchAccount(accountKey) {
-        const auth = activateSavedAccount(accountKey);
-        if (!auth) {
+      async switchAccount(accountKey) {
+        const credentials = getSavedAccountCredentials(accountKey);
+        if (!credentials) {
           syncAccounts();
           return;
         }
 
+        const auth = await authApi.signin(credentials);
+        saveAuth(auth, true, credentials);
+        markActiveSavedAccount(accountKey);
         setUser(auth.user ?? null);
-        setToken(auth.token ?? null);
+        setToken(authToken(auth));
         syncAccounts();
+        applyAuthNavigation(router);
+      },
+      removeSavedAccount(accountKey) {
+        const removingActiveAccount = activeAccountKey === accountKey;
+        removeSavedAccountFromStorage(accountKey);
+        syncAccounts();
+
+        if (removingActiveAccount) {
+          setUser(null);
+          setToken(null);
+          router.push("/login");
+        }
       }
     }),
     [activeAccountKey, router, savedAccounts, syncAccounts, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function authToken(auth?: AuthenticationResponse | null) {
+  return auth?.token ?? auth?.accessToken ?? null;
+}
+
+function applyAuthNavigation(router: ReturnType<typeof useRouter>) {
+  router.replace("/");
+  router.refresh();
 }
 
 export function useAuth() {

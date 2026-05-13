@@ -11,20 +11,30 @@ export type User = {
   password?: string;
   confirmPassword?: string;
   active?: boolean;
+  status?: string;
   role?: string;
   idEmployee?: string;
 };
 
 export type AuthenticationResponse = {
+  accessToken?: string;
   statusCode?: number;
   error?: string;
   message?: string;
   token?: string;
   refreshToken?: string;
+  tokenType?: string;
+  expiresInSeconds?: number;
   expirationTime?: string;
   user?: User;
   isVaild?: boolean;
   role?: string;
+};
+
+export type RegistrationPending = {
+  email: string;
+  status: string;
+  expiresInSeconds: number;
 };
 
 export type SavedAccount = {
@@ -32,7 +42,11 @@ export type SavedAccount = {
   label: string;
   email?: string;
   role?: string;
-  auth: AuthenticationResponse;
+  credentials?: {
+    email: string;
+    password: string;
+  };
+  auth?: AuthenticationResponse;
   savedAt: string;
 };
 
@@ -50,6 +64,7 @@ export type Profile = {
   education?: string;
   workExperience?: string;
   skills?: string;
+  name?: string;
   typeProfile?: string;
   idUser?: number;
   url?: string;
@@ -78,10 +93,32 @@ export type Company = {
   phone?: string;
   city?: string;
   country?: string;
+  url?: string;
   idManager?: number;
   idHR?: number[];
   idJobs?: number[];
   image?: string | File;
+};
+
+export type RoleRequest = {
+  id?: number;
+  requesterUserId?: number;
+  targetUserId?: number;
+  requesterName?: string;
+  requesterEmail?: string;
+  targetName?: string;
+  targetEmail?: string;
+  requestedRole?: string;
+  type?: "MANAGER_UPGRADE" | "HR_PROMOTION" | string;
+  status?: "PENDING_SYSADMIN" | "PENDING_USER_CONFIRMATION" | "APPROVED" | "REJECTED" | "CANCELLED" | string;
+  companyId?: number;
+  companyName?: string;
+  reason?: string;
+  adminNote?: string;
+  decidedByUserId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  decidedAt?: string;
 };
 
 export type Job = {

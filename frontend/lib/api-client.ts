@@ -56,11 +56,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const payload = await parseBody(response);
 
   if (response.status === 401) {
-    clearAuth();
-    if (typeof window !== "undefined") {
-      window.location.assign("/login");
+    if (options.auth !== false) {
+      clearAuth();
+      if (typeof window !== "undefined") {
+        window.location.assign("/login");
+      }
     }
-    throw new ApiError("Unauthorized", 401);
+    throw new ApiError(payload?.message ?? "Unauthorized", 401);
   }
 
   if (!response.ok) {

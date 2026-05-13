@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  background: #f5f7fb;
-  color: #172033;
+  color-scheme: dark;
+  background: #0c102b;
+  color: #f8f7ff;
 }
 
 * {
@@ -20,14 +20,50 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(245, 247, 251, 0.96)),
-    #f5f7fb;
-  color: #172033;
+    linear-gradient(118deg, rgba(37, 219, 198, 0.12) 0%, transparent 32%, rgba(255, 220, 93, 0.08) 100%),
+    linear-gradient(172deg, rgba(255, 117, 110, 0.1) 0%, transparent 38%),
+    repeating-linear-gradient(112deg, transparent 0 58px, rgba(255, 255, 255, 0.025) 58px 59px),
+    linear-gradient(180deg, #38346a 0%, #201b52 42%, #0d102b 100%);
+  color: #f8f7ff;
   font-family: Arial, Helvetica, sans-serif;
 }
 
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  content: "";
+  opacity: 0.62;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.92) 0 1px, transparent 1.7px),
+    radial-gradient(circle, rgba(255, 220, 93, 0.72) 0 1px, transparent 1.55px),
+    radial-gradient(circle, rgba(37, 219, 198, 0.55) 0 1px, transparent 1.5px);
+  background-position:
+    0 0,
+    33px 41px,
+    79px 18px;
+  background-size:
+    112px 112px,
+    168px 168px,
+    236px 236px;
+}
+
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(180deg, transparent 0%, transparent 48%, rgba(13, 16, 43, 0.28) 65%, rgba(7, 9, 26, 0.78) 100%),
+    linear-gradient(132deg, transparent 0 18%, rgba(255, 220, 93, 0.1) 31%, transparent 44%),
+    linear-gradient(42deg, transparent 0 34%, rgba(37, 219, 198, 0.08) 52%, transparent 68%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.84), rgba(0, 0, 0, 1));
+}
+
 ::selection {
-  background: rgba(27, 107, 147, 0.18);
+  background: rgba(255, 220, 93, 0.28);
 }
 
 a {
@@ -40,6 +76,24 @@ input,
 select,
 textarea {
   font: inherit;
+  color: #10103a;
+  color-scheme: light;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #10103a;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-out;
 }
 
 .focus-ring {
@@ -47,7 +101,7 @@ textarea {
 }
 
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 3px rgba(27, 107, 147, 0.22);
+  box-shadow: 0 0 0 3px rgba(255, 220, 93, 0.32);
 }
 
 .animate-page {
@@ -67,7 +121,29 @@ textarea {
 
 .interactive-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 54px rgba(23, 32, 51, 0.11);
+  box-shadow: 0 22px 70px rgba(8, 8, 32, 0.26);
+}
+
+.scroll-reveal {
+  animation: reveal-on-scroll both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 28%;
+}
+
+.pressable {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.pressable:hover {
+  transform: translateY(-1px);
+}
+
+.pressable:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .skeleton {
@@ -110,6 +186,17 @@ textarea {
 @keyframes skeleton-shimmer {
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes reveal-on-scroll {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

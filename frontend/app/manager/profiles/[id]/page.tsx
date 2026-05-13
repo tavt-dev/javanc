@@ -26,7 +26,11 @@ export default function ManagerProfilePage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Manager profile view" title={profile.data.title || profile.data.objective || `Profile #${profile.data.id}`} />
+      <PageHeader
+        eyebrow="Manager profile view"
+        title={profile.data.title || profile.data.objective || `Profile #${profile.data.id}`}
+        breadcrumbs={[{ label: "Employees", href: "/manager/employees" }, { label: profile.data.title || `Profile #${profile.data.id}` }]}
+      />
       <section className="rounded-md border border-line bg-white p-5 shadow-soft">
         <Pill tone="blue">{profile.data.typeProfile || "Profile"}</Pill>
         <p className="mt-4 text-sm leading-6 text-muted">{profile.data.workExperience || profile.data.education || "No profile details"}</p>

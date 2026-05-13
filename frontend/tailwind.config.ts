@@ -10,18 +10,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#172033",
-        muted: "#667085",
-        line: "#d9e1ec",
+        ink: "#10103a",
+        muted: "#7b7895",
+        line: "#dedcf0",
         panel: "#ffffff",
-        canvas: "#f5f7fb",
-        brand: "#1b6b93",
-        accent: "#2d9a69",
-        warn: "#c86b2c",
+        canvas: "#17163c",
+        brand: "#6f63d8",
+        accent: "#ffdc5d",
+        warn: "#b97835",
         danger: "#b42318"
       },
       boxShadow: {
-        soft: "0 16px 48px rgba(23, 32, 51, 0.08)"
+        soft: "0 18px 60px rgba(8, 8, 32, 0.22)"
       }
     }
   },

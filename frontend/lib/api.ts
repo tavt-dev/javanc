@@ -1,4 +1,5 @@
 import { apiRequest, jsonBody } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-client";
 import type {
   ApiResponse,
   AuthenticationResponse,
@@ -7,78 +8,220 @@ import type {
   Notification,
   Profile,
   Project,
+  RegistrationPending,
+  RoleRequest,
   User
 } from "@/lib/types";
-import { getToken } from "@/lib/storage";
-
-function tokenParam() {
-  const token = getToken();
-  return token ? `token=${encodeURIComponent(token)}` : "token=";
-}
 
 export const authApi = {
   signup: (user: User) =>
-    apiRequest<AuthenticationResponse>("/auth/signup", {
+    apiRequest<RegistrationPending>("/auth/register", {
       method: "POST",
       auth: false,
-      ...jsonBody(authPayload(user))
+      ...jsonBody(registerPayload(user))
     }),
   signin: (user: User) =>
-    apiRequest<AuthenticationResponse>("/auth/signin", {
+    apiRequest<AuthenticationResponse>("/auth/login", {
       method: "POST",
       auth: false,
-      ...jsonBody(authPayload(user))
-    }),
-  currentUser: () => apiRequest<User>("/auth/getCurrentUser"),
-  getAll: () => apiRequest<User[]>(`/auth/getAll?${tokenParam()}`),
-  findById: (id: number) => apiRequest<User>(`/auth/findbyid?id=${id}&${tokenParam()}`),
-  update: (user: User) =>
-    apiRequest<User>(`/auth/update?${tokenParam()}`, {
+      ...jsonBody(loginPayload(user))
+    }).then(normalizeAuthSession),
+  verifyEmail: (email: string, otp: string) =>
+    apiRequest<AuthenticationResponse>("/auth/verify-email", {
       method: "POST",
-      ...jsonBody(user)
+      auth: false,
+      ...jsonBody({ email, otp })
+    }).then(normalizeAuthSession),
+  resendVerificationOtp: (email: string) =>
+    apiRequest<void>("/auth/resend-verification-otp", {
+      method: "POST",
+      auth: false,
+      ...jsonBody({ email })
+    }),
+  currentUser: () => apiRequest<User>("/users/me"),
+  getAll: () => apiRequest<User[]>("/users"),
+  search: (params: { query?: string; role?: string; page?: number; size?: number } = {}) =>
+    apiRequest<User[]>(`/users/search?${userSearchParams(params)}`),
+  findById: (id: number) => apiRequest<User>(`/users/${id}`),
+  update: (user: User) =>
+    apiRequest<User>(`/users/${user.id}`, {
+      method: "PATCH",
+      ...jsonBody(userPayload(user))
     }),
   updateActive: (user: User) =>
-    apiRequest<User>(`/auth/updateactive?${tokenParam()}`, {
-      method: "POST",
-      ...jsonBody(user)
+    apiRequest<User>(`/users/${user.id}/status`, {
+      method: "PATCH",
+      ...jsonBody({ active: user.active })
+    }),
+  updateRole: (id: number, role: string) =>
+    apiRequest<User>(`/users/${id}/role`, {
+      method: "PATCH",
+      ...jsonBody({ role })
     }),
   delete: (id: number) =>
-    apiRequest<User>(`/auth/delete?${tokenParam()}&id=${id}`, {
+    apiRequest<User>(`/users/${id}`, {
       method: "DELETE"
     })
 };
 
-function authPayload(user: User) {
+function userSearchParams(params: { query?: string; role?: string; page?: number; size?: number }) {
+  const search = new URLSearchParams();
+  if (params.query) {
+    search.set("query", params.query);
+  }
+  if (params.role) {
+    search.set("role", params.role);
+  }
+  search.set("page", String(params.page ?? 0));
+  search.set("size", String(params.size ?? 10));
+  return search.toString();
+}
+
+export const roleRequestApi = {
+  createManagerUpgrade: (reason: string) =>
+    apiRequest<RoleRequest>("/users/me/manager-upgrade-requests", {
+      method: "POST",
+      ...jsonBody({ reason })
+    }),
+  myRequests: () => apiRequest<RoleRequest[]>("/users/me/role-requests"),
+  myHrPromotions: () => apiRequest<RoleRequest[]>("/users/me/hr-promotion-requests"),
+  adminList: (params: { status?: string; type?: string } = {}) =>
+    apiRequest<RoleRequest[]>(`/users/admin/role-requests?${roleRequestSearchParams(params)}`),
+  approve: (id: number) =>
+    apiRequest<RoleRequest>(`/users/admin/role-requests/${id}/approve`, {
+      method: "PATCH"
+    }),
+  reject: (id: number, adminNote?: string) =>
+    apiRequest<RoleRequest>(`/users/admin/role-requests/${id}/reject`, {
+      method: "PATCH",
+      ...jsonBody({ adminNote })
+    }),
+  acceptHrPromotion: (id: number) =>
+    apiRequest<RoleRequest>(`/users/me/hr-promotion-requests/${id}/accept`, {
+      method: "PATCH"
+    }),
+  rejectHrPromotion: (id: number) =>
+    apiRequest<RoleRequest>(`/users/me/hr-promotion-requests/${id}/reject`, {
+      method: "PATCH"
+    })
+};
+
+function roleRequestSearchParams(params: { status?: string; type?: string }) {
+  const search = new URLSearchParams();
+  if (params.status) {
+    search.set("status", params.status);
+  }
+  if (params.type) {
+    search.set("type", params.type);
+  }
+  return search.toString();
+}
+
+function loginPayload(user: User) {
+  return {
+    email: user.email,
+    password: user.password
+  };
+}
+
+function registerPayload(user: User) {
+  return {
+    name: user.name,
+    email: user.email,
+    password: user.password
+  };
+}
+
+function userPayload(user: User) {
   return {
     name: user.name,
     email: user.email,
     password: user.password,
-    role: user.role?.toLowerCase(),
-    idEmployee: user.idEmployee
+    employeeId: user.idEmployee
+  };
+}
+
+function normalizeAuthSession(auth: AuthenticationResponse): AuthenticationResponse {
+  if (!auth || auth.error || auth.statusCode || auth.isVaild === false) {
+    throw new ApiError(auth?.message || auth?.error || "Unable to sign in", auth?.statusCode);
+  }
+  const token = auth.token ?? auth.accessToken;
+  if (!token) {
+    throw new ApiError(auth.message || "Login response did not include a session token");
+  }
+
+  return {
+    ...auth,
+    token,
+    expirationTime: auth.expirationTime ?? (auth.expiresInSeconds ? String(auth.expiresInSeconds) : undefined),
+    role: auth.role ?? auth.user?.role
   };
 }
 
 export const profileApi = {
-  list: () => apiRequest<Profile[]>("/profile/user/getAll"),
-  findById: (id: number) => apiRequest<Profile>(`/profile/user/findById?id=${id}`),
-  findByUserId: (userId: number) => apiRequest<Profile>(`/profile/user/findByUserId?userId=${userId}`),
+  list: (params: { type?: string; title?: string; page?: number; size?: number } = {}) =>
+    apiRequest<Profile[]>(`/profiles?${profileSearchParams(params)}`),
+  me: () => apiRequest<Profile>("/profiles/me"),
+  findById: (id: number) => apiRequest<Profile>(`/profiles/${id}`),
+  findByUserId: (userId: number) => apiRequest<Profile>(`/profiles/by-user/${userId}`),
   findByType: (typeProfile: string) =>
-    apiRequest<Profile[]>(`/profile/user/findProfileByType?typeProfile=${encodeURIComponent(typeProfile)}`),
-  save: (formData: FormData) =>
-    apiRequest<Profile>("/profile/user/save", {
+    apiRequest<Profile[]>(`/profiles?${profileSearchParams({ type: typeProfile })}`),
+  save: (profile: Profile) =>
+    apiRequest<Profile>("/profiles/me", {
+      method: "POST",
+      ...jsonBody(profile)
+    }),
+  update: (profile: Profile) =>
+    apiRequest<Profile>("/profiles/me", {
+      method: "PATCH",
+      ...jsonBody(profile)
+    }),
+  deleteMe: () =>
+    apiRequest<void>("/profiles/me", {
+      method: "DELETE"
+    }),
+  uploadAvatar: (image: File) => {
+    const formData = new FormData();
+    formData.append("image", image);
+    return apiRequest<Profile>("/profiles/me/avatar", {
       method: "POST",
       body: formData
-    }),
-  update: (formData: FormData) =>
-    apiRequest<Profile>("/profile/user/update", {
-      method: "POST",
-      body: formData
-    }),
+    });
+  },
   pendingJobProfiles: (ids: number[]) =>
-    apiRequest<Profile[]>(`/profile/manager/getProfileByIdPendingJob?ids=${ids.join(",")}`)
+    apiRequest<Profile[]>(`/profiles/batch?${ids.map((id) => `ids=${encodeURIComponent(id)}`).join("&")}`)
 };
 
+function profileSearchParams(params: { type?: string; title?: string; page?: number; size?: number }) {
+  const search = new URLSearchParams();
+  if (params.type) {
+    search.set("type", params.type);
+  }
+  if (params.title) {
+    search.set("title", params.title);
+  }
+  search.set("page", String(params.page ?? 0));
+  search.set("size", String(params.size ?? 20));
+  return search.toString();
+}
+
 export const projectApi = {
+  myProjects: () => apiRequest<Project[]>("/project/user/projects"),
+  findMine: (id: number) => apiRequest<Project>(`/project/user/projects/${id}`),
+  createMine: (project: Project) =>
+    apiRequest<Project>("/project/user/projects", {
+      method: "POST",
+      ...jsonBody(project)
+    }),
+  updateMine: (project: Project) =>
+    apiRequest<Project>(`/project/user/projects/${project.id}`, {
+      method: "PATCH",
+      ...jsonBody(project)
+    }),
+  deleteMine: (id: number) =>
+    apiRequest<void>(`/project/user/projects/${id}`, {
+      method: "DELETE"
+    }),
   save: (project: Project) =>
     apiRequest<Project>("/project/user/save", {
       method: "POST",
@@ -101,7 +244,11 @@ export const imageApi = {
       method: "POST",
       body: formData
     });
-  }
+  },
+  previewUrl: (url: string, width = 160) =>
+    apiRequest<string>(`/image/preview?url=${encodeURIComponent(url)}&width=${encodeURIComponent(width)}`, {
+      auth: false
+    })
 };
 
 export const notificationApi = {
@@ -124,6 +271,9 @@ export const companyApi = {
   byType: (type: string) => apiRequest<Company[]>(`/manager/user/company/getcompanybytype?type=${type}`),
   byManager: (managerId?: number) =>
     apiRequest<Company>(`/manager/company/getcompanybyidmanager?managerId=${managerId ?? ""}`),
+  myManagedCompany: () => apiRequest<Company>("/manager/manager/company/me"),
+  hrCandidates: (query: string, page = 0, size = 10) =>
+    apiRequest<User[]>(`/manager/manager/hr-candidates?${userSearchParams({ query, page, size })}`),
   byHr: (id: number) => apiRequest<Company>(`/manager/hr/findByIdHr?id=${id}`),
   create: (formData: FormData) =>
     apiRequest<Company>("/manager/admin/company/create", {
@@ -148,6 +298,22 @@ export const companyApi = {
     apiRequest<Company>(`/manager/manager/setmaanagertocompany?idCompany=${idCompany}`, {
       method: "PUT",
       ...jsonBody(user)
+    }),
+  promoteHr: (idUser: number, idCompany: number) =>
+    apiRequest<Company>(`/manager/manager/promotehrtocompany?idUser=${idUser}&idCompany=${idCompany}`, {
+      method: "PUT"
+    }),
+  requestHrPromotion: (targetUserId: number) =>
+    apiRequest<RoleRequest>(`/manager/manager/hr-promotions?targetUserId=${targetUserId}`, {
+      method: "POST"
+    }),
+  acceptHrPromotion: (requestId: number) =>
+    apiRequest<Company>(`/manager/user/hr-promotions/${requestId}/accept`, {
+      method: "PATCH"
+    }),
+  leaveHr: () =>
+    apiRequest<Company>("/manager/hr/leave", {
+      method: "PATCH"
     })
 };
 
@@ -176,6 +342,16 @@ export const jobApi = {
     apiRequest<Job>(`/manager/user/job/apply?jobDTO=${jobDTO}&idProfile=${idProfile}`, {
       method: "PUT"
     }),
+  applyMine: (id: number) =>
+    apiRequest<Job>(`/manager/user/jobs/${id}/applications`, {
+      method: "POST"
+    }),
+  leaveMine: (id: number) =>
+    apiRequest<Job>(`/manager/user/jobs/${id}/leave`, {
+      method: "POST"
+    }),
+  applicationStatus: (id: number) =>
+    apiRequest<"NONE" | "PENDING" | "ACCEPTED">(`/manager/user/jobs/${id}/application-status`),
   accept: (jobDTO: number, idProfile: number) =>
     apiRequest<Job>(`/manager/hr/job/accept?jobDTO=${jobDTO}&idProfile=${idProfile}`, {
       method: "PUT"

@@ -7,15 +7,29 @@ import { Button, Field, inputClass } from "@/components/ui";
 import { ErrorState } from "@/components/data-state";
 import { useLanguage } from "@/lib/i18n";
 
-export function ProjectForm({ idProfile, onSaved }: { idProfile?: number; onSaved?: (project: Project) => void }) {
+export function ProjectForm({
+  idProfile,
+  initialProject,
+  onCancel,
+  onSaved,
+  userProject = true
+}: {
+  idProfile?: number;
+  initialProject?: Project | null;
+  onCancel?: () => void;
+  onSaved?: (project: Project) => void;
+  userProject?: boolean;
+}) {
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const project: Project = {
+      id: initialProject?.id,
       title: String(form.get("title") ?? ""),
       description: String(form.get("description") ?? ""),
       url: String(form.get("url") ?? ""),
@@ -26,8 +40,14 @@ export function ProjectForm({ idProfile, onSaved }: { idProfile?: number; onSave
     setSaving(true);
     setError(null);
     try {
-      const saved = await projectApi.save(project);
-      event.currentTarget.reset();
+      const saved = initialProject?.id
+        ? await projectApi.updateMine(project)
+        : userProject
+          ? await projectApi.createMine(project)
+          : await projectApi.save(project);
+      if (!initialProject?.id) {
+        formElement.reset();
+      }
       onSaved?.(saved);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save project");
@@ -40,26 +60,35 @@ export function ProjectForm({ idProfile, onSaved }: { idProfile?: number; onSave
     <form onSubmit={onSubmit} className="grid gap-4 rounded-md border border-line bg-white p-5">
       {error ? <ErrorState message={error} /> : null}
       <Field label={t("projects.titleLabel")}>
-        <input className={inputClass} name="title" placeholder="Portfolio platform" required />
+        <input className={inputClass} name="title" placeholder="Portfolio platform" defaultValue={initialProject?.title} required />
       </Field>
       <Field label={t("projects.descriptionLabel")}>
-        <textarea className={inputClass} name="description" rows={3} required />
+        <textarea className={inputClass} name="description" rows={3} defaultValue={initialProject?.description} required />
       </Field>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 ${userProject ? "" : "md:grid-cols-2"}`}>
         <Field label={t("projects.urlLabel")}>
-          <input className={inputClass} name="url" placeholder="https://..." />
+          <input className={inputClass} name="url" placeholder="https://..." defaultValue={initialProject?.url} />
         </Field>
-        <Field label={t("projects.profileIdLabel")}>
-          <input className={inputClass} name="idProfile" type="number" defaultValue={idProfile} />
-        </Field>
+        {!userProject ? (
+          <Field label={t("projects.profileIdLabel")}>
+            <input className={inputClass} name="idProfile" type="number" defaultValue={initialProject?.idProfile ?? idProfile} />
+          </Field>
+        ) : null}
       </div>
       <label className="flex items-center gap-2 text-sm font-medium text-ink">
-        <input name="display" type="checkbox" defaultChecked />
+        <input name="display" type="checkbox" defaultChecked={initialProject?.display ?? true} />
         {t("projects.displayLabel")}
       </label>
-      <Button type="submit" disabled={saving}>
-        {saving ? t("projects.saving") : t("projects.create")}
-      </Button>
+      <div className="flex justify-end gap-2">
+        {onCancel ? (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
+        <Button type="submit" disabled={saving}>
+          {saving ? t("projects.saving") : initialProject?.id ? "Update project" : t("projects.create")}
+        </Button>
+      </div>
     </form>
   );
 }

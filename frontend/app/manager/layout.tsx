@@ -11,8 +11,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
         <SideNav
           title="Manager"
           items={[
-            { href: "/manager/jobs", label: "Jobs", icon: BriefcaseBusiness },
             { href: "/manager/company", label: "Company", icon: Building2 },
+            { href: "/manager/jobs", label: "Jobs", icon: BriefcaseBusiness },
             { href: "/manager/hr", label: "HR", icon: UserRoundCheck },
             { href: "/manager/employees", label: "Employees", icon: UsersRound }
           ]}

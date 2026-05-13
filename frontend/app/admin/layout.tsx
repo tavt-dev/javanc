@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, UsersRound } from "lucide-react";
+import { Building2, Inbox, UsersRound } from "lucide-react";
 import { Protected } from "@/components/protected";
 import { SideNav } from "@/components/side-nav";
 
@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           title="Admin"
           items={[
             { href: "/admin/users", label: "Users", icon: UsersRound },
+            { href: "/admin/role-requests", label: "Role Requests", icon: Inbox },
             { href: "/admin/companies", label: "Companies", icon: Building2 }
           ]}
         />

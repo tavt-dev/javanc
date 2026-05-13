@@ -14,6 +14,7 @@ export default function CreateProfilePage() {
         eyebrow={t("profile.createEyebrow")}
         title={t("profile.createTitle")}
         description={t("profile.createDescription")}
+        breadcrumbs={[{ label: t("nav.profiles"), href: "/profiles" }, { label: t("profile.createTitle") }]}
       />
       <ProfileForm />
     </Protected>

@@ -1,68 +1,171 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { ErrorState } from "@/components/data-state";
-import { Button, Field, inputClass } from "@/components/ui";
+import { EmptyState, ErrorState, LoadingState } from "@/components/data-state";
+import { Button, Pill } from "@/components/ui";
 import { companyApi } from "@/lib/api";
-import { useLanguage } from "@/lib/i18n";
+import { useApi } from "@/lib/use-api";
+import type { User } from "@/lib/types";
 
 export default function ManagerHrPage() {
-  const { t } = useLanguage();
+  const company = useApi(() => companyApi.myManagedCompany(), []);
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selected, setSelected] = useState<User | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const candidates = useApi(
+    () => (company.data?.id && debouncedQuery ? companyApi.hrCandidates(debouncedQuery) : Promise.resolve([])),
+    [company.data?.id, debouncedQuery]
+  );
+  const visibleCandidates = useMemo(() => candidates.data ?? [], [candidates.data]);
+  const canSearch = Boolean(company.data?.id);
 
-  async function assign(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedQuery(query.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [query]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      if (!searchRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
+
+  async function requestPromotion() {
+    if (!selected?.id) {
+      return;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
     try {
-      await companyApi.setHr(
-        {
-          email: String(form.get("email") ?? ""),
-          password: String(form.get("password") ?? ""),
-          name: String(form.get("name") ?? ""),
-          role: "hr"
-        },
-        Number(form.get("idCompany"))
-      );
-      setMessage(t("manager.hrAssigned"));
+      await companyApi.requestHrPromotion(selected.id);
+      setMessage(`HR invitation sent to ${selected.name || selected.email}.`);
+      setSelected(null);
+      setQuery("");
+      setMenuOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to assign HR");
+      setError(err instanceof Error ? err.message : "Unable to request HR promotion");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div>
-      <PageHeader eyebrow={t("manager.hrEyebrow")} title={t("manager.assignHrTitle")} description={t("manager.assignHrDescription")} />
-      <form onSubmit={assign} className="grid max-w-2xl gap-4 rounded-md border border-line bg-white p-5 shadow-soft">
+    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section>
+        <PageHeader eyebrow="HR" title="Manage HR" description="Invite existing users to become HR for your company." />
+        {company.loading ? <LoadingState /> : null}
+        {company.error ? <ErrorState message={company.error} /> : null}
+        {!company.loading && !company.data ? <EmptyState title="No company assigned" description="Create or assign your company before managing HR." /> : null}
         {error ? <ErrorState message={error} /> : null}
-        {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label={t("manager.companyId")}>
-            <input name="idCompany" className={inputClass} type="number" required />
-          </Field>
-          <Field label={t("manager.hrName")}>
-            <input name="name" className={inputClass} required />
-          </Field>
+        {message ? <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</div> : null}
+        {company.data ? (
+          <div className="mb-5 rounded-md border border-line bg-white p-4 shadow-soft">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted">Selected company</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-semibold text-ink">{company.data.name || `Company #${company.data.id}`}</h2>
+              <Pill tone="orange">{company.data.type || "Company"}</Pill>
+              <Pill tone="blue">{company.data.idHR?.length ?? 0} HR</Pill>
+            </div>
+            <p className="mt-2 text-sm text-muted">{[company.data.city, company.data.country].filter(Boolean).join(", ") || "Location not set"}</p>
+          </div>
+        ) : null}
+
+        <div className="rounded-md border border-line bg-white p-5 shadow-soft">
+          <h2 className="text-lg font-semibold text-ink">Invite existing user</h2>
+          <p className="mt-1 text-sm text-muted">The user must confirm before the HR role is activated.</p>
+          <div className="relative mt-4" ref={searchRef}>
+            <div className="flex items-center gap-2 rounded-md border border-line bg-white px-3 shadow-sm focus-within:border-brand">
+              <Search className="h-4 w-4 text-muted" />
+              <input
+                className="h-11 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-slate-400"
+                value={query}
+                disabled={!canSearch}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setSelected(null);
+                  setMenuOpen(true);
+                }}
+                onFocus={() => setMenuOpen(true)}
+                placeholder={canSearch ? "Search by name, email, or user ID" : "Create or assign a company before inviting HR"}
+              />
+            </div>
+            {!canSearch ? (
+              <div className="mt-2 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-3 text-sm font-medium text-warn">
+                HR invitations require a managed company. Create a company in Manager &gt; Company first.
+              </div>
+            ) : null}
+            {canSearch && menuOpen && query ? (
+              <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-80 overflow-auto rounded-md border border-line bg-white p-2 text-ink shadow-soft">
+                {candidates.loading ? <LoadingState label="Searching users" /> : null}
+                {candidates.error ? (
+                  <div className="rounded-md border border-red-100 bg-red-50 px-3 py-3 text-sm font-medium text-danger">
+                    {candidates.error}
+                  </div>
+                ) : null}
+                {!candidates.loading && !candidates.error && visibleCandidates.length === 0 ? (
+                  <div className="px-3 py-4 text-sm text-muted">No eligible normal users found.</div>
+                ) : null}
+                {visibleCandidates.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    className="pressable flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-canvas"
+                    onClick={() => {
+                      setSelected(user);
+                      setQuery(user.name || user.email || `User #${user.id}`);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{user.name || `User #${user.id}`}</span>
+                      <span className="block truncate text-xs text-muted">{user.email}</span>
+                    </span>
+                    <Pill tone="neutral">#{user.id}</Pill>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {selected ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-md bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-ink">{selected.name || `User #${selected.id}`}</p>
+                <p className="text-sm text-muted">{selected.email}</p>
+              </div>
+              <Button type="button" onClick={requestPromotion} disabled={saving}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Request HR promotion
+              </Button>
+            </div>
+          ) : null}
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label={t("manager.hrEmail")}>
-            <input name="email" className={inputClass} type="email" required />
-          </Field>
-          <Field label={t("manager.temporaryPassword")}>
-            <input name="password" className={inputClass} type="password" required />
-          </Field>
+      </section>
+
+      <section>
+        <PageHeader eyebrow="Workflow" title="HR invitations" description="HR access starts only after the invited user confirms." />
+        <div className="grid gap-4 rounded-md border border-line bg-white p-5 text-sm text-muted shadow-soft">
+          <p>Search supports exact user IDs and partial username or email matches.</p>
+          <p>Only normal user accounts can be invited. Existing HR members are excluded from the suggestion list.</p>
+          <p>The user receives an invitation on their account invitations page and can accept or reject it.</p>
         </div>
-        <Button type="submit" disabled={saving}>
-          {saving ? t("manager.assigning") : t("manager.assignHr")}
-        </Button>
-      </form>
+      </section>
     </div>
   );
 }

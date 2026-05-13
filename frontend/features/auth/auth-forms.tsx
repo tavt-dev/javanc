@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -20,8 +20,7 @@ const loginSchema = z.object({
 const registerSchema = loginSchema
   .extend({
     name: z.string().min(2, "Name is required"),
-    confirmPassword: z.string().min(1, "Confirm your password"),
-    role: z.string().min(1, "Role is required")
+    confirmPassword: z.string().min(1, "Confirm your password")
   })
   .refine((value) => value.password === value.confirmPassword, {
     message: "Passwords do not match",
@@ -32,10 +31,11 @@ type LoginInput = z.infer<typeof loginSchema>;
 type RegisterInput = z.infer<typeof registerSchema>;
 
 export function LoginForm() {
-  const router = useRouter();
   const { login, savedAccounts, switchAccount } = useAuth();
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
+  const [saveAccount, setSaveAccount] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -46,16 +46,19 @@ export function LoginForm() {
     setError(null);
     try {
       const auth = await authApi.signin(values);
-      login(auth);
-      router.push("/");
+      login(auth, saveAccount, saveAccount ? values : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in");
     }
   }
 
-  function continueWithSavedAccount(accountKey: string) {
-    switchAccount(accountKey);
-    router.push("/");
+  async function continueWithSavedAccount(accountKey: string) {
+    setError(null);
+    try {
+      await switchAccount(accountKey);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sign in with saved account");
+    }
   }
 
   return (
@@ -86,8 +89,34 @@ export function LoginForm() {
         <input className={inputClass} type="email" placeholder="you@company.com" {...register("email")} />
       </Field>
       <Field label={t("auth.password")} error={errors.password?.message}>
-        <input className={inputClass} type="password" placeholder={t("auth.passwordPlaceholder")} {...register("password")} />
+        <div className="relative">
+          <input
+            className={`${inputClass} pr-11`}
+            type={showPassword ? "text" : "password"}
+            placeholder={t("auth.passwordPlaceholder")}
+            autoComplete="current-password"
+            {...register("password")}
+          />
+          <button
+            type="button"
+            className="focus-ring pressable absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-slate-100 hover:text-ink"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </Field>
+      <label className="flex items-center gap-2 text-sm font-semibold text-muted">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-brand"
+          checked={saveAccount}
+          onChange={(event) => setSaveAccount(event.target.checked)}
+        />
+        Save this account on this browser
+      </label>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t("auth.signingIn") : t("auth.loginButton")}
       </Button>
@@ -102,29 +131,80 @@ export function LoginForm() {
 }
 
 export function RegisterForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { role: "user" }
+    resolver: zodResolver(registerSchema)
   });
 
   async function onSubmit(values: RegisterInput) {
     setError(null);
     try {
-      await authApi.signup(values);
-      const auth = await authApi.signin({ email: values.email, password: values.password });
-      login(auth);
-      router.push("/");
+      const pending = await authApi.signup(values);
+      setPendingEmail(pending.email || values.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to register");
     }
+  }
+
+  async function verifyOtp(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pendingEmail) {
+      return;
+    }
+    setError(null);
+    try {
+      const auth = await authApi.verifyEmail(pendingEmail, otp);
+      login(auth, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to verify email");
+    }
+  }
+
+  async function resendOtp() {
+    if (!pendingEmail) {
+      return;
+    }
+    setError(null);
+    try {
+      await authApi.resendVerificationOtp(pendingEmail);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to resend verification code");
+    }
+  }
+
+  if (pendingEmail) {
+    return (
+      <form onSubmit={verifyOtp} className="space-y-4">
+        {error ? <ErrorState message={error} /> : null}
+        <div className="rounded-md border border-line bg-canvas p-4 text-sm text-muted">
+          We sent a verification code to <span className="font-semibold text-ink">{pendingEmail}</span>.
+        </div>
+        <Field label="Verification code">
+          <input
+            className={inputClass}
+            inputMode="numeric"
+            maxLength={8}
+            placeholder="123456"
+            value={otp}
+            onChange={(event) => setOtp(event.target.value)}
+          />
+        </Field>
+        <Button type="submit" className="w-full" disabled={!otp.trim()}>
+          Verify email
+        </Button>
+        <button type="button" className="w-full text-sm font-semibold text-brand" onClick={resendOtp}>
+          Resend code
+        </button>
+      </form>
+    );
   }
 
   return (
@@ -144,13 +224,6 @@ export function RegisterForm() {
           <input className={inputClass} type="password" placeholder={t("auth.confirmPassword")} {...register("confirmPassword")} />
         </Field>
       </div>
-      <Field label={t("auth.role")} error={errors.role?.message}>
-        <select className={inputClass} {...register("role")}>
-          <option value="user">{t("auth.userRole")}</option>
-          <option value="hr">{t("auth.hrRole")}</option>
-          <option value="manager">{t("auth.managerRole")}</option>
-        </select>
-      </Field>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t("auth.creatingAccount") : t("auth.registerButton")}
       </Button>
