@@ -45,31 +45,31 @@
 }
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --card: 150 33% 99%;
+  --background: 156 36% 98%;
+  --foreground: 222 54% 9%;
+  --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --primary: 158 84% 32%;
+  --primary: 160 84% 28%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 152 45% 96%;
+  --secondary: 158 45% 94%;
   --secondary-foreground: 222 47% 11%;
-  --muted: 152 34% 95%;
-  --muted-foreground: 160 12% 39%;
-  --accent: 154 42% 93%;
+  --muted: 154 32% 93%;
+  --muted-foreground: 165 14% 29%;
+  --accent: 158 44% 90%;
   --accent-foreground: 222 47% 11%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 154 26% 86%;
-  --input: 154 26% 86%;
-  --ring: 158 84% 32%;
+  --border: 156 22% 78%;
+  --input: 156 22% 78%;
+  --ring: 160 84% 28%;
   --success: 160 84% 39%;
   --warning: 38 92% 50%;
   --nav-height: 4.25rem;
   --brand-emerald: 158 84% 32%;
   --brand-forest: 164 72% 14%;
-  --brand-mint: 152 66% 92%;
+  --brand-mint: 153 62% 89%;
   --brand-lime: 82 78% 55%;
   --hero-dark: 220 58% 10%;
   --job-blue: 213 92% 51%;
@@ -85,9 +85,9 @@
 }
 
 .dark {
-  --background: 168 52% 7%;
+  --background: 168 54% 6%;
   --foreground: 210 40% 98%;
-  --card: 168 48% 9%;
+  --card: 168 48% 8%;
   --card-foreground: 210 40% 98%;
   --popover: 168 48% 9%;
   --popover-foreground: 210 40% 98%;
@@ -96,7 +96,7 @@
   --secondary: 166 37% 15%;
   --secondary-foreground: 210 40% 98%;
   --muted: 166 37% 15%;
-  --muted-foreground: 160 13% 70%;
+  --muted-foreground: 160 16% 76%;
   --accent: 165 42% 17%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 84% 60%;
@@ -168,7 +168,9 @@ main:focus {
   border-radius: var(--radius);
   background-color: hsl(var(--card));
   color: hsl(var(--card-foreground));
-  box-shadow: 0 1px 2px hsl(222 47% 11% / 0.05);
+  box-shadow:
+    0 1px 2px hsl(222 47% 11% / 0.06),
+    0 10px 28px hsl(222 47% 11% / 0.04);
 }
 
 .brand-panel {
@@ -224,6 +226,34 @@ main:focus {
   border: 1px solid rgb(255 255 255 / 0.13);
   background: linear-gradient(90deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.02));
   pointer-events: none;
+}
+
+.dashboard-hero {
+  border-color: rgb(255 255 255 / 0.18);
+  background: linear-gradient(135deg, hsl(222 55% 10%), hsl(167 68% 13%));
+  box-shadow:
+    0 18px 44px hsl(222 54% 9% / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.dashboard-hero::after {
+  display: none;
+}
+
+.dashboard-hero-user {
+  background: linear-gradient(135deg, hsl(213 78% 18%), hsl(160 78% 20%));
+}
+
+.dashboard-hero-hr {
+  background: linear-gradient(135deg, hsl(196 84% 16%), hsl(174 76% 18%));
+}
+
+.dashboard-hero-manager {
+  background: linear-gradient(135deg, hsl(164 76% 14%), hsl(92 58% 20%));
+}
+
+.dashboard-hero-admin {
+  background: linear-gradient(135deg, hsl(231 56% 20%), hsl(210 74% 17%));
 }
 
 .job-search-panel {
@@ -450,10 +480,12 @@ main:focus {
 .btn-primary {
   background-color: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
+  box-shadow: 0 8px 18px hsl(var(--primary) / 0.18);
 }
 
 .btn-primary:hover {
-  background-color: hsl(var(--primary) / 0.92);
+  background-color: hsl(var(--primary) / 0.88);
+  box-shadow: 0 10px 22px hsl(var(--primary) / 0.24);
 }
 
 .btn-secondary {
@@ -530,7 +562,8 @@ main:focus {
   width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid hsl(var(--input));
-  background-color: hsl(var(--background));
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
   padding: 0.625rem 0.75rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -543,7 +576,7 @@ main:focus {
 
 .form-input:focus {
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
 }
 
 .premium-scrollbar {

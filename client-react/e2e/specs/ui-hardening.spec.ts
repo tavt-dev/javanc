@@ -9,9 +9,9 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await seedAuth(page, "admin");
     await setViewport(page, width);
 
-    await page.goto("/dashboard");
+    await page.goto("/admin/dashboard");
 
-    await expect(page.getByText(/Welcome back/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Admin Dashboard" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 }
@@ -20,7 +20,7 @@ test("topbar menus close with Escape", async ({ page }) => {
   await installApiMocks(page, { role: "user" });
   await seedAuth(page, "user");
 
-  await page.goto("/dashboard");
+  await page.goto("/user/dashboard");
   await page.getByRole("button", { name: "Change theme" }).click();
   await expect(page.getByRole("menu")).toBeVisible();
 

@@ -8,6 +8,7 @@ import { GuestRoute } from "./GuestRoute";
 import { RootRedirect } from "./RootRedirect";
 import { RoleGuard } from "./RoleGuard";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
+import { DashboardRedirect } from "./DashboardRedirect";
 
 const LoginPage = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((module) => ({
@@ -24,9 +25,24 @@ const VerifyEmailPage = lazy(() =>
     default: module.VerifyEmailPage,
   })),
 );
-const DashboardPage = lazy(() =>
-  import("@/features/dashboard/pages/DashboardPage").then((module) => ({
-    default: module.DashboardPage,
+const UserDashboardPage = lazy(() =>
+  import("@/features/dashboard/pages/UserDashboardPage").then((module) => ({
+    default: module.UserDashboardPage,
+  })),
+);
+const HrDashboardPage = lazy(() =>
+  import("@/features/dashboard/pages/HrDashboardPage").then((module) => ({
+    default: module.HrDashboardPage,
+  })),
+);
+const ManagerDashboardPage = lazy(() =>
+  import("@/features/dashboard/pages/ManagerDashboardPage").then((module) => ({
+    default: module.ManagerDashboardPage,
+  })),
+);
+const AdminDashboardPage = lazy(() =>
+  import("@/features/dashboard/pages/AdminDashboardPage").then((module) => ({
+    default: module.AdminDashboardPage,
   })),
 );
 const MyProfilePage = lazy(() =>
@@ -171,7 +187,39 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: "/dashboard", element: lazyPage(<DashboardPage />) },
+      { path: "/dashboard", element: <DashboardRedirect /> },
+      {
+        path: "/user/dashboard",
+        element: (
+          <RoleGuard allow={["user"]}>
+            {lazyPage(<UserDashboardPage />)}
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "/hr/dashboard",
+        element: (
+          <RoleGuard allow={["hr"]}>
+            {lazyPage(<HrDashboardPage />)}
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "/manager/dashboard",
+        element: (
+          <RoleGuard allow={["manager"]}>
+            {lazyPage(<ManagerDashboardPage />)}
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "/admin/dashboard",
+        element: (
+          <RoleGuard allow={["admin"]}>
+            {lazyPage(<AdminDashboardPage />)}
+          </RoleGuard>
+        ),
+      },
       { path: "/profile", element: lazyPage(<MyProfilePage />) },
       { path: "/profiles", element: lazyPage(<ProfileSearchPage />) },
       { path: "/profiles/:id", element: lazyPage(<ProfileDetailPage />) },

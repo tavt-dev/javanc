@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { getDashboardPath } from "@/routes/dashboard-path";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import {
@@ -28,7 +29,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "My Profile", path: "/profile", icon: User },
   { label: "Profiles", path: "/profiles", icon: Search },
   { label: "My Projects", path: "/projects", icon: FolderKanban },
@@ -83,6 +83,7 @@ export function Sidebar() {
   const toggleCollapsed = useUIStore((s) => s.toggleSidebarCollapsed);
   const location = useLocation();
   const role = user?.role;
+  const dashboardPath = getDashboardPath(role);
 
   const visibleRoleItems = roleNavItems.filter(
     (item) => role && item.roles?.includes(role),
@@ -117,6 +118,11 @@ export function Sidebar() {
             Workspace
           </p>
         )}
+        <SidebarLink
+          item={{ label: "Dashboard", path: dashboardPath, icon: LayoutDashboard }}
+          collapsed={collapsed}
+          active={location.pathname === dashboardPath}
+        />
         {navItems.map((item) => (
           <SidebarLink
             key={item.path}

@@ -10,7 +10,7 @@ export function AppShell() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background [background-image:linear-gradient(to_bottom,hsl(var(--brand-mint)/0.5),transparent_340px),linear-gradient(90deg,hsl(var(--primary)/0.045)_1px,transparent_1px)] [background-size:auto,52px_52px]">
+    <div className="flex min-h-screen flex-col bg-background [background-image:linear-gradient(to_bottom,hsl(var(--brand-mint)/0.34),transparent_320px),linear-gradient(90deg,hsl(var(--primary)/0.035)_1px,transparent_1px)] [background-size:auto,56px_56px]">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"

@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { getDashboardPath } from "@/routes/dashboard-path";
 import type { Role } from "@/types/auth";
 
 type NavItem = {
@@ -10,7 +11,6 @@ type NavItem = {
 };
 
 const primaryNav: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard" },
   { label: "Jobs", path: "/jobs" },
   { label: "Companies", path: "/companies" },
   { label: "Profiles", path: "/profiles" },
@@ -29,6 +29,7 @@ const roleNav: NavItem[] = [
 
 export function DesktopNavbar() {
   const role = useAuthStore((state) => state.user?.role);
+  const dashboardPath = getDashboardPath(role);
   const visibleRoleItems = roleNav.filter(
     (item) => role && item.roles?.includes(role),
   );
@@ -36,7 +37,7 @@ export function DesktopNavbar() {
   return (
     <div className="hidden min-w-0 flex-1 items-center gap-5 lg:flex">
       <NavLink
-        to="/dashboard"
+        to={dashboardPath}
         className="focus-ring flex shrink-0 items-center gap-2 rounded-md"
         aria-label="JavaNC dashboard"
       >
@@ -52,6 +53,7 @@ export function DesktopNavbar() {
         className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto premium-scrollbar"
         aria-label="Primary navigation"
       >
+        <DesktopNavLink item={{ label: "Dashboard", path: dashboardPath }} exact />
         {primaryNav.map((item) => (
           <DesktopNavLink key={item.path} item={item} />
         ))}
@@ -68,10 +70,10 @@ export function DesktopNavbar() {
   );
 }
 
-function DesktopNavLink({ item }: { item: NavItem }) {
+function DesktopNavLink({ item, exact = false }: { item: NavItem; exact?: boolean }) {
   const location = useLocation();
   const active =
-    item.path === "/dashboard"
+    exact
       ? location.pathname === item.path
       : location.pathname.startsWith(item.path);
 

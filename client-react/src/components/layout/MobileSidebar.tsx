@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { getDashboardPath } from "@/routes/dashboard-path";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -30,7 +31,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "My Profile", path: "/profile", icon: User },
   { label: "Profiles", path: "/profiles", icon: Search },
   { label: "My Projects", path: "/projects", icon: FolderKanban },
@@ -55,6 +55,7 @@ export function MobileSidebar() {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
   const role = user?.role;
+  const dashboardPath = getDashboardPath(role);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export function MobileSidebar() {
               <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
                 Workspace
               </p>
-              {navItems.map((item) => {
+              {[{ label: "Dashboard", path: dashboardPath, icon: LayoutDashboard }, ...navItems].map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.path;
                 return (

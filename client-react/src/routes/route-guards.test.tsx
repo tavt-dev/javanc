@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { GuestRoute } from "@/routes/GuestRoute";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RoleGuard } from "@/routes/RoleGuard";
+import { DashboardRedirect } from "@/routes/DashboardRedirect";
 import { useAuthStore } from "@/stores/auth-store";
 
 describe("route guards", () => {
@@ -65,12 +66,40 @@ describe("route guards", () => {
               </GuestRoute>
             }
           />
-          <Route path="/dashboard" element={<div>Dashboard</div>} />
+          <Route path="/user/dashboard" element={<div>User Dashboard</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("User Dashboard")).toBeInTheDocument();
+  });
+
+  it("redirects the shared dashboard route to the current role dashboard", () => {
+    useAuthStore.setState({
+      user: {
+        id: 2,
+        name: "HR",
+        email: "hr@example.com",
+        role: "hr",
+        active: true,
+      },
+      accessToken: "token",
+      refreshToken: "refresh",
+      expiresInSeconds: 3600,
+      isAuthenticated: true,
+      hasHydrated: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="/hr/dashboard" element={<div>HR Dashboard</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("HR Dashboard")).toBeInTheDocument();
   });
 
   it("renders role-protected content only for allowed roles", () => {

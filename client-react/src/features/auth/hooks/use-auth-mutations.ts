@@ -6,6 +6,7 @@ import { queryClient } from "@/lib/query-client";
 import { extractErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { authApi } from "@/features/auth/api/auth-api";
+import { getDashboardPath } from "@/routes/dashboard-path";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -39,7 +40,7 @@ export function useLoginMutation() {
     onSuccess: (response) => {
       setSession(response.data);
       toast.success("Signed in successfully");
-      navigate("/dashboard", { replace: true });
+      navigate(getDashboardPath(response.data.user.role), { replace: true });
     },
     onError: (error, variables) => {
       if (isVerificationRequired(error)) {
@@ -73,7 +74,7 @@ export function useVerifyEmailMutation() {
     onSuccess: (response) => {
       setSession(response.data);
       toast.success("Email verified");
-      navigate("/dashboard", { replace: true });
+      navigate(getDashboardPath(response.data.user.role), { replace: true });
     },
   });
 }
