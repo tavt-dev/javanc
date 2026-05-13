@@ -1,0 +1,155 @@
+{
+  "info": {
+    "_postman_id": "f7d6e721-30a6-4d28-bd13-87554f1cd419",
+    "name": "image-service",
+    "description": "Quarkus image-service compatibility tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{image_service_url}}/q/health",
+          "host": [
+            "{{image_service_url}}"
+          ],
+          "path": [
+            "q",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Compatibility",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('wrapper is compatible', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.message).to.eql('Get all is successfully');",
+              "  pm.expect(json.data).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{image_service_url}}/image/getAll",
+          "host": [
+            "{{image_service_url}}"
+          ],
+          "path": [
+            "image",
+            "getAll"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Save Image",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('image response is compatible', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.message).to.eql('Image uploaded successfully');",
+              "  pm.expect(json.data).to.have.property('id');",
+              "  pm.expect(json.data).to.have.property('url');",
+              "  pm.expect(json.data).to.have.property('publicId');",
+              "  pm.expect(json.data.url).to.match(/^https:\\/\\//);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": "{{image_file_path}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{image_service_url}}/image/save",
+          "host": [
+            "{{image_service_url}}"
+          ],
+          "path": [
+            "image",
+            "save"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Save Missing Image",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+              "pm.test('error wrapper is returned', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(false);",
+              "  pm.expect(json.data).to.eql(null);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "other",
+              "value": "value",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{image_service_url}}/image/save",
+          "host": [
+            "{{image_service_url}}"
+          ],
+          "path": [
+            "image",
+            "save"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

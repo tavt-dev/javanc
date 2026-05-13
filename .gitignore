@@ -60,7 +60,7 @@ coverage/
 
 # Next.js
 .next/
-out/
+/out/
 
 # Angular
 .angular/
@@ -80,10 +80,15 @@ yarn-error.log*
 pnpm-debug.log*
 
 # local env files
+.env
+**/.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# local migration docs
+
 
 # vercel
 .vercel/

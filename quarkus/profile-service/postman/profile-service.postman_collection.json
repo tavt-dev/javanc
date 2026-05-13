@@ -1,0 +1,151 @@
+{
+  "info": {
+    "_postman_id": "f236db2c-f8ab-4278-b6e8-2fb8c07d46b8",
+    "name": "Quarkus profile-service",
+    "description": "Smoke collection for the profile-service /profiles API. Set authToken before running protected requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{profileBaseUrl}}"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/q/health"
+      }
+    },
+    {
+      "name": "Create My Profile",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Java Developer\",\n  \"objective\": \"Build backend services\",\n  \"education\": \"Computer Science\",\n  \"workExperience\": \"3 years\",\n  \"skills\": \"Java, Quarkus, MongoDB\",\n  \"typeProfile\": \"{{typeProfile}}\",\n  \"contact\": {\n    \"address\": \"Ho Chi Minh City\",\n    \"phone\": \"0900000000\",\n    \"email\": \"candidate@example.com\"\n  }\n}"
+        },
+        "url": "{{profileBaseUrl}}/profiles/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('create profile succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.success).to.eql(true);",
+              "  if (json.data && json.data.id) pm.environment.set('profileId', json.data.id);",
+              "  if (json.data && json.data.idUser) pm.environment.set('profileUserId', json.data.idUser);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get My Profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles/me"
+      }
+    },
+    {
+      "name": "Update My Profile",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Senior Java Developer\",\n  \"objective\": \"Maintain Quarkus services\",\n  \"typeProfile\": \"JAVA\"\n}"
+        },
+        "url": "{{profileBaseUrl}}/profiles/me"
+      }
+    },
+    {
+      "name": "Update My Avatar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": "{{profileBaseUrl}}/profiles/me/avatar"
+      }
+    },
+    {
+      "name": "Search Profiles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles?type={{typeProfile}}&title={{titleQuery}}&page=0&size=20"
+      }
+    },
+    {
+      "name": "Find Profile By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles/{{profileId}}"
+      }
+    },
+    {
+      "name": "Find Profile By User Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles/by-user/{{profileUserId}}"
+      }
+    },
+    {
+      "name": "Batch Profiles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles/batch?ids={{pendingProfileIds}}"
+      }
+    },
+    {
+      "name": "Delete My Profile",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{profileBaseUrl}}/profiles/me"
+      }
+    }
+  ]
+}
