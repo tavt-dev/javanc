@@ -5,6 +5,8 @@ import com.javanc.manager.application.dto.CompanyDTO;
 import com.javanc.manager.application.dto.JobDTO;
 import com.javanc.manager.application.dto.MessageDTO;
 import com.javanc.manager.application.dto.ProfileDTO;
+import com.javanc.manager.application.dto.RoleRequestDTO;
+import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.mapper.CompanyMapper;
 import com.javanc.manager.application.mapper.JobMapper;
 import com.javanc.manager.application.port.EmailPort;
@@ -32,7 +34,8 @@ class ManagerApplicationServiceTest {
     @Test
     void createCompanyWithoutImageStoresEmptyUrlAndManualId() {
         FakeCompanyRepository repository = new FakeCompanyRepository();
-        CompanyApplicationService service = newCompanyService(repository, imageFile -> "uploaded-url", request -> 99);
+        CompanyApplicationService service = newCompanyService(repository, imageFile -> "uploaded-url",
+                new CapturingUserAccountPort(99));
         CompanyDTO request = new CompanyDTO();
         request.name = "Company";
 
@@ -59,6 +62,22 @@ class ManagerApplicationServiceTest {
     }
 
     @Test
+    void promoteExistingUserToHrCreatesPendingRequestWithoutLinkingCompany() {
+        FakeCompanyRepository repository = new FakeCompanyRepository();
+        Company company = new Company();
+        company.id = 1;
+        repository.saved = company;
+        CapturingUserAccountPort userAccount = new CapturingUserAccountPort(77);
+        CompanyApplicationService service = newCompanyService(repository, imageFile -> "", userAccount);
+
+        CompanyDTO result = service.promoteUserToHR(42, 1);
+
+        assertEquals(42, userAccount.changedUserId);
+        assertEquals(1, result.id);
+        assertNull(result.idHR);
+    }
+
+    @Test
     void acceptProfileMovesProfileAndSendsNotificationThenEmail() {
         FakeJobRepository repository = new FakeJobRepository();
         Job job = new Job();
@@ -70,10 +89,18 @@ class ManagerApplicationServiceTest {
         repository.saved = job;
         CapturingNotificationPort notification = new CapturingNotificationPort();
         CapturingEmailPort email = new CapturingEmailPort();
-        JobApplicationService service = newJobService(repository, id -> {
-            ProfileDTO profile = new ProfileDTO();
-            profile.idUser = 33;
-            return profile;
+        JobApplicationService service = newJobService(repository, new ProfileLookupPort() {
+            @Override
+            public ProfileDTO findProfileById(Integer id) {
+                ProfileDTO profile = new ProfileDTO();
+                profile.idUser = 33;
+                return profile;
+            }
+
+            @Override
+            public ProfileDTO myProfile() {
+                return findProfileById(10);
+            }
         }, notification, email);
 
         JobDTO result = service.acceptProfile(5, 10);
@@ -86,12 +113,59 @@ class ManagerApplicationServiceTest {
     }
 
     @Test
-    void updateCompanyKeepsCurrentDtoCompatibilityByNotMappingUrl() {
+    void updateCompanyMapsUrl() {
         CompanyDTO dto = new CompanyDTO();
         dto.id = 1;
+        dto.url = "https://image.test/logo.png";
         Company domain = new CompanyMapper().toDomain(dto);
 
-        assertNull(domain.url);
+        assertEquals("https://image.test/logo.png", domain.url);
+    }
+
+    @Test
+    void currentUserApplyUsesCurrentProfile() {
+        FakeJobRepository repository = new FakeJobRepository();
+        Job job = new Job();
+        job.id = 5;
+        repository.saved = job;
+        JobApplicationService service = newJobService(repository, new ProfileLookupPort() {
+            @Override
+            public ProfileDTO findProfileById(Integer id) {
+                ProfileDTO profile = new ProfileDTO();
+                profile.id = id;
+                profile.idUser = 33;
+                return profile;
+            }
+
+            @Override
+            public ProfileDTO myProfile() {
+                ProfileDTO profile = new ProfileDTO();
+                profile.id = 10;
+                profile.idUser = 33;
+                return profile;
+            }
+        }, new CapturingNotificationPort(), new CapturingEmailPort());
+
+        JobDTO result = service.applyCurrentUser(5);
+
+        assertEquals(List.of(10), result.idProfiePending);
+    }
+
+    @Test
+    void leaveHrRemovesHrFromCompanyBeforeDemotingUser() {
+        FakeCompanyRepository repository = new FakeCompanyRepository();
+        Company company = new Company();
+        company.id = 1;
+        company.idHr = new ArrayList<>(List.of(9));
+        repository.saved = company;
+        CapturingUserAccountPort userAccount = new CapturingUserAccountPort(9);
+        userAccount.currentRole = "hr";
+        CompanyApplicationService service = newCompanyService(repository, imageFile -> "", userAccount);
+
+        CompanyDTO result = service.leaveHr();
+
+        assertEquals(List.of(), result.idHR);
+        assertEquals("user", userAccount.changedRole);
     }
 
     private CompanyApplicationService newCompanyService(CompanyRepository repository, ImageStoragePort imageStoragePort,
@@ -103,7 +177,7 @@ class ManagerApplicationServiceTest {
     private JobApplicationService newJobService(JobRepository repository, ProfileLookupPort profileLookupPort,
             NotificationPort notificationPort, EmailPort emailPort) {
         return new JobApplicationService(repository, new JobMapper(), new FixedIdGenerator(123), profileLookupPort,
-                notificationPort, emailPort);
+                new CapturingUserAccountPort(33), notificationPort, emailPort);
     }
 
     private static class FixedIdGenerator extends ManagerIdGenerator {
@@ -217,6 +291,9 @@ class ManagerApplicationServiceTest {
     private static class CapturingUserAccountPort implements UserAccountPort {
         private final Integer id;
         private AuthenticationRequest request;
+        private Integer changedUserId;
+        private String changedRole;
+        private String currentRole = "user";
 
         private CapturingUserAccountPort(Integer id) {
             this.id = id;
@@ -226,6 +303,60 @@ class ManagerApplicationServiceTest {
         public Integer createAccount(AuthenticationRequest authenticationRequest) {
             request = authenticationRequest;
             return id;
+        }
+
+        @Override
+        public UserDTO changeRole(Integer userId, String role) {
+            changedUserId = userId;
+            changedRole = role;
+            UserDTO user = new UserDTO();
+            user.id = userId;
+            user.role = role;
+            return user;
+        }
+
+        @Override
+        public UserDTO currentUser() {
+            UserDTO user = new UserDTO();
+            user.id = id;
+            user.role = currentRole;
+            return user;
+        }
+
+        @Override
+        public List<UserDTO> searchUsers(String query, String role, int page, int size) {
+            return List.of();
+        }
+
+        @Override
+        public RoleRequestDTO requestHrPromotion(Integer targetUserId, Integer companyId, String companyName) {
+            changedUserId = targetUserId;
+            RoleRequestDTO request = new RoleRequestDTO();
+            request.id = 7;
+            request.targetUserId = targetUserId;
+            request.companyId = companyId;
+            request.companyName = companyName;
+            request.status = "PENDING_USER_CONFIRMATION";
+            return request;
+        }
+
+        @Override
+        public RoleRequestDTO acceptHrPromotion(Integer requestId) {
+            RoleRequestDTO request = new RoleRequestDTO();
+            request.id = requestId;
+            request.targetUserId = 42;
+            request.companyId = 1;
+            request.status = "APPROVED";
+            return request;
+        }
+
+        @Override
+        public UserDTO leaveHr() {
+            changedRole = "user";
+            UserDTO user = new UserDTO();
+            user.id = id;
+            user.role = "user";
+            return user;
         }
     }
 

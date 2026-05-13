@@ -22,4 +22,10 @@ public class ProfileServiceAdapter implements ProfileLookupPort {
         ApiResponse<ProfileDTO> response = profileClient.getProfileById(id);
         return response == null ? null : response.data;
     }
+
+    @Override
+    public ProfileDTO myProfile() {
+        ApiResponse<ProfileDTO> response = profileClient.getMyProfile();
+        return response == null ? null : response.data;
+    }
 }

@@ -7,4 +7,6 @@ import java.util.List;
 public interface ProfileLookupPort {
 
     List<ProfileDTO> getAllProfiles();
+
+    ProfileDTO getMyProfile();
 }

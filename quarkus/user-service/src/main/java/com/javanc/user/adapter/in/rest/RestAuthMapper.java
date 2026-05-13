@@ -8,6 +8,7 @@ import com.javanc.user.adapter.in.rest.dto.LoginRequest;
 import com.javanc.user.adapter.in.rest.dto.RegistrationPending;
 import com.javanc.user.adapter.in.rest.dto.ResendVerificationOtpRequest;
 import com.javanc.user.adapter.in.rest.dto.RegisterRequest;
+import com.javanc.user.adapter.in.rest.dto.RoleRequestDTO;
 import com.javanc.user.adapter.in.rest.dto.TokenIntrospection;
 import com.javanc.user.adapter.in.rest.dto.UpdateUserRequest;
 import com.javanc.user.adapter.in.rest.dto.UserDTO;
@@ -22,6 +23,7 @@ import com.javanc.user.application.command.UpdateUserProfileCommand;
 import com.javanc.user.application.command.VerifyEmailCommand;
 import com.javanc.user.application.result.AuthSessionResult;
 import com.javanc.user.application.result.RegistrationPendingResult;
+import com.javanc.user.application.result.RoleRequestResult;
 import com.javanc.user.application.result.TokenIntrospectionResult;
 import com.javanc.user.application.result.UserResult;
 import com.javanc.user.shared.exception.ApplicationException;
@@ -99,6 +101,32 @@ public class RestAuthMapper {
         }
         return new UserDTO(result.id(), result.name(), result.email(), null, result.idEmployee(), result.role(),
                 result.active(), result.status());
+    }
+
+    public RoleRequestDTO toDto(RoleRequestResult result) {
+        if (result == null) {
+            return null;
+        }
+        RoleRequestDTO dto = new RoleRequestDTO();
+        dto.id = result.id();
+        dto.requesterUserId = result.requesterUserId();
+        dto.targetUserId = result.targetUserId();
+        dto.requesterName = result.requesterName();
+        dto.requesterEmail = result.requesterEmail();
+        dto.targetName = result.targetName();
+        dto.targetEmail = result.targetEmail();
+        dto.requestedRole = result.requestedRole();
+        dto.type = result.type();
+        dto.status = result.status();
+        dto.companyId = result.companyId();
+        dto.companyName = result.companyName();
+        dto.reason = result.reason();
+        dto.adminNote = result.adminNote();
+        dto.decidedByUserId = result.decidedByUserId();
+        dto.createdAt = result.createdAt();
+        dto.updatedAt = result.updatedAt();
+        dto.decidedAt = result.decidedAt();
+        return dto;
     }
 
     private void requireRequest(Object request) {

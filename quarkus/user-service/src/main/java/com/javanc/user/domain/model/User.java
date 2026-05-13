@@ -92,8 +92,9 @@ public class User {
     }
 
     public void assignRole(Role actorRole, Role newRole) {
-        if (actorRole != Role.admin || newRole == null) {
-            throw new IllegalArgumentException("Only admin can assign roles");
+        boolean allowed = actorRole == Role.admin || (actorRole == Role.manager && newRole == Role.hr);
+        if (!allowed || newRole == null) {
+            throw new IllegalArgumentException("Role assignment is not allowed");
         }
         this.role = newRole;
     }

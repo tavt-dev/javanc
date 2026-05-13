@@ -22,6 +22,7 @@ public class CompanyMapper {
         company.phone = dto.phone;
         company.city = dto.city;
         company.country = dto.country;
+        company.url = dto.url;
         company.idManager = dto.idManager;
         company.idHr = dto.idHR;
         company.idJobs = dto.idJobs;
@@ -42,6 +43,7 @@ public class CompanyMapper {
         dto.phone = company.phone;
         dto.city = company.city;
         dto.country = company.country;
+        dto.url = company.url;
         dto.idManager = company.idManager;
         dto.idHR = company.idHr;
         dto.idJobs = company.idJobs;

@@ -3,6 +3,8 @@ package com.javanc.manager.interfaces.rest.resource;
 import com.javanc.manager.application.dto.ApiResponse;
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.CompanyDTO;
+import com.javanc.manager.application.dto.RoleRequestDTO;
+import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.mapper.CompanyMapper;
 import com.javanc.manager.application.service.CompanyApplicationService;
 import com.javanc.manager.interfaces.rest.form.CompanyMultipartForm;
@@ -10,6 +12,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -53,6 +56,46 @@ public class CompanyResource {
     public ApiResponse<CompanyDTO> setHeadToCompany(AuthenticationRequest request,
             @QueryParam("idCompany") Integer idCompany) {
         return new ApiResponse<>(true, "Head updated successfully", companyService.setHRToCompany(request, idCompany));
+    }
+
+    @PUT
+    @Path("/manager/promotehrtocompany")
+    public ApiResponse<CompanyDTO> promoteUserToHr(@QueryParam("idUser") Integer idUser,
+            @QueryParam("idCompany") Integer idCompany) {
+        return new ApiResponse<>(true, "HR updated successfully", companyService.promoteUserToHR(idUser, idCompany));
+    }
+
+    @GET
+    @Path("/manager/company/me")
+    public ApiResponse<CompanyDTO> getMyManagedCompany() {
+        return new ApiResponse<>(true, "Company retrieved successfully", companyService.getMyManagedCompany());
+    }
+
+    @GET
+    @Path("/manager/hr-candidates")
+    public ApiResponse<List<UserDTO>> hrCandidates(@QueryParam("query") String query, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size) {
+        return new ApiResponse<>(true, "HR candidates retrieved successfully",
+                companyService.searchHrCandidates(query, page, size));
+    }
+
+    @POST
+    @Path("/manager/hr-promotions")
+    public ApiResponse<RoleRequestDTO> requestHrPromotion(@QueryParam("targetUserId") Integer targetUserId) {
+        return new ApiResponse<>(true, "HR promotion requested successfully",
+                companyService.requestHrPromotion(targetUserId));
+    }
+
+    @PATCH
+    @Path("/user/hr-promotions/{requestId}/accept")
+    public ApiResponse<CompanyDTO> acceptHrPromotion(@jakarta.ws.rs.PathParam("requestId") Integer requestId) {
+        return new ApiResponse<>(true, "HR promotion accepted successfully", companyService.acceptHrPromotion(requestId));
+    }
+
+    @PATCH
+    @Path("/hr/leave")
+    public ApiResponse<CompanyDTO> leaveHr() {
+        return new ApiResponse<>(true, "HR left company successfully", companyService.leaveHr());
     }
 
     @POST

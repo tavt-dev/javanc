@@ -26,7 +26,17 @@ public class UserAuthorizationPolicy {
         return isAdmin(actor);
     }
 
+    public boolean canListUsers(User actor) {
+        return isAdmin(actor) || (actor != null && actor.role() == Role.manager);
+    }
+
     public boolean canAssignRole(User actor, Role role) {
-        return isAdmin(actor) && role != null;
+        if (actor == null || role == null) {
+            return false;
+        }
+        if (isAdmin(actor)) {
+            return true;
+        }
+        return actor.role() == Role.manager && role == Role.hr;
     }
 }

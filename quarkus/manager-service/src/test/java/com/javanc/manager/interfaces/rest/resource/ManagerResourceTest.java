@@ -3,6 +3,8 @@ package com.javanc.manager.interfaces.rest.resource;
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.MessageDTO;
 import com.javanc.manager.application.dto.ProfileDTO;
+import com.javanc.manager.application.dto.RoleRequestDTO;
+import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.port.EmailPort;
 import com.javanc.manager.application.port.ImageStoragePort;
 import com.javanc.manager.application.port.NotificationPort;
@@ -209,6 +211,56 @@ class ManagerResourceTest {
         public Integer createAccount(AuthenticationRequest authenticationRequest) {
             return 99;
         }
+
+        @Override
+        public UserDTO changeRole(Integer userId, String role) {
+            UserDTO user = new UserDTO();
+            user.id = userId;
+            user.role = role;
+            return user;
+        }
+
+        @Override
+        public UserDTO currentUser() {
+            UserDTO user = new UserDTO();
+            user.id = 1;
+            user.role = "manager";
+            return user;
+        }
+
+        @Override
+        public List<UserDTO> searchUsers(String query, String role, int page, int size) {
+            return List.of();
+        }
+
+        @Override
+        public RoleRequestDTO requestHrPromotion(Integer targetUserId, Integer companyId, String companyName) {
+            RoleRequestDTO request = new RoleRequestDTO();
+            request.id = 10;
+            request.targetUserId = targetUserId;
+            request.companyId = companyId;
+            request.companyName = companyName;
+            request.status = "PENDING_USER_CONFIRMATION";
+            return request;
+        }
+
+        @Override
+        public RoleRequestDTO acceptHrPromotion(Integer requestId) {
+            RoleRequestDTO request = new RoleRequestDTO();
+            request.id = requestId;
+            request.targetUserId = 99;
+            request.companyId = 1;
+            request.status = "APPROVED";
+            return request;
+        }
+
+        @Override
+        public UserDTO leaveHr() {
+            UserDTO user = new UserDTO();
+            user.id = 1;
+            user.role = "user";
+            return user;
+        }
     }
 
     @Alternative
@@ -221,6 +273,11 @@ class ManagerResourceTest {
             profile.id = id;
             profile.idUser = 42;
             return profile;
+        }
+
+        @Override
+        public ProfileDTO myProfile() {
+            return findProfileById(11);
         }
     }
 

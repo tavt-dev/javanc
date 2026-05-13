@@ -186,6 +186,13 @@ class AdminAccountBootstrapTest {
         }
 
         @Override
+        public List<User> searchUsers(String query, Role role, int page, int size) {
+            return users.stream()
+                    .filter(user -> role == null || user.role() == role)
+                    .toList();
+        }
+
+        @Override
         public boolean existsByRole(Role role) {
             return users.stream().anyMatch(user -> user.role() == role);
         }

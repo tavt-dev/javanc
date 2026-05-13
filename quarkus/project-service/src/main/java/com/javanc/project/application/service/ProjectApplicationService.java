@@ -55,6 +55,13 @@ public class ProjectApplicationService {
     }
 
     @Transactional
+    public ProjectDTO createMyProject(ProjectDTO projectDTO) {
+        ProfileDTO profile = requireMyProfile();
+        projectDTO.setIdProfile(profile.getId());
+        return saveProject(projectDTO);
+    }
+
+    @Transactional
     public ProjectDTO updateProject(ProjectDTO projectDTO) {
         try {
             ProjectDTO existingProject = findById(projectDTO.getId());
@@ -65,6 +72,27 @@ public class ProjectApplicationService {
             throw exception;
         } catch (PersistenceException exception) {
             throw new ApplicationException(ErrorCode.PROJECT_UNABLE_TO_UPDATE, exception);
+        }
+    }
+
+    @Transactional
+    public ProjectDTO updateMyProject(Integer id, ProjectDTO projectDTO) {
+        Project existing = myProjectEntity(id);
+        ProjectDTO update = projectDTO == null ? new ProjectDTO() : projectDTO;
+        update.setId(existing.getId());
+        update.setIdProfile(existing.getIdProfile());
+        update.setCreateAt(existing.getCreateAt());
+        return updateProject(update);
+    }
+
+    @Transactional
+    public void deleteMyProject(Integer id) {
+        try {
+            projectRepository.delete(myProjectEntity(id));
+        } catch (ApplicationException exception) {
+            throw exception;
+        } catch (PersistenceException exception) {
+            throw new ApplicationException(ErrorCode.PROJECT_UNABLE_TO_DELETE, exception);
         }
     }
 
@@ -88,6 +116,15 @@ public class ProjectApplicationService {
         }
     }
 
+    public List<ProjectDTO> getMyProjects() {
+        ProfileDTO profile = requireMyProfile();
+        return getProjectByIdProfile(profile.getId());
+    }
+
+    public ProjectDTO getMyProject(Integer id) {
+        return projectMapper.toDto(myProjectEntity(id));
+    }
+
     public ImageDTO saveImage(FileUpload image) {
         return imageStoragePort.save(image);
     }
@@ -99,5 +136,23 @@ public class ProjectApplicationService {
     public Integer getGenerationId() {
         UUID uuid = UUID.randomUUID();
         return (int) (uuid.getMostSignificantBits() & 0xFFFFFFFFL);
+    }
+
+    private Project myProjectEntity(Integer id) {
+        ProfileDTO profile = requireMyProfile();
+        Project project = projectRepository.findByProjectId(id)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.PROJECT_NOT_FOUND));
+        if (profile.getId() == null || !profile.getId().equals(project.getIdProfile())) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        return project;
+    }
+
+    private ProfileDTO requireMyProfile() {
+        ProfileDTO profile = profileLookupPort.getMyProfile();
+        if (profile == null || profile.getId() == null) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        return profile;
     }
 }

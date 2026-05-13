@@ -105,6 +105,46 @@ class ProjectApplicationServiceTest {
     }
 
     @Test
+    void userCrudUsesCurrentProfileOwnership() {
+        ProfileDTO profile = new ProfileDTO();
+        profile.setId(88);
+        when(profileLookupPort.getMyProfile()).thenReturn(profile);
+
+        ProjectDTO create = new ProjectDTO();
+        create.setTitle("User project");
+        create.setDescription("Owned");
+        create.setDisplay(true);
+
+        ProjectDTO saved = service.createMyProject(create);
+        assertEquals(88, saved.getIdProfile());
+        assertEquals(1, service.getMyProjects().size());
+
+        ProjectDTO update = new ProjectDTO();
+        update.setTitle("Updated user project");
+        update.setDescription("Updated");
+        update.setDisplay(false);
+
+        ProjectDTO updated = service.updateMyProject(saved.getId(), update);
+        assertEquals("Updated user project", updated.getTitle());
+
+        service.deleteMyProject(saved.getId());
+        assertEquals(0, service.getMyProjects().size());
+    }
+
+    @Test
+    void userUpdateRejectsProjectOwnedByAnotherProfile() {
+        ProfileDTO profile = new ProfileDTO();
+        profile.setId(88);
+        when(profileLookupPort.getMyProfile()).thenReturn(profile);
+        repository.save(project(99, 77, "Other"));
+
+        ApplicationException exception = assertThrows(ApplicationException.class,
+                () -> service.updateMyProject(99, new ProjectDTO()));
+
+        assertEquals(ErrorCode.FORBIDDEN, exception.getErrorCode());
+    }
+
+    @Test
     void profileListDelegatesAndReturnsUnwrappedProfiles() {
         ProfileDTO profile = new ProfileDTO();
         profile.setId(1);
@@ -151,6 +191,11 @@ class ProjectApplicationServiceTest {
         @Override
         public List<Project> findByIdProfile(Integer idProfile) {
             return projects.stream().filter(project -> project.getIdProfile().equals(idProfile)).toList();
+        }
+
+        @Override
+        public void delete(Project project) {
+            projects.removeIf(existing -> existing.getId().equals(project.getId()));
         }
     }
 }

@@ -213,6 +213,9 @@ public class ProfileApplicationService {
         if (create || request.getSkills() != null) {
             profile.setSkills(normalizeOptional(request.getSkills()));
         }
+        if (create || request.getName() != null) {
+            profile.setName(normalizeOptional(request.getName()));
+        }
         if (create || request.getTitle() != null) {
             profile.setTitle(requiredTrimmed(request.getTitle(), "Title is required"));
         }

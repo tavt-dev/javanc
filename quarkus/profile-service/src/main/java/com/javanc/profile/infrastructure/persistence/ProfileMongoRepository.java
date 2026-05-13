@@ -122,7 +122,7 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
 
     @Override
     public List<Profile> findByTitleRegex(String title) {
-        return mongoCollection().find(Filters.and(activeFilter(), titleFilter(title))).limit(DEFAULT_LIMIT)
+        return mongoCollection().find(Filters.and(activeFilter(), keywordFilter(title))).limit(DEFAULT_LIMIT)
                 .into(new ArrayList<>());
     }
 
@@ -134,7 +134,7 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
             filters.add(Filters.eq("typeProfile", typeProfile.name()));
         }
         if (title != null && !title.isBlank()) {
-            filters.add(titleFilter(title));
+            filters.add(keywordFilter(title));
         }
         return mongoCollection().find(Filters.and(filters))
                 .skip(page * size)
@@ -155,9 +155,15 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
         return mongoCollection().find(Filters.and(activeFilter(), Filters.in("_id", ids))).into(new ArrayList<>());
     }
 
-    private org.bson.conversions.Bson titleFilter(String title) {
-        String safeTitle = title == null ? "" : Pattern.quote(title.trim());
-        return Filters.regex("title", safeTitle, "i");
+    private org.bson.conversions.Bson keywordFilter(String keyword) {
+        String safeKeyword = keyword == null ? "" : Pattern.quote(keyword.trim());
+        return Filters.or(
+                Filters.regex("name", safeKeyword, "i"),
+                Filters.regex("title", safeKeyword, "i"),
+                Filters.regex("objective", safeKeyword, "i"),
+                Filters.regex("skills", safeKeyword, "i"),
+                Filters.regex("education", safeKeyword, "i"),
+                Filters.regex("workExperience", safeKeyword, "i"));
     }
 
     private org.bson.conversions.Bson activeFilter() {

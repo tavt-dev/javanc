@@ -2,6 +2,8 @@ package com.javanc.manager.application.service;
 
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.CompanyDTO;
+import com.javanc.manager.application.dto.RoleRequestDTO;
+import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.exception.ApplicationException;
 import com.javanc.manager.application.exception.ErrorCode;
 import com.javanc.manager.application.mapper.CompanyMapper;
@@ -47,6 +49,7 @@ public class CompanyApplicationService {
         company.phone = companyDTO.phone;
         company.email = companyDTO.email;
         company.country = companyDTO.country;
+        company.idManager = companyDTO.idManager;
         company.url = image == null ? "" : imageStoragePort.uploadCompanyImage(image);
         return companyMapper.toDto(companyRepository.create(company));
     }
@@ -74,12 +77,63 @@ public class CompanyApplicationService {
 
     public CompanyDTO setHRToCompany(AuthenticationRequest request, Integer idCompany) {
         Integer hrId = userAccountPort.createAccount(accountRequest(request, "hr"));
-        CompanyDTO companyDTO = findById(idCompany);
-        if (companyDTO.idHR == null) {
-            companyDTO.idHR = new ArrayList<>();
+        return appendHrToCompany(idCompany, hrId);
+    }
+
+    public CompanyDTO promoteUserToHR(Integer userId, Integer idCompany) {
+        if (userId == null || userId <= 0) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
         }
-        companyDTO.idHR.add(hrId);
-        return update(companyDTO);
+        CompanyDTO companyDTO = findById(idCompany);
+        userAccountPort.requestHrPromotion(userId, companyDTO.id, companyDTO.name);
+        return companyDTO;
+    }
+
+    public CompanyDTO getMyManagedCompany() {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"manager".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        return companyMapper.toDto(companyRepository.findByManagerId(currentUser.id)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.COMPANY_NOT_FOUND,
+                        "Create or assign a company before inviting HR")));
+    }
+
+    public List<UserDTO> searchHrCandidates(String query, Integer page, Integer size) {
+        CompanyDTO company = getMyManagedCompany();
+        int resolvedPage = page == null ? 0 : page;
+        int resolvedSize = size == null ? 10 : size;
+        List<Integer> existingHr = company.idHR == null ? List.of() : company.idHR;
+        return userAccountPort.searchUsers(query, "user", resolvedPage, resolvedSize).stream()
+                .filter(user -> user.id != null && !existingHr.contains(user.id))
+                .toList();
+    }
+
+    public RoleRequestDTO requestHrPromotion(Integer targetUserId) {
+        CompanyDTO company = getMyManagedCompany();
+        return userAccountPort.requestHrPromotion(targetUserId, company.id, company.name);
+    }
+
+    public CompanyDTO acceptHrPromotion(Integer requestId) {
+        RoleRequestDTO request = userAccountPort.acceptHrPromotion(requestId);
+        if (!"APPROVED".equalsIgnoreCase(request.status) || request.companyId == null || request.targetUserId == null) {
+            throw new ApplicationException(ErrorCode.CONFLICT);
+        }
+        return appendHrToCompany(request.companyId, request.targetUserId);
+    }
+
+    public CompanyDTO leaveHr() {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"hr".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        CompanyDTO companyDTO = findByIdHr(currentUser.id);
+        if (companyDTO.idHR != null) {
+            companyDTO.idHR.remove(currentUser.id);
+        }
+        CompanyDTO updated = update(companyDTO);
+        userAccountPort.leaveHr();
+        return updated;
     }
 
     public CompanyDTO setManagerToCompany(AuthenticationRequest request, Integer idCompany) {
@@ -107,5 +161,16 @@ public class CompanyApplicationService {
         request.employeeId = source.employeeId;
         request.role = role;
         return request;
+    }
+
+    private CompanyDTO appendHrToCompany(Integer idCompany, Integer hrId) {
+        CompanyDTO companyDTO = findById(idCompany);
+        if (companyDTO.idHR == null) {
+            companyDTO.idHR = new ArrayList<>();
+        }
+        if (!companyDTO.idHR.contains(hrId)) {
+            companyDTO.idHR.add(hrId);
+        }
+        return update(companyDTO);
     }
 }

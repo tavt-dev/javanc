@@ -59,12 +59,13 @@ class ProfileResourceTest {
         given()
                 .header("Authorization", "Bearer user-token")
                 .contentType("application/json")
-                .body("{\"title\":\"Java Engineer\",\"typeProfile\":\"java\",\"objective\":\"Build systems\"}")
+                .body("{\"name\":\"Hieu Cao\",\"title\":\"Java Engineer\",\"typeProfile\":\"java\",\"objective\":\"Build systems\"}")
                 .when().post("/profiles/me")
                 .then()
                 .statusCode(200)
                 .body("success", equalTo(true))
                 .body("data.id", equalTo(100))
+                .body("data.name", equalTo("Hieu Cao"))
                 .body("data.idUser", equalTo(5))
                 .body("data.typeProfile", equalTo("JAVA"))
                 .body("data.createdAt", notNullValue());
@@ -191,6 +192,7 @@ class ProfileResourceTest {
         Profile profile = new Profile();
         profile.setId(id);
         profile.setIdUser(userId);
+        profile.setName("Profile Owner " + id);
         profile.setTitle("Profile " + id);
         profile.setTypeProfile(type);
         profile.setStatus(status);

@@ -25,4 +25,10 @@ public class ProjectJpaRepository implements ProjectRepository, PanacheRepositor
     public List<Project> findByIdProfile(Integer idProfile) {
         return find("idProfile", idProfile).list();
     }
+
+    @Override
+    public void delete(Project project) {
+        Project managed = getEntityManager().contains(project) ? project : getEntityManager().merge(project);
+        getEntityManager().remove(managed);
+    }
 }

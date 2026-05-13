@@ -9,6 +9,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -51,6 +52,24 @@ public class JobResource {
     @Path("/user/job/apply")
     public ApiResponse<JobDTO> apply(@QueryParam("jobDTO") Integer jobDTO, @QueryParam("idProfile") Integer idProfile) {
         return new ApiResponse<>(true, "Job applied", jobService.applyJob(jobDTO, idProfile));
+    }
+
+    @POST
+    @Path("/user/jobs/{id}/applications")
+    public ApiResponse<JobDTO> applyCurrentUser(@PathParam("id") Integer id) {
+        return new ApiResponse<>(true, "Job applied", jobService.applyCurrentUser(id));
+    }
+
+    @POST
+    @Path("/user/jobs/{id}/leave")
+    public ApiResponse<JobDTO> leaveCurrentUser(@PathParam("id") Integer id) {
+        return new ApiResponse<>(true, "Job left", jobService.leaveCurrentUser(id));
+    }
+
+    @GET
+    @Path("/user/jobs/{id}/application-status")
+    public ApiResponse<String> applicationStatus(@PathParam("id") Integer id) {
+        return new ApiResponse<>(true, "Application status found", jobService.applicationStatus(id));
     }
 
     @PUT
