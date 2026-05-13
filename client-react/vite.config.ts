@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import path from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -9,40 +9,52 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
     globals: true,
+    exclude: ["e2e/**", "node_modules/**", "dist/**"],
   },
   resolve: {
+    dedupe: ["react", "react-dom", "react-router", "react-router-dom"],
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": resolve(__dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react-router",
+      "react-router-dom",
+    ],
   },
   server: {
     port: 3000,
     proxy: {
-      "/auth": {
+      "^/auth/": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/users": {
+      "^/users(?:$|/|\\?)": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/profiles": {
+      "^/profiles(?:$|/|\\?)": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/project": {
+      "^/project/": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/manager": {
+      "^/manager/(user|hr|company|manager|admin)/": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/notification": {
+      "^/notification/": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },
-      "/image": {
+      "^/image/": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },

@@ -20,9 +20,15 @@ describe("usersApi", () => {
 
   it("uses admin user management endpoints", async () => {
     mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
-    mockedApiClient.post.mockResolvedValue({ data: { data: {} } });
-    mockedApiClient.patch.mockResolvedValue({ data: { data: {} } });
-    mockedApiClient.delete.mockResolvedValue({ data: { data: {} } });
+    mockedApiClient.post.mockResolvedValue({
+      data: { data: { id: 7, active: true } },
+    });
+    mockedApiClient.patch.mockResolvedValue({
+      data: { data: { id: 7, active: true } },
+    });
+    mockedApiClient.delete.mockResolvedValue({
+      data: { data: { id: 7, active: false } },
+    });
 
     await usersApi.list();
     await usersApi.createAccount({
@@ -37,6 +43,7 @@ describe("usersApi", () => {
 
     expect(mockedApiClient.get).toHaveBeenCalledWith("/users", {
       params: undefined,
+      paramsSerializer: expect.any(Object),
     });
     expect(mockedApiClient.post).toHaveBeenCalledWith(
       "/users/admin/accounts",
@@ -53,5 +60,34 @@ describe("usersApi", () => {
       { active: false, status: "DISABLED" },
     );
     expect(mockedApiClient.delete).toHaveBeenCalledWith("/users/7");
+  });
+
+  it("normalizes user DTO aliases and serializes ids for backend query params", async () => {
+    mockedApiClient.get.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 11,
+            name: "Alias User",
+            email: "alias@example.com",
+            employeeId: "EMP-11",
+            role: "admin",
+            isActive: true,
+          },
+        ],
+      },
+    });
+
+    const response = await usersApi.list([11, 12]);
+    const config = mockedApiClient.get.mock.calls[0]?.[1];
+    const serializer = config?.paramsSerializer as
+      | { serialize?: (params: Record<string, unknown>) => string }
+      | undefined;
+
+    expect(response.data[0]).toMatchObject({
+      idEmployee: "EMP-11",
+      active: true,
+    });
+    expect(serializer?.serialize?.({ ids: [11, 12] })).toBe("ids=11&ids=12");
   });
 });

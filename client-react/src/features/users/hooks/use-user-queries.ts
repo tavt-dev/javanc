@@ -4,6 +4,7 @@ import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { usersApi } from "@/features/users/api/users-api";
 import type {
+  AdminUserDTO,
   ChangeUserRoleRequest,
   ChangeUserStatusRequest,
   CreateUserAccountRequest,
@@ -26,7 +27,11 @@ export function useCreateUserAccountMutation() {
   return useMutation({
     mutationFn: (input: CreateUserAccountRequest) =>
       usersApi.createAccount(input),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      queryClient.setQueryData<AdminUserDTO[]>(userKeys.all, (current = []) => {
+        const created = response.data;
+        return [created, ...current.filter((user) => user.id !== created.id)];
+      });
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       toast.success("Account created");
     },

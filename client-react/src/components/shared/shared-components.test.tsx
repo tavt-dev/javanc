@@ -5,7 +5,9 @@ import { FileText } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DataTable } from "./DataTable";
+import { DataToolbar } from "./DataToolbar";
 import { EmptyState } from "./EmptyState";
+import { ManagementDialog } from "./ManagementDialog";
 import { RetryState } from "./RetryState";
 
 describe("shared state components", () => {
@@ -98,5 +100,44 @@ describe("shared state components", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("No rows found.");
+  });
+
+  it("calls DataToolbar search and clear actions", async () => {
+    const user = userEvent.setup();
+    const onSearchChange = vi.fn();
+    const onClear = vi.fn();
+    render(
+      <DataToolbar
+        search=""
+        searchPlaceholder="Search records"
+        onSearchChange={onSearchChange}
+        onClear={onClear}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Search records"), "abc");
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(onSearchChange).toHaveBeenCalled();
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes management dialog with Escape", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <ManagementDialog
+        open
+        title="Edit record"
+        description="Update values."
+        onClose={onClose}
+      >
+        <button type="button">Inside</button>
+      </ManagementDialog>,
+    );
+
+    await user.keyboard("{Escape}");
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

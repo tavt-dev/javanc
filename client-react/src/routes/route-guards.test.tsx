@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 import { GuestRoute } from "@/routes/GuestRoute";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { RoleGuard } from "@/routes/RoleGuard";
 import { useAuthStore } from "@/stores/auth-store";
 
 describe("route guards", () => {
@@ -70,5 +71,55 @@ describe("route guards", () => {
     );
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
+  });
+
+  it("renders role-protected content only for allowed roles", () => {
+    useAuthStore.setState({
+      user: {
+        id: 1,
+        name: "Admin",
+        email: "admin@example.com",
+        role: "admin",
+        active: true,
+      },
+      accessToken: "token",
+      refreshToken: "refresh",
+      expiresInSeconds: 3600,
+      isAuthenticated: true,
+      hasHydrated: true,
+    });
+
+    render(
+      <RoleGuard allow={["admin"]}>
+        <div>Admin workspace</div>
+      </RoleGuard>,
+    );
+
+    expect(screen.getByText("Admin workspace")).toBeInTheDocument();
+  });
+
+  it("renders permission state for disallowed roles", () => {
+    useAuthStore.setState({
+      user: {
+        id: 1,
+        name: "User",
+        email: "user@example.com",
+        role: "user",
+        active: true,
+      },
+      accessToken: "token",
+      refreshToken: "refresh",
+      expiresInSeconds: 3600,
+      isAuthenticated: true,
+      hasHydrated: true,
+    });
+
+    render(
+      <RoleGuard allow={["admin"]}>
+        <div>Admin workspace</div>
+      </RoleGuard>,
+    );
+
+    expect(screen.getByText("Access denied")).toBeInTheDocument();
   });
 });

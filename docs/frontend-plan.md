@@ -8,6 +8,7 @@
 > **Phase 4:** DONE - Jobs, companies, and notifications implemented and verified on 2026-05-12  
 > **Phase 5:** DONE - Role workspaces implemented and verified on 2026-05-13  
 > **Phase 6:** DONE - UI/UX, accessibility, and animation polish implemented and verified on 2026-05-13  
+> **Phase 7:** DONE - Hardening, E2E, and release quality gate implemented and verified on 2026-05-13  
 > **Frontend:** New React app in `client-react/`  
 > **Backend:** Quarkus 3.33.1 microservices through gateway `http://localhost:8080`  
 > **Out of scope:** Existing Angular `client/` is not reused, migrated, or modified.
@@ -1187,7 +1188,7 @@ Senior notes:
 
 - Backend typo query names such as `jobDTO` and `setmaanagertocompany` are hidden behind clean frontend function names.
 - Company/job update flows preserve relationship fields such as `idManager`, `idHR`, `idJobs`, `idCompany`, `idProfiePending`, and `idProfile`.
-- `/settings` intentionally remains a placeholder.
+- `/settings` was intentionally left for the polish phase at Phase 5 time and was replaced with a real settings page in Phase 6.
 - Company logo display remains out of scope because `CompanyDTO` still does not expose a stable `url`.
 
 ### Phase 6: UI/UX and Animation Polish
@@ -1225,10 +1226,66 @@ Senior notes:
 
 ### Phase 7: Hardening
 
-- Unit tests for stores, guards, schemas, API error extraction.
-- Integration tests for core flows.
-- Playwright E2E for auth, role navigation, job apply, admin company setup.
-- Production build verification.
+**Status:** DONE on 2026-05-13.
+
+Verification:
+
+- `npm run quality` passed.
+- Quality gate includes:
+  - `npm run lint`
+  - `npm run test:run`: 27 test files, 69 tests.
+  - `npm run test:e2e`: 16 Playwright tests.
+  - `npm run build`
+
+Completed:
+
+- Added Playwright E2E tooling and scripts:
+  - `test:e2e`
+  - `test:e2e:ui`
+  - `test:e2e:headed`
+  - `quality`
+- Added deterministic mock-gateway E2E fixtures for `user`, `hr`, `manager`, and `admin`.
+- Added E2E coverage for:
+  - Guest protected-route redirect.
+  - Login and session restore.
+  - Role-aware navigation and permission state.
+  - Missing-profile onboarding.
+  - Job board filtering and apply flow.
+  - Notification mark-read flow.
+  - HR unassigned-company state.
+  - HR job create/delete flow.
+  - Admin self-deactivate guard.
+  - Topbar keyboard Escape behavior.
+  - Dashboard responsive overflow checks at `320`, `390`, `768`, `1024`, and `1440`.
+- Added schema tests for jobs, companies, and admin users.
+- Added `ui-store` tests for theme persistence and sidebar collapsed persistence.
+- Added API client interceptor tests for bearer auth, single-flight refresh, and auth-endpoint refresh exclusion.
+- Added component/guard hardening tests for `RoleGuard`, `DataToolbar`, `ManagementDialog`, and `NotificationBell`.
+- Updated Vite proxy matching so app routes such as `/notifications` and role workspace routes are not accidentally proxied to the backend during dev refreshes.
+- Fixed the mobile topbar at `320px` by reducing small-screen chrome width and hiding the JavaNC text below `380px`.
+- Added Playwright artifact ignores for `test-results`, `playwright-report`, and browser cache output.
+
+Release checklist:
+
+- Confirm `.env` or runtime environment sets `VITE_API_BASE_URL=http://localhost:8080`.
+- Confirm Quarkus gateway and dependent services are available for manual backend smoke tests.
+- Run `npm ci` on a clean checkout before release validation.
+- Run `npm run quality`.
+- Manually verify real-backend flows:
+  - Register -> verify OTP -> dashboard.
+  - Profile create/update/avatar upload.
+  - Project create/update.
+  - Job apply -> HR accept/reject.
+  - Manager company update -> create HR account.
+  - Admin create company -> assign manager.
+  - Notification mark read persists after refetch.
+- Manually verify keyboard-only navigation, reduced motion, and responsive widths `320`, `390`, `768`, `1024`, `1440`.
+
+Senior notes:
+
+- Default E2E is mock-based for repeatability and does not require live Quarkus services.
+- Real-backend acceptance remains a manual release gate until the backend provides stable seeded test data.
+- On Windows, Tailwind and Playwright native binaries may require running `test:run`, `test:e2e`, `build`, or `quality` outside restricted sandboxes.
 
 ---
 

@@ -15,6 +15,7 @@ import { NotificationBell } from "@/features/notifications/components/Notificati
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
@@ -57,15 +58,17 @@ export function Topbar() {
   }, []);
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    setUserMenuOpen(false);
+    logoutMutation.mutate(accessToken);
   };
 
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-3 sticky top-0 z-30">
+    <header className="h-16 border-b border-border bg-card flex min-w-0 items-center px-3 sm:px-4 gap-2 sm:gap-3 sticky top-0 z-30">
       {/* Mobile hamburger */}
       <button
+        type="button"
         onClick={toggleSidebar}
         className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label="Toggle menu"
@@ -74,11 +77,13 @@ export function Topbar() {
       </button>
 
       {/* Mobile logo */}
-      <div className="lg:hidden flex items-center gap-2">
+      <div className="lg:hidden flex min-w-0 items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-xs">J</span>
         </div>
-        <span className="font-semibold text-sm">JavaNC</span>
+        <span className="hidden min-[380px]:inline font-semibold text-sm">
+          JavaNC
+        </span>
       </div>
 
       <div className="flex-1" />
@@ -86,6 +91,7 @@ export function Topbar() {
       {/* Theme toggle */}
       <div className="relative" ref={themeMenuRef}>
         <button
+          type="button"
           onClick={() => setThemeMenuOpen(!themeMenuOpen)}
           className="p-2 rounded-md hover:bg-accent text-muted-foreground
                      hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -104,6 +110,7 @@ export function Topbar() {
           >
             {(["light", "dark", "system"] as const).map((t) => (
               <button
+                type="button"
                 key={t}
                 onClick={() => {
                   setTheme(t);
@@ -131,6 +138,7 @@ export function Topbar() {
       {/* User menu */}
       <div className="relative" ref={userMenuRef}>
         <button
+          type="button"
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="flex min-w-0 items-center gap-2 p-1.5 pr-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Open user menu"
@@ -167,6 +175,7 @@ export function Topbar() {
               </p>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
               disabled={logoutMutation.isPending}
               className="w-full text-left px-3 py-2 text-sm text-destructive

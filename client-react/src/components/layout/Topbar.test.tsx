@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Topbar } from "./Topbar";
 import { useAuthStore } from "@/stores/auth-store";
 
+const logoutMutateMock = vi.fn();
+
 vi.mock("@/features/notifications/components/NotificationBell", () => ({
   NotificationBell: () => (
     <button type="button" aria-label="Notifications">
@@ -13,11 +15,12 @@ vi.mock("@/features/notifications/components/NotificationBell", () => ({
 }));
 
 vi.mock("@/features/auth/hooks/use-auth-mutations", () => ({
-  useLogoutMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useLogoutMutation: () => ({ mutate: logoutMutateMock, isPending: false }),
 }));
 
 describe("Topbar", () => {
   beforeEach(() => {
+    logoutMutateMock.mockClear();
     useAuthStore.setState({
       user: {
         id: 1,
@@ -61,5 +64,15 @@ describe("Topbar", () => {
     await user.keyboard("{Escape}");
 
     expect(userMenuButton).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("calls logout mutation with the current access token", async () => {
+    const user = userEvent.setup();
+    render(<Topbar />);
+
+    await user.click(screen.getByRole("button", { name: "Open user menu" }));
+    await user.click(screen.getByRole("menuitem", { name: /logout/i }));
+
+    expect(logoutMutateMock).toHaveBeenCalledWith("token");
   });
 });

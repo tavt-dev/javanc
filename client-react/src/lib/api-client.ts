@@ -22,6 +22,7 @@ const authRefreshExclusions = [
   "/auth/verify-email",
   "/auth/resend-verification-otp",
   "/auth/refresh",
+  "/auth/logout",
 ];
 
 function isRefreshExcluded(url?: string) {

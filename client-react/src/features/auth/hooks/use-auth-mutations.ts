@@ -93,14 +93,15 @@ export function useLogoutMutation() {
   const logoutLocal = useAuthStore((s) => s.logoutLocal);
 
   return useMutation({
-    mutationFn: () => authApi.logout(),
-    onSettled: (_data, error) => {
+    mutationFn: (accessToken?: string | null) =>
+      authApi.logout(accessToken ?? undefined),
+    onMutate: () => {
       logoutLocal();
       queryClient.clear();
-      if (error) {
-        toast.message(extractErrorMessage(error));
-      }
       navigate("/login", { replace: true });
+    },
+    onError: (error) => {
+      toast.message(extractErrorMessage(error));
     },
   });
 }

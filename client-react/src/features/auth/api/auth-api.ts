@@ -61,8 +61,14 @@ export const authApi = {
     return data;
   },
 
-  async logout() {
-    const { data } = await apiClient.post<ApiResponse<void>>("/auth/logout");
+  async logout(accessToken?: string) {
+    const { data } = await apiClient.post<ApiResponse<void>>(
+      "/auth/logout",
+      undefined,
+      accessToken
+        ? { headers: { Authorization: `Bearer ${accessToken}` } }
+        : undefined,
+    );
     return data;
   },
 };

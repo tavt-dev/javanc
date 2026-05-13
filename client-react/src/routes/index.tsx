@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { GuestRoute } from "./GuestRoute";
 import { RootRedirect } from "./RootRedirect";
 import { RoleGuard } from "./RoleGuard";
+import { RouteErrorBoundary } from "./RouteErrorBoundary";
 
 const LoginPage = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((module) => ({
@@ -130,11 +131,12 @@ function lazyPage(page: ReactNode) {
 
 export const router = createBrowserRouter([
   // Root redirect
-  { path: "/", element: <RootRedirect /> },
+  { path: "/", element: <RootRedirect />, errorElement: <RouteErrorBoundary /> },
 
   // Guest routes
   {
     path: "/login",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <GuestRoute>
         {lazyPage(<LoginPage />)}
@@ -143,6 +145,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/register",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <GuestRoute>
         {lazyPage(<RegisterPage />)}
@@ -151,6 +154,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/verify-email",
+    errorElement: <RouteErrorBoundary />,
     element: (
       <GuestRoute>
         {lazyPage(<VerifyEmailPage />)}
@@ -160,6 +164,7 @@ export const router = createBrowserRouter([
 
   // Protected routes with AppShell layout
   {
+    errorElement: <RouteErrorBoundary />,
     element: (
       <ProtectedRoute>
         <AppShell />
