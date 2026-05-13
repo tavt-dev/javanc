@@ -1,5 +1,6 @@
 import { Briefcase, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -15,14 +16,21 @@ import { useMyProfileQuery } from "@/features/profiles/hooks/use-profile-queries
 import type { TypeJob } from "@/types/job";
 
 export function JobBoardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const profileQuery = useMyProfileQuery();
   const profile = profileQuery.profile;
   const jobsQuery = useJobBoardQuery(profile?.id);
   const companiesQuery = useCompaniesQuery();
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<TypeJob | "">("");
-  const [companyId, setCompanyId] = useState("");
-  const [openOnly, setOpenOnly] = useState(false);
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [type, setType] = useState<TypeJob | "">(() =>
+    readJobType(searchParams.get("type")),
+  );
+  const [companyId, setCompanyId] = useState(
+    () => searchParams.get("companyId") ?? "",
+  );
+  const [openOnly, setOpenOnly] = useState(
+    () => searchParams.get("openOnly") === "true",
+  );
 
   const companyMap = useMemo(
     () => new Map((companiesQuery.data ?? []).map((company) => [company.id, company.name])),
@@ -39,6 +47,16 @@ export function JobBoardPage() {
     [jobsQuery.data, query, type, companyId, openOnly],
   );
 
+  useEffect(() => {
+    const next = new URLSearchParams();
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) next.set("q", trimmedQuery);
+    if (type) next.set("type", type);
+    if (companyId) next.set("companyId", companyId);
+    if (openOnly) next.set("openOnly", "true");
+    setSearchParams(next, { replace: true });
+  }, [companyId, openOnly, query, setSearchParams, type]);
+
   return (
     <PageTransition>
       <PageHeader
@@ -54,6 +72,7 @@ export function JobBoardPage() {
             filters={
               <>
                 <select
+                  aria-label="Job type"
                   value={type}
                   onChange={(event) => setType(event.target.value as TypeJob | "")}
                   className="form-input md:w-40"
@@ -64,6 +83,7 @@ export function JobBoardPage() {
                   <option value="php">PHP</option>
                 </select>
                 <select
+                  aria-label="Company"
                   value={companyId}
                   onChange={(event) => setCompanyId(event.target.value)}
                   className="form-input md:w-56"
@@ -127,4 +147,8 @@ export function JobBoardPage() {
       )}
     </PageTransition>
   );
+}
+
+function readJobType(value: string | null): TypeJob | "" {
+  return value === "java" || value === "python" || value === "php" ? value : "";
 }

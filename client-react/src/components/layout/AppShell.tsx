@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Topbar } from "./Topbar";
 import { MobileSidebar } from "./MobileSidebar";
+import { Footer } from "./Footer";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { motionPresets } from "@/components/motion/motion-presets";
@@ -42,6 +43,7 @@ export function AppShell() {
             </motion.div>
           </AnimatePresence>
         </main>
+        <Footer />
       </div>
     </div>
   );
