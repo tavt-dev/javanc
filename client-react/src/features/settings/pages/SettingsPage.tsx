@@ -31,7 +31,6 @@ import { cn, formatDate } from "@/lib/utils";
 const themeOptions = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
 ] as const;
 
 export function SettingsPage() {
@@ -111,7 +110,7 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {themeOptions.map((option) => {
               const Icon = option.icon;
               const active = theme === option.value;

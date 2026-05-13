@@ -1,5 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { Moon, Sun } from "lucide-react";
 import type { ReactNode } from "react";
+import { useUIStore } from "@/stores/ui-store";
 
 interface AuthLayoutProps {
   title: string;
@@ -9,13 +11,18 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
   const reducedMotion = useReducedMotion();
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
   const transition = reducedMotion
     ? { duration: 0 }
     : { duration: 0.22, ease: [0.2, 0, 0, 1] as const };
+  const nextTheme = getNextTheme(theme);
+  const displayTheme = theme === "dark" ? "dark" : "light";
+  const ThemeIcon = displayTheme === "dark" ? Moon : Sun;
 
   return (
-    <main className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]">
-      <section className="hero-panel hidden min-h-screen rounded-none border-0 text-white lg:flex lg:flex-col lg:justify-between">
+    <main className="relative isolate min-h-screen overflow-hidden bg-background text-foreground">
+      <section className="hero-panel auth-animated-bg pointer-events-none !absolute inset-0 z-0 hidden min-h-screen rounded-none border-0 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(#ffffff_1px,transparent_1px),linear-gradient(90deg,#ffffff_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgb(16_185_129/0.22),transparent)]" />
         <motion.div
@@ -118,13 +125,25 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
           </motion.div>
         </div>
       </section>
+      <div className="auth-bg-soften pointer-events-none absolute inset-0 z-10 hidden lg:block" />
 
-      <section className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:min-h-0">
+      <button
+        type="button"
+        onClick={() => setTheme(nextTheme)}
+        className="auth-theme-toggle focus-ring absolute right-4 top-4 z-30 inline-flex h-11 items-center justify-center gap-2 rounded-full border border-primary/20 bg-card/82 px-3 text-sm font-semibold text-foreground shadow-lg shadow-black/10 backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card sm:right-6 sm:top-6"
+        aria-label={`Switch to ${nextTheme} theme`}
+        title={`Switch to ${nextTheme} theme`}
+      >
+        <ThemeIcon size={18} />
+        <span className="hidden capitalize sm:inline">{displayTheme}</span>
+      </button>
+
+      <section className="relative z-20 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
           transition={transition}
-          className="w-full max-w-[420px]"
+          className="auth-login-shell w-full max-w-[444px] p-3"
         >
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
@@ -135,7 +154,9 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
             <span className="font-semibold">JavaNC Workspace</span>
           </div>
 
-          <div className="surface p-6 shadow-xl shadow-black/[0.03] sm:p-7">
+          <div
+            className="auth-login-card surface bg-card p-6 shadow-2xl shadow-black/20 sm:p-7"
+          >
             <div className="mb-6 space-y-1 text-center">
               <h1 className="display-title text-2xl font-semibold">
                 {title}
@@ -148,4 +169,8 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
       </section>
     </main>
   );
+}
+
+function getNextTheme(theme: "light" | "dark") {
+  return theme === "dark" ? "light" : "dark";
 }

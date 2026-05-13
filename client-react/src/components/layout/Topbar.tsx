@@ -4,7 +4,6 @@ import {
   Menu,
   Sun,
   Moon,
-  Monitor,
   LogOut,
   ChevronDown,
 } from "lucide-react";
@@ -72,7 +71,7 @@ export function Topbar() {
     logoutMutation.mutate(accessToken);
   };
 
-  const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const ThemeIcon = theme === "dark" ? Moon : Sun;
 
   return (
     <header className="sticky top-0 z-30 flex h-[var(--nav-height)] min-w-0 items-center gap-2 border-b border-primary/10 bg-card/95 px-3 shadow-sm shadow-[hsl(var(--hero-dark)/0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/88 sm:gap-3 sm:px-4 lg:px-6">
@@ -127,7 +126,7 @@ export function Topbar() {
             }}
             className="brand-card absolute right-0 z-50 mt-2 w-40 origin-top-right bg-popover p-1 shadow-xl"
           >
-            {(["light", "dark", "system"] as const).map((t) => (
+            {(["light", "dark"] as const).map((t) => (
               <button
                 type="button"
                 key={t}
@@ -144,7 +143,6 @@ export function Topbar() {
               >
                 {t === "light" && <Sun size={14} />}
                 {t === "dark" && <Moon size={14} />}
-                {t === "system" && <Monitor size={14} />}
                 {t}
               </button>
             ))}

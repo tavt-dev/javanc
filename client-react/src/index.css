@@ -173,6 +173,393 @@ main:focus {
     0 10px 28px hsl(222 47% 11% / 0.04);
 }
 
+.auth-login-shell {
+  perspective: 900px;
+}
+
+.auth-theme-toggle {
+  min-width: 3rem;
+  border-color: hsl(var(--primary) / 0.34);
+  background:
+    linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--secondary) / 0.9)),
+    hsl(var(--card));
+  color: hsl(var(--primary));
+  box-shadow:
+    0 16px 36px hsl(var(--hero-dark) / 0.18),
+    0 0 0 1px hsl(var(--primary) / 0.08),
+    0 0 26px hsl(var(--primary) / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+
+.auth-theme-toggle svg {
+  filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.42));
+  stroke-width: 2.5;
+}
+
+.auth-theme-toggle:hover {
+  border-color: hsl(var(--primary) / 0.58);
+  color: hsl(var(--primary));
+  box-shadow:
+    0 20px 44px hsl(var(--hero-dark) / 0.22),
+    0 0 0 1px hsl(var(--primary) / 0.16),
+    0 0 34px hsl(var(--primary) / 0.24),
+    inset 0 1px 0 rgb(255 255 255 / 0.78);
+}
+
+.dark .auth-theme-toggle {
+  border-color: hsl(var(--job-cyan) / 0.3);
+  background:
+    linear-gradient(180deg, hsl(168 56% 9% / 0.9), hsl(168 56% 6% / 0.78)),
+    hsl(168 56% 8% / 0.72);
+  color: hsl(var(--job-cyan));
+  box-shadow:
+    0 16px 36px hsl(176 60% 4% / 0.42),
+    0 0 0 1px hsl(var(--job-cyan) / 0.14),
+    0 0 30px hsl(var(--job-cyan) / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.dark .auth-theme-toggle svg {
+  filter: drop-shadow(0 0 10px hsl(var(--job-cyan) / 0.48));
+}
+
+.dark .auth-theme-toggle:hover {
+  border-color: hsl(var(--job-cyan) / 0.58);
+  color: hsl(164 34% 96%);
+  box-shadow:
+    0 20px 44px hsl(176 60% 4% / 0.54),
+    0 0 0 1px hsl(var(--job-cyan) / 0.24),
+    0 0 42px hsl(var(--job-cyan) / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.auth-bg-soften {
+  background:
+    radial-gradient(circle at center, rgb(255 255 255 / 0.22), transparent 22rem),
+    rgb(236 253 245 / 0.2);
+}
+
+.auth-login-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: hsl(var(--primary) / 0.28);
+  background-color: hsl(var(--card) / 0.86);
+  color: hsl(var(--foreground));
+  backdrop-filter: blur(20px) saturate(1.16);
+  box-shadow:
+    0 26px 70px hsl(var(--hero-dark) / 0.2),
+    0 0 0 1px hsl(var(--primary) / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.62);
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  transition:
+    transform var(--duration-page) var(--ease-premium),
+    border-color var(--duration-page) var(--ease-premium),
+    box-shadow var(--duration-page) var(--ease-premium);
+}
+
+.auth-login-card::before,
+.auth-login-card::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.auth-login-card::before {
+  display: none;
+}
+
+.auth-login-card::after {
+  display: none;
+}
+
+.auth-login-shell:hover .auth-login-card {
+  transform: translateY(-0.375rem) scale(1.012);
+  border-color: hsl(var(--primary) / 0.42);
+  box-shadow:
+    0 34px 86px hsl(var(--hero-dark) / 0.26),
+    0 0 0 1px hsl(var(--primary) / 0.14),
+    0 0 46px hsl(var(--primary) / 0.14);
+}
+
+.auth-login-card > * {
+  position: relative;
+  z-index: 3;
+}
+
+.auth-login-card .display-title,
+.auth-login-card .text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.auth-login-card .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.auth-login-card input,
+.auth-login-card textarea,
+.auth-login-card select {
+  border-color: hsl(var(--primary) / 0.28);
+  background-color: hsl(var(--card) / 0.94);
+  color: hsl(var(--foreground));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+}
+
+.auth-login-card .relative > svg {
+  color: hsl(var(--primary));
+  filter: drop-shadow(0 0 7px hsl(var(--primary) / 0.24));
+  stroke-width: 2.35;
+}
+
+.auth-login-card button[type="button"] {
+  border: 1px solid hsl(var(--primary) / 0.18);
+  background-color: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
+  box-shadow: 0 6px 14px hsl(var(--primary) / 0.08);
+}
+
+.auth-login-card button[type="button"]:hover {
+  border-color: hsl(var(--primary) / 0.34);
+  background-color: hsl(var(--primary) / 0.14);
+  color: hsl(var(--primary));
+  box-shadow:
+    0 8px 18px hsl(var(--primary) / 0.12),
+    0 0 18px hsl(var(--primary) / 0.16);
+}
+
+.auth-login-card input::placeholder,
+.auth-login-card textarea::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.auth-login-card input:focus,
+.auth-login-card textarea:focus,
+.auth-login-card select:focus {
+  border-color: hsl(var(--primary) / 0.68);
+  box-shadow:
+    0 0 0 3px hsl(var(--primary) / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+.auth-login-card .btn-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow:
+    0 14px 28px hsl(var(--primary) / 0.24),
+    inset 0 1px 0 rgb(255 255 255 / 0.16);
+}
+
+.auth-login-card .btn-primary:hover {
+  background-color: hsl(var(--primary) / 0.9);
+  box-shadow:
+    0 18px 34px hsl(var(--primary) / 0.3),
+    0 0 24px hsl(var(--primary) / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.auth-login-card a {
+  color: hsl(var(--primary));
+}
+
+.auth-login-card a:hover {
+  color: hsl(var(--primary) / 0.82);
+}
+
+.dark .auth-bg-soften {
+  background:
+    radial-gradient(circle at center, rgb(255 255 255 / 0.1), transparent 22rem),
+    rgb(4 24 21 / 0.18);
+}
+
+.dark .auth-login-card {
+  border-color: hsl(var(--job-cyan) / 0.42);
+  background-color: hsl(168 56% 8% / 0.78);
+  color: hsl(164 34% 96%);
+  box-shadow:
+    0 28px 76px hsl(176 60% 4% / 0.42),
+    0 0 0 1px hsl(var(--job-cyan) / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.dark .auth-login-shell:hover .auth-login-card {
+  border-color: hsl(var(--job-cyan) / 0.58);
+  box-shadow:
+    0 34px 88px hsl(176 60% 4% / 0.5),
+    0 0 0 1px hsl(var(--job-cyan) / 0.24),
+    0 0 54px hsl(var(--job-cyan) / 0.2);
+}
+
+.dark .auth-login-card .display-title,
+.dark .auth-login-card .text-foreground {
+  color: hsl(164 34% 96%);
+}
+
+.dark .auth-login-card .text-muted-foreground {
+  color: hsl(163 16% 78%);
+}
+
+.dark .auth-login-card input,
+.dark .auth-login-card textarea,
+.dark .auth-login-card select {
+  border-color: hsl(var(--job-cyan) / 0.3);
+  background-color: hsl(164 34% 96% / 0.94);
+  color: hsl(172 54% 10%);
+}
+
+.dark .auth-login-card .relative > svg {
+  color: hsl(172 54% 20%);
+  filter: drop-shadow(0 0 7px hsl(var(--job-cyan) / 0.2));
+}
+
+.dark .auth-login-card button[type="button"] {
+  border-color: hsl(var(--job-cyan) / 0.28);
+  background-color: hsl(var(--job-cyan) / 0.1);
+  color: hsl(172 54% 18%);
+  box-shadow: 0 6px 14px hsl(var(--job-cyan) / 0.1);
+}
+
+.dark .auth-login-card button[type="button"]:hover {
+  border-color: hsl(var(--job-cyan) / 0.46);
+  background-color: hsl(var(--job-cyan) / 0.18);
+  color: hsl(172 54% 10%);
+  box-shadow:
+    0 8px 18px hsl(var(--job-cyan) / 0.14),
+    0 0 20px hsl(var(--job-cyan) / 0.2);
+}
+
+.dark .auth-login-card input::placeholder,
+.dark .auth-login-card textarea::placeholder {
+  color: hsl(168 13% 37%);
+}
+
+.dark .auth-login-card input:focus,
+.dark .auth-login-card textarea:focus,
+.dark .auth-login-card select:focus {
+  border-color: hsl(var(--job-cyan) / 0.72);
+  box-shadow:
+    0 0 0 3px hsl(var(--job-cyan) / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+.dark .auth-login-card .btn-primary {
+  background-color: hsl(160 72% 39%);
+  color: hsl(168 56% 8%);
+  box-shadow:
+    0 14px 28px hsl(160 72% 18% / 0.34),
+    inset 0 1px 0 rgb(255 255 255 / 0.16);
+}
+
+.dark .auth-login-card .btn-primary:hover {
+  background-color: hsl(160 76% 45%);
+  box-shadow:
+    0 18px 34px hsl(160 72% 18% / 0.42),
+    0 0 24px hsl(160 76% 45% / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.dark .auth-login-card a {
+  color: hsl(160 76% 52%);
+}
+
+.dark .auth-login-card a:hover {
+  color: hsl(160 84% 62%);
+}
+
+.auth-login-card .display-title {
+  background: linear-gradient(
+    90deg,
+    hsl(160 84% 42%),
+    hsl(var(--job-cyan)),
+    hsl(213 92% 56%),
+    hsl(160 84% 42%)
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-text-flow 5.8s var(--ease-premium) infinite;
+}
+
+.auth-login-card label,
+.auth-login-card a {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)),
+    hsl(var(--job-cyan)),
+    hsl(var(--primary))
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-text-flow 6.8s var(--ease-premium) infinite;
+}
+
+.auth-login-card label {
+  text-shadow: 0 0 18px hsl(var(--primary) / 0.18);
+}
+
+.dark .auth-login-card .display-title {
+  background-image: linear-gradient(
+    90deg,
+    hsl(160 84% 62%),
+    hsl(var(--job-cyan)),
+    hsl(213 94% 68%),
+    hsl(160 84% 62%)
+  );
+}
+
+.dark .auth-login-card label,
+.dark .auth-login-card a {
+  background-image: linear-gradient(
+    90deg,
+    hsl(160 84% 62%),
+    hsl(var(--job-cyan)),
+    hsl(160 84% 62%)
+  );
+}
+
+.hero-panel.auth-animated-bg::before {
+  animation: auth-grid-drift 18s linear infinite;
+}
+
+.hero-panel.auth-animated-bg::after {
+  animation: auth-panel-float 7s var(--ease-premium) infinite;
+}
+
+@keyframes auth-grid-drift {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+
+  100% {
+    background-position: 44px 44px, 44px 44px;
+  }
+}
+
+@keyframes auth-text-flow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes auth-panel-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-12deg);
+  }
+
+  50% {
+    transform: translate3d(-1.25rem, 0.7rem, 0) rotate(-10deg);
+  }
+}
+
 .brand-panel {
   position: relative;
   overflow: hidden;
@@ -579,6 +966,35 @@ main:focus {
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  caret-color: hsl(var(--foreground));
+  -webkit-text-fill-color: hsl(var(--foreground));
+  box-shadow: 0 0 0 1000px hsl(var(--background)) inset;
+  transition: background-color 9999s var(--ease-premium);
+}
+
+.auth-login-card input:-webkit-autofill,
+.auth-login-card input:-webkit-autofill:hover,
+.auth-login-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: hsl(var(--foreground));
+  box-shadow: 0 0 0 1000px hsl(var(--card) / 0.94) inset;
+}
+
+.dark .auth-login-card input:-webkit-autofill,
+.dark .auth-login-card input:-webkit-autofill:hover,
+.dark .auth-login-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: hsl(172 54% 10%);
+  box-shadow: 0 0 0 1000px hsl(164 34% 96% / 0.94) inset;
+}
+
 .premium-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
@@ -628,6 +1044,9 @@ main:focus {
   }
 
   .interactive-card:hover,
+  .auth-login-card,
+  .auth-login-card:hover,
+  .auth-login-shell:hover .auth-login-card,
   .job-card-premium:hover,
   .btn-primary:active,
   .btn-secondary:active,
@@ -638,6 +1057,20 @@ main:focus {
 
   .horizontal-nav-link::after {
     transition: none;
+  }
+
+  .auth-login-card,
+  .auth-login-card::before,
+  .hero-panel.auth-animated-bg::before,
+  .hero-panel.auth-animated-bg::after,
+  .auth-login-card .display-title,
+  .auth-login-card label,
+  .auth-login-card a {
+    animation: none;
+  }
+
+  .auth-login-card::after {
+    opacity: 0;
   }
 
   .skeleton-shimmer::after {

@@ -26,7 +26,7 @@ export default function App() {
           style: { fontFamily: "Inter, sans-serif" },
         }}
       />
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

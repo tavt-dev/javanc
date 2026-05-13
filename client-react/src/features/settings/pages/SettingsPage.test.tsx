@@ -38,7 +38,7 @@ describe("SettingsPage", () => {
     useUIStore.setState({
       sidebarOpen: false,
       sidebarCollapsed: false,
-      theme: "system",
+      theme: "light",
     });
   });
 

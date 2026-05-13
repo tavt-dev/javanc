@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark";
 const THEME_KEY = "theme";
 const SIDEBAR_COLLAPSED_KEY = "sidebar_collapsed";
 
@@ -14,27 +14,22 @@ interface UIState {
   closeSidebar: () => void;
 }
 
-let currentTheme: Theme = (localStorage.getItem(THEME_KEY) as Theme) || "system";
-const systemThemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+function readTheme(): Theme {
+  return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
+}
+
+let currentTheme: Theme = readTheme();
 
 function applyThemeToDocument(theme: Theme) {
   const root = document.documentElement;
   if (theme === "dark") {
     root.classList.add("dark");
-  } else if (theme === "light") {
-    root.classList.remove("dark");
   } else {
-    root.classList.toggle("dark", systemThemeMedia.matches);
+    root.classList.remove("dark");
   }
 }
 
 applyThemeToDocument(currentTheme);
-
-systemThemeMedia.addEventListener("change", () => {
-  if (currentTheme === "system") {
-    applyThemeToDocument("system");
-  }
-});
 
 function readSidebarCollapsed() {
   return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
