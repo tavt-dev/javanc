@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS role_upgrade_request (
+    id INT NOT NULL AUTO_INCREMENT,
+    requester_user_id INT NOT NULL,
+    target_user_id INT NOT NULL,
+    requested_role VARCHAR(32) NOT NULL,
+    type VARCHAR(64) NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    company_id INT NULL,
+    company_name VARCHAR(255) NULL,
+    reason VARCHAR(1000) NULL,
+    admin_note VARCHAR(1000) NULL,
+    decided_by_user_id INT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    decided_at TIMESTAMP NULL,
+    version BIGINT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_role_request_target (target_user_id),
+    INDEX idx_role_request_requester (requester_user_id),
+    INDEX idx_role_request_status_type (status, type),
+    CONSTRAINT fk_role_request_requester FOREIGN KEY (requester_user_id) REFERENCES `user` (id),
+    CONSTRAINT fk_role_request_target FOREIGN KEY (target_user_id) REFERENCES `user` (id)
+);

@@ -19,4 +19,8 @@ public interface ProfileClient {
 
     @GET
     ApiResponse<List<ProfileDTO>> getAll();
+
+    @GET
+    @Path("/me")
+    ApiResponse<ProfileDTO> me();
 }

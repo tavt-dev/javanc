@@ -9,6 +9,11 @@ public class ApplicationException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    public ApplicationException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
     public ApplicationException(ErrorCode errorCode, Throwable cause) {
         super(errorCode.getMessage(), cause);
         this.errorCode = errorCode;

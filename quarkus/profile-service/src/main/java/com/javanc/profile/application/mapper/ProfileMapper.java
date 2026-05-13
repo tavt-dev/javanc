@@ -20,6 +20,7 @@ public class ProfileMapper {
         dto.setEducation(profile.getEducation());
         dto.setWorkExperience(profile.getWorkExperience());
         dto.setSkills(profile.getSkills());
+        dto.setName(profile.getName());
         dto.setContact(profile.getContact());
         dto.setTypeProfile(profile.getTypeProfile() == null ? null : profile.getTypeProfile().name());
         dto.setIdUser(profile.getIdUser());
@@ -41,6 +42,7 @@ public class ProfileMapper {
         profile.setEducation(dto.getEducation());
         profile.setWorkExperience(dto.getWorkExperience());
         profile.setSkills(dto.getSkills());
+        profile.setName(dto.getName());
         profile.setContact(dto.getContact());
         profile.setTypeProfile(toTypeProfile(dto.getTypeProfile()));
         profile.setIdUser(dto.getIdUser());
@@ -61,6 +63,7 @@ public class ProfileMapper {
         dto.setEducation(form.getEducation());
         dto.setWorkExperience(form.getWorkExperience());
         dto.setSkills(form.getSkills());
+        dto.setName(form.getName());
         dto.setTypeProfile(form.getTypeProfile());
         dto.setIdUser(form.getIdUser());
         dto.setUrl(form.getUrl());

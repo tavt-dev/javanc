@@ -19,4 +19,8 @@ public interface ProfileClient {
     @GET
     @Path("/{id}")
     ApiResponse<ProfileDTO> getProfileById(@PathParam("id") Integer id);
+
+    @GET
+    @Path("/me")
+    ApiResponse<ProfileDTO> getMyProfile();
 }

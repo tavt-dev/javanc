@@ -14,7 +14,7 @@ public class ApplicationExceptionMapper implements ExceptionMapper<ApplicationEx
     public Response toResponse(ApplicationException exception) {
         ErrorCode errorCode = exception.getErrorCode();
         return Response.status(errorCode.getStatus())
-                .entity(new ApiResponse<>(false, errorCode.getMessage(), ""))
+                .entity(new ApiResponse<>(false, exception.getMessage(), ""))
                 .build();
     }
 }

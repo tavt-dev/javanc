@@ -24,4 +24,10 @@ public class ProfileServiceAdapter implements ProfileLookupPort {
         ApiResponse<List<ProfileDTO>> response = profileClient.getAll();
         return response.getData();
     }
+
+    @Override
+    public ProfileDTO getMyProfile() {
+        ApiResponse<ProfileDTO> response = profileClient.me();
+        return response.getData();
+    }
 }

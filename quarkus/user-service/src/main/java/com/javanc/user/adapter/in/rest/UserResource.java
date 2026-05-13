@@ -3,7 +3,11 @@ package com.javanc.user.adapter.in.rest;
 import com.javanc.user.adapter.in.rest.dto.ApiResponse;
 import com.javanc.user.adapter.in.rest.dto.ChangeUserRoleRequest;
 import com.javanc.user.adapter.in.rest.dto.ChangeUserStatusRequest;
+import com.javanc.user.adapter.in.rest.dto.CreateHrPromotionRequest;
+import com.javanc.user.adapter.in.rest.dto.CreateManagerUpgradeRequest;
 import com.javanc.user.adapter.in.rest.dto.CreateUserAccountRequest;
+import com.javanc.user.adapter.in.rest.dto.RejectRoleRequest;
+import com.javanc.user.adapter.in.rest.dto.RoleRequestDTO;
 import com.javanc.user.adapter.in.rest.dto.UpdateUserRequest;
 import com.javanc.user.adapter.in.rest.dto.UserDTO;
 import com.javanc.user.application.usecase.UserUseCase;
@@ -61,6 +65,16 @@ public class UserResource {
                 userUseCase.list(token, ids).stream().map(mapper::toDto).toList());
     }
 
+    @GET
+    @Path("/search")
+    public ApiResponse<List<UserDTO>> search(@HeaderParam("Authorization") String authorizationHeader,
+            @QueryParam("query") String query, @QueryParam("role") String role, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Users retrieved successfully",
+                userUseCase.search(token, query, role, page, size).stream().map(mapper::toDto).toList());
+    }
+
     @PATCH
     @Path("/{id}")
     public ApiResponse<UserDTO> update(@HeaderParam("Authorization") String authorizationHeader,
@@ -103,5 +117,97 @@ public class UserResource {
             @PathParam("id") Integer id) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "User deleted successfully", mapper.toDto(userUseCase.delete(token, id)));
+    }
+
+    @POST
+    @Path("/me/manager-upgrade-requests")
+    public ApiResponse<RoleRequestDTO> requestManagerUpgrade(@HeaderParam("Authorization") String authorizationHeader,
+            CreateManagerUpgradeRequest request) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Manager upgrade request created",
+                mapper.toDto(userUseCase.requestManagerUpgrade(token, request == null ? null : request.reason)));
+    }
+
+    @GET
+    @Path("/me/role-requests")
+    public ApiResponse<List<RoleRequestDTO>> myRoleRequests(@HeaderParam("Authorization") String authorizationHeader) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Role requests retrieved",
+                userUseCase.myRoleRequests(token).stream().map(mapper::toDto).toList());
+    }
+
+    @GET
+    @Path("/admin/role-requests")
+    public ApiResponse<List<RoleRequestDTO>> adminRoleRequests(@HeaderParam("Authorization") String authorizationHeader,
+            @QueryParam("status") String status, @QueryParam("type") String type) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Role requests retrieved",
+                userUseCase.adminRoleRequests(token, status, type).stream().map(mapper::toDto).toList());
+    }
+
+    @PATCH
+    @Path("/admin/role-requests/{id}/approve")
+    public ApiResponse<RoleRequestDTO> approveRoleRequest(@HeaderParam("Authorization") String authorizationHeader,
+            @PathParam("id") Integer id) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Role request approved", mapper.toDto(userUseCase.approveRoleRequest(token, id)));
+    }
+
+    @PATCH
+    @Path("/admin/role-requests/{id}/reject")
+    public ApiResponse<RoleRequestDTO> rejectRoleRequest(@HeaderParam("Authorization") String authorizationHeader,
+            @PathParam("id") Integer id, RejectRoleRequest request) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Role request rejected",
+                mapper.toDto(userUseCase.rejectRoleRequest(token, id, request == null ? null : request.adminNote)));
+    }
+
+    @POST
+    @Path("/manager/hr-promotion-requests")
+    public ApiResponse<RoleRequestDTO> requestHrPromotion(@HeaderParam("Authorization") String authorizationHeader,
+            CreateHrPromotionRequest request) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "HR promotion request created", mapper.toDto(userUseCase.requestHrPromotion(token,
+                request == null ? null : request.targetUserId, request == null ? null : request.companyId,
+                request == null ? null : request.companyName)));
+    }
+
+    @GET
+    @Path("/me/hr-promotion-requests")
+    public ApiResponse<List<RoleRequestDTO>> myHrPromotions(@HeaderParam("Authorization") String authorizationHeader) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "HR promotion requests retrieved",
+                userUseCase.myHrPromotions(token).stream().map(mapper::toDto).toList());
+    }
+
+    @GET
+    @Path("/role-requests/{id}")
+    public ApiResponse<RoleRequestDTO> findRoleRequest(@HeaderParam("Authorization") String authorizationHeader,
+            @PathParam("id") Integer id) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Role request retrieved", mapper.toDto(userUseCase.findRoleRequest(token, id)));
+    }
+
+    @PATCH
+    @Path("/me/hr-promotion-requests/{id}/accept")
+    public ApiResponse<RoleRequestDTO> acceptHrPromotion(@HeaderParam("Authorization") String authorizationHeader,
+            @PathParam("id") Integer id) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "HR promotion accepted", mapper.toDto(userUseCase.acceptHrPromotion(token, id)));
+    }
+
+    @PATCH
+    @Path("/me/hr-promotion-requests/{id}/reject")
+    public ApiResponse<RoleRequestDTO> rejectHrPromotion(@HeaderParam("Authorization") String authorizationHeader,
+            @PathParam("id") Integer id) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "HR promotion rejected", mapper.toDto(userUseCase.rejectHrPromotion(token, id)));
+    }
+
+    @PATCH
+    @Path("/me/leave-hr")
+    public ApiResponse<UserDTO> leaveHr(@HeaderParam("Authorization") String authorizationHeader) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "HR role removed", mapper.toDto(userUseCase.leaveHr(token)));
     }
 }

@@ -11,6 +11,7 @@ public class ProfileDTO {
     private String education;
     private String workExperience;
     private String skills;
+    private String name;
     private Contact contact;
     private String typeProfile;
     private Integer idUser;
@@ -24,17 +25,23 @@ public class ProfileDTO {
     }
 
     public ProfileDTO(Integer id, String objective, String education, String workExperience, String skills,
-            Contact contact, String typeProfile, Integer idUser, String url, String title) {
+            String name, Contact contact, String typeProfile, Integer idUser, String url, String title) {
         this.id = id;
         this.objective = objective;
         this.education = education;
         this.workExperience = workExperience;
         this.skills = skills;
+        this.name = name;
         this.contact = contact;
         this.typeProfile = typeProfile;
         this.idUser = idUser;
         this.url = url;
         this.title = title;
+    }
+
+    public ProfileDTO(Integer id, String objective, String education, String workExperience, String skills,
+            Contact contact, String typeProfile, Integer idUser, String url, String title) {
+        this(id, objective, education, workExperience, skills, null, contact, typeProfile, idUser, url, title);
     }
 
     public Integer getId() {
@@ -75,6 +82,14 @@ public class ProfileDTO {
 
     public void setSkills(String skills) {
         this.skills = skills;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Contact getContact() {

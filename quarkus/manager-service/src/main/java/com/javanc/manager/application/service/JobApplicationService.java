@@ -3,12 +3,14 @@ package com.javanc.manager.application.service;
 import com.javanc.manager.application.dto.JobDTO;
 import com.javanc.manager.application.dto.MessageDTO;
 import com.javanc.manager.application.dto.ProfileDTO;
+import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.exception.ApplicationException;
 import com.javanc.manager.application.exception.ErrorCode;
 import com.javanc.manager.application.mapper.JobMapper;
 import com.javanc.manager.application.port.EmailPort;
 import com.javanc.manager.application.port.NotificationPort;
 import com.javanc.manager.application.port.ProfileLookupPort;
+import com.javanc.manager.application.port.UserAccountPort;
 import com.javanc.manager.domain.model.Job;
 import com.javanc.manager.domain.repository.JobRepository;
 import com.javanc.manager.domain.service.ManagerIdGenerator;
@@ -25,16 +27,19 @@ public class JobApplicationService {
     private final JobMapper jobMapper;
     private final ManagerIdGenerator idGenerator;
     private final ProfileLookupPort profileLookupPort;
+    private final UserAccountPort userAccountPort;
     private final NotificationPort notificationPort;
     private final EmailPort emailPort;
 
     @Inject
     public JobApplicationService(JobRepository jobRepository, JobMapper jobMapper, ManagerIdGenerator idGenerator,
-            ProfileLookupPort profileLookupPort, NotificationPort notificationPort, EmailPort emailPort) {
+            ProfileLookupPort profileLookupPort, UserAccountPort userAccountPort, NotificationPort notificationPort,
+            EmailPort emailPort) {
         this.jobRepository = jobRepository;
         this.jobMapper = jobMapper;
         this.idGenerator = idGenerator;
         this.profileLookupPort = profileLookupPort;
+        this.userAccountPort = userAccountPort;
         this.notificationPort = notificationPort;
         this.emailPort = emailPort;
     }
@@ -86,21 +91,67 @@ public class JobApplicationService {
         if (jobDTO.idProfiePending == null) {
             jobDTO.idProfiePending = new ArrayList<>();
         }
-        profileLookupPort.findProfileById(idProfile);
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"user".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        ProfileDTO profile = profileLookupPort.findProfileById(idProfile);
+        if (profile == null || !currentUser.id.equals(profile.idUser)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        if ((jobDTO.idProfile != null && jobDTO.idProfile.contains(idProfile))
+                || jobDTO.idProfiePending.contains(idProfile)) {
+            throw new ApplicationException(ErrorCode.CONFLICT);
+        }
         jobDTO.idProfiePending.add(idProfile);
+        return update(jobDTO);
+    }
+
+    public JobDTO applyCurrentUser(Integer idJob) {
+        ProfileDTO profile = requireCurrentUserProfile();
+        return applyJob(idJob, profile.id);
+    }
+
+    public String applicationStatus(Integer idJob) {
+        ProfileDTO profile = requireCurrentUserProfile();
+        JobDTO jobDTO = findById(idJob);
+        if (jobDTO.idProfile != null && jobDTO.idProfile.contains(profile.id)) {
+            return "ACCEPTED";
+        }
+        if (jobDTO.idProfiePending != null && jobDTO.idProfiePending.contains(profile.id)) {
+            return "PENDING";
+        }
+        return "NONE";
+    }
+
+    public JobDTO leaveCurrentUser(Integer idJob) {
+        ProfileDTO profile = requireCurrentUserProfile();
+        JobDTO jobDTO = findById(idJob);
+        boolean changed = false;
+        if (jobDTO.idProfiePending != null) {
+            changed = jobDTO.idProfiePending.remove(profile.id);
+        }
+        if (jobDTO.idProfile != null) {
+            changed = jobDTO.idProfile.remove(profile.id) || changed;
+        }
+        if (!changed) {
+            throw new ApplicationException(ErrorCode.CONFLICT);
+        }
         return update(jobDTO);
     }
 
     public JobDTO acceptProfile(Integer idJob, Integer idProfile) {
         JobDTO jobDTO = findById(idJob);
-        if (jobDTO.idProfiePending != null) {
-            jobDTO.idProfiePending.remove(idProfile);
+        if (jobDTO.idProfiePending == null || !jobDTO.idProfiePending.remove(idProfile)) {
+            throw new ApplicationException(ErrorCode.CONFLICT);
         }
         if (jobDTO.idProfile == null) {
             jobDTO.idProfile = new ArrayList<>();
         }
-        jobDTO.size = jobDTO.size - 1;
-        jobDTO.idProfile.add(idProfile);
+        if (!jobDTO.idProfile.contains(idProfile)) {
+            jobDTO.idProfile.add(idProfile);
+        }
+        jobDTO.size = Math.max(0, (jobDTO.size == null ? 0 : jobDTO.size) - 1);
         update(jobDTO);
         ProfileDTO profileDTO = profileLookupPort.findProfileById(idProfile);
         MessageDTO messageDTO = new MessageDTO("accept job successful by" + jobDTO.typeJob, profileDTO.idUser);
@@ -112,7 +163,21 @@ public class JobApplicationService {
 
     public JobDTO rejectProfile(Integer idJob, Integer idProfile) {
         JobDTO jobDTO = findById(idJob);
-        jobDTO.idProfiePending.remove(idProfile);
+        if (jobDTO.idProfiePending == null || !jobDTO.idProfiePending.remove(idProfile)) {
+            throw new ApplicationException(ErrorCode.CONFLICT);
+        }
         return update(jobDTO);
+    }
+
+    private ProfileDTO requireCurrentUserProfile() {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"user".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        ProfileDTO profile = profileLookupPort.myProfile();
+        if (profile == null || profile.id == null) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+        return profile;
     }
 }

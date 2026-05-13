@@ -4,4 +4,6 @@ import com.javanc.manager.application.dto.ProfileDTO;
 
 public interface ProfileLookupPort {
     ProfileDTO findProfileById(Integer id);
+
+    ProfileDTO myProfile();
 }

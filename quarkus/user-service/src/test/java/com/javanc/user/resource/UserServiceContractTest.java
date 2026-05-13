@@ -14,6 +14,7 @@ import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -190,8 +191,7 @@ class UserServiceContractTest {
                 .when()
                 .patch("/users/" + userId + "/role")
                 .then()
-                .statusCode(200)
-                .body("data.role", equalTo("hr"));
+                .statusCode(403);
 
         given()
                 .header("Authorization", "Bearer " + adminToken)
@@ -211,6 +211,148 @@ class UserServiceContractTest {
                 .post("/auth/login")
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    void adminAccountsCannotBeDisabledOrDeleted() {
+        String adminToken = loginToken("test.admin@example.com", "Password1!");
+        Integer protectedAdminId = createAccountAndUserId(adminToken, "contract.protected.admin@example.com",
+                "EMP-CONTRACT-PROTECTED-ADMIN", "admin");
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("active", false))
+                .when()
+                .patch("/users/" + protectedAdminId + "/status")
+                .then()
+                .statusCode(409)
+                .body("message", equalTo("Admin accounts cannot be disabled or deleted"));
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .delete("/users/" + protectedAdminId)
+                .then()
+                .statusCode(409)
+                .body("message", equalTo("Admin accounts cannot be disabled or deleted"));
+    }
+
+    @Test
+    void roleRequestsControlManagerAndHrPromotionWorkflows() {
+        String adminToken = loginToken("test.admin@example.com", "Password1!");
+        createAccountAndUserId(adminToken, "contract.manager@example.com", "EMP-CONTRACT-MANAGER", "manager");
+        Integer targetUserId = createAccountAndUserId(adminToken, "contract.hr.target@example.com",
+                "EMP-CONTRACT-HR-TARGET", "user");
+        String targetToken = loginToken("contract.hr.target@example.com", "Password1!");
+        String managerToken = loginToken("contract.manager@example.com", "Password1!");
+
+        given()
+                .header("Authorization", "Bearer " + managerToken)
+                .when()
+                .get("/users")
+                .then()
+                .statusCode(200);
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(adminAccountBody("Alice Candidate", "contract.alice.candidate@example.com", "Password1!",
+                        "EMP-CONTRACT-ALICE", "user"))
+                .when()
+                .post("/users/admin/accounts")
+                .then()
+                .statusCode(200);
+
+        given()
+                .header("Authorization", "Bearer " + managerToken)
+                .when()
+                .get("/users/search?query=alice&role=user")
+                .then()
+                .statusCode(200)
+                .body("data.email", hasItem("contract.alice.candidate@example.com"));
+
+        given()
+                .header("Authorization", "Bearer " + managerToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("role", "hr"))
+                .when()
+                .patch("/users/" + targetUserId + "/role")
+                .then()
+                .statusCode(403);
+
+        Integer hrRequestId = given()
+                .header("Authorization", "Bearer " + managerToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("targetUserId", targetUserId, "companyId", 77, "companyName", "Contract Co"))
+                .when()
+                .post("/users/manager/hr-promotion-requests")
+                .then()
+                .statusCode(200)
+                .body("data.status", equalTo("PENDING_USER_CONFIRMATION"))
+                .body("data.requestedRole", equalTo("hr"))
+                .extract()
+                .path("data.id");
+
+        given()
+                .header("Authorization", "Bearer " + targetToken)
+                .when()
+                .patch("/users/me/hr-promotion-requests/" + hrRequestId + "/accept")
+                .then()
+                .statusCode(200)
+                .body("data.status", equalTo("APPROVED"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "contract.hr.target@example.com", "password", "Password1!"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .body("data.user.role", equalTo("hr"));
+    }
+
+    @Test
+    void managerUpgradeRequiresAdminApproval() {
+        String adminToken = loginToken("test.admin@example.com", "Password1!");
+        String userToken = registerVerifyAndToken("contract.manager.request@example.com");
+
+        Integer requestId = given()
+                .header("Authorization", "Bearer " + userToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("reason", "I manage a company"))
+                .when()
+                .post("/users/me/manager-upgrade-requests")
+                .then()
+                .statusCode(200)
+                .body("data.status", equalTo("PENDING_SYSADMIN"))
+                .body("data.requestedRole", equalTo("manager"))
+                .extract()
+                .path("data.id");
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .get("/users/admin/role-requests?status=PENDING_SYSADMIN")
+                .then()
+                .statusCode(200)
+                .body("data[0].id", notNullValue());
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .patch("/users/admin/role-requests/" + requestId + "/approve")
+                .then()
+                .statusCode(200)
+                .body("data.status", equalTo("APPROVED"));
+
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/users/me")
+                .then()
+                .statusCode(200)
+                .body("data.role", equalTo("manager"));
     }
 
     @Test

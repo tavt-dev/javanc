@@ -118,6 +118,64 @@ class ProjectResourceTest {
     }
 
     @Test
+    void userCrudRoutesUseCurrentProfile() {
+        ProfileDTO profile = new ProfileDTO();
+        profile.setId(501);
+        when(profileLookupPort.getMyProfile()).thenReturn(profile);
+
+        Integer id = given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "title": "My project",
+                          "description": "Created by current user",
+                          "url": "https://example.test/my-project",
+                          "display": true
+                        }
+                        """)
+                .when().post("/project/user/projects")
+                .then()
+                .statusCode(200)
+                .body("data.idProfile", equalTo(501))
+                .extract()
+                .path("data.id");
+
+        given()
+                .when().get("/project/user/projects")
+                .then()
+                .statusCode(200)
+                .body("data", hasSize(1))
+                .body("data[0].id", equalTo(id));
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "title": "Updated",
+                          "description": "Updated by current user",
+                          "url": "https://example.test/updated",
+                          "display": false
+                        }
+                        """)
+                .when().patch("/project/user/projects/%d".formatted(id))
+                .then()
+                .statusCode(200)
+                .body("data.title", equalTo("Updated"));
+
+        given()
+                .when().delete("/project/user/projects/%d".formatted(id))
+                .then()
+                .statusCode(200)
+                .body("message", equalTo("Project deleted successfully"));
+
+        given()
+                .when().get("/project/user/projects")
+                .then()
+                .statusCode(200)
+                .body("data", hasSize(0));
+    }
+
+    @Test
     void getProfileReturnsProfileDataFromConfiguredProfileServiceAdapter() {
         ProfileDTO profile = new ProfileDTO();
         profile.setId(11);

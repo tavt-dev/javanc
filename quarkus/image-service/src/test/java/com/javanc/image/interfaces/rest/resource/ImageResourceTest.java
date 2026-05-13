@@ -22,6 +22,28 @@ class ImageResourceTest {
     }
 
     @Test
+    void previewReturnsLowResolutionCloudinaryUrl() {
+        given()
+                .queryParam("url", "https://res.cloudinary.com/demo/image/upload/v1/javanc/profile/avatar.png")
+                .queryParam("width", 96)
+                .when().get("/image/preview")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("data", equalTo("https://res.cloudinary.com/demo/image/upload/c_fill,w_96,h_96,q_auto,f_auto/v1/javanc/profile/avatar.png"));
+    }
+
+    @Test
+    void previewKeepsLocalUrlUnchanged() {
+        given()
+                .queryParam("url", "http://localhost:8083/image/files/avatar.png")
+                .when().get("/image/preview")
+                .then()
+                .statusCode(200)
+                .body("data", equalTo("http://localhost:8083/image/files/avatar.png"));
+    }
+
+    @Test
     void saveImageReturnsMetadataWrapper() {
         given()
                 .multiPart("image", "avatar.png",

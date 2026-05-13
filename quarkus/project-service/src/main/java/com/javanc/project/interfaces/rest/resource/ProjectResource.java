@@ -10,8 +10,11 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -43,6 +46,39 @@ public class ProjectResource {
     public ApiResponse<ProjectDTO> update(ProjectDTO projectDTO) {
         ProjectDTO updatedProject = projectService.updateProject(projectDTO);
         return new ApiResponse<>(true, "Project updated successfully", updatedProject);
+    }
+
+    @GET
+    @Path("/user/projects")
+    public ApiResponse<List<ProjectDTO>> myProjects() {
+        return new ApiResponse<>(true, "Projects fetched successfully", projectService.getMyProjects());
+    }
+
+    @GET
+    @Path("/user/projects/{id}")
+    public ApiResponse<ProjectDTO> myProject(@PathParam("id") Integer id) {
+        return new ApiResponse<>(true, "Project fetched successfully", projectService.getMyProject(id));
+    }
+
+    @POST
+    @Path("/user/projects")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ApiResponse<ProjectDTO> createMyProject(ProjectDTO projectDTO) {
+        return new ApiResponse<>(true, "Project saved successfully", projectService.createMyProject(projectDTO));
+    }
+
+    @PATCH
+    @Path("/user/projects/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ApiResponse<ProjectDTO> updateMyProject(@PathParam("id") Integer id, ProjectDTO projectDTO) {
+        return new ApiResponse<>(true, "Project updated successfully", projectService.updateMyProject(id, projectDTO));
+    }
+
+    @DELETE
+    @Path("/user/projects/{id}")
+    public ApiResponse<Void> deleteMyProject(@PathParam("id") Integer id) {
+        projectService.deleteMyProject(id);
+        return new ApiResponse<>(true, "Project deleted successfully", null);
     }
 
     @GET

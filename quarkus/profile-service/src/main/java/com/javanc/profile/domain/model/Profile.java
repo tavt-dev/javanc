@@ -14,6 +14,7 @@ public class Profile {
     private String education;
     private String workExperience;
     private String skills;
+    private String name;
     private Contact contact;
     private TypeProfile typeProfile;
     private Integer idImage;
@@ -65,6 +66,14 @@ public class Profile {
 
     public void setSkills(String skills) {
         this.skills = skills;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Contact getContact() {

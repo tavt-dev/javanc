@@ -20,6 +20,9 @@ public class ProfileMultipartForm {
     @RestForm("skills")
     private String skills;
 
+    @RestForm("name")
+    private String name;
+
     @RestForm("typeProfile")
     private String typeProfile;
 
@@ -85,6 +88,14 @@ public class ProfileMultipartForm {
 
     public void setSkills(String skills) {
         this.skills = skills;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getTypeProfile() {

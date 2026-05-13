@@ -12,4 +12,6 @@ public interface ProjectRepository {
     Optional<Project> findByProjectId(Integer id);
 
     List<Project> findByIdProfile(Integer idProfile);
+
+    void delete(Project project);
 }

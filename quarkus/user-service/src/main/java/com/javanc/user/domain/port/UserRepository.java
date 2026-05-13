@@ -22,6 +22,8 @@ public interface UserRepository {
 
     List<User> findUsersByIds(Collection<UserId> ids);
 
+    List<User> searchUsers(String query, Role role, int page, int size);
+
     boolean existsByRole(Role role);
 
     boolean existsActiveByRole(Role role);

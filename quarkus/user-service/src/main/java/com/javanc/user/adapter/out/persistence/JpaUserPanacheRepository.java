@@ -58,6 +58,29 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
     }
 
     @Override
+    public List<User> searchUsers(String query, Role role, int page, int size) {
+        String normalized = query == null ? "" : query.trim().toLowerCase();
+        String like = "%" + normalized + "%";
+        boolean numeric = normalized.matches("\\d+");
+        if (role != null && numeric) {
+            return find("role = ?1 and status = ?2 and (id = ?3 or lower(name) like ?4 or lower(email) like ?4 or (idEmployee is not null and lower(idEmployee) like ?4))",
+                    role, AccountStatus.ACTIVE, Integer.valueOf(normalized), like).page(page, size).list().stream()
+                    .map(mapper::toDomain).toList();
+        }
+        if (role != null) {
+            return find("role = ?1 and status = ?2 and (lower(name) like ?3 or lower(email) like ?3 or (idEmployee is not null and lower(idEmployee) like ?3))",
+                    role, AccountStatus.ACTIVE, like).page(page, size).list().stream().map(mapper::toDomain).toList();
+        }
+        if (numeric) {
+            return find("status = ?1 and (id = ?2 or lower(name) like ?3 or lower(email) like ?3 or (idEmployee is not null and lower(idEmployee) like ?3))",
+                    AccountStatus.ACTIVE, Integer.valueOf(normalized), like).page(page, size).list().stream()
+                    .map(mapper::toDomain).toList();
+        }
+        return find("status = ?1 and (lower(name) like ?2 or lower(email) like ?2 or (idEmployee is not null and lower(idEmployee) like ?2))",
+                AccountStatus.ACTIVE, like).page(page, size).list().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public boolean existsByRole(Role role) {
         return count("role", role) > 0;
     }
