@@ -8,7 +8,10 @@ import { DataTable } from "./DataTable";
 import { DataToolbar } from "./DataToolbar";
 import { EmptyState } from "./EmptyState";
 import { ManagementDialog } from "./ManagementDialog";
+import { PageHeader } from "./PageHeader";
 import { RetryState } from "./RetryState";
+import { StatusBadge } from "./StatusBadge";
+import { BrandPanel } from "./BrandPanel";
 
 describe("shared state components", () => {
   it("renders an empty state action", () => {
@@ -23,6 +26,42 @@ describe("shared state components", () => {
 
     expect(screen.getByText("No data")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create" })).toBeInTheDocument();
+  });
+
+  it("renders brand empty state and brand page header search content", () => {
+    render(
+      <>
+        <EmptyState
+          variant="brand"
+          icon={FileText}
+          title="No branded data"
+          description="Brand state copy."
+        />
+        <PageHeader
+          variant="brand"
+          eyebrow="Marketplace"
+          title="Talent search"
+          description="Find candidates quickly."
+          search={<input aria-label="Brand search" />}
+        />
+      </>,
+    );
+
+    expect(screen.getByText("No branded data")).toBeInTheDocument();
+    expect(screen.getByText("Marketplace")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Brand search" })).toBeInTheDocument();
+  });
+
+  it("renders emerald status tones and brand panel", () => {
+    render(
+      <BrandPanel>
+        <StatusBadge tone="emerald">Emerald</StatusBadge>
+        <StatusBadge tone="mint">Mint</StatusBadge>
+      </BrandPanel>,
+    );
+
+    expect(screen.getByText("Emerald")).toBeInTheDocument();
+    expect(screen.getByText("Mint")).toBeInTheDocument();
   });
 
   it("calls retry action", async () => {
@@ -112,6 +151,8 @@ describe("shared state components", () => {
         searchPlaceholder="Search records"
         onSearchChange={onSearchChange}
         onClear={onClear}
+        variant="prominent"
+        activeFilterCount={2}
       />,
     );
 
@@ -120,6 +161,7 @@ describe("shared state components", () => {
 
     expect(onSearchChange).toHaveBeenCalled();
     expect(onClear).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("2")).toBeInTheDocument();
   });
 
   it("closes management dialog with Escape", async () => {

@@ -1,4 +1,4 @@
-import { Briefcase, Search, SlidersHorizontal } from "lucide-react";
+import { Briefcase, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RetryState } from "@/components/shared/RetryState";
+import { SearchHeroPanel } from "@/components/shared/SearchHeroPanel";
 import { useCompaniesQuery } from "@/features/companies/hooks/use-company-queries";
 import { JobCard } from "@/features/jobs/components/JobCard";
 import { useJobBoardQuery } from "@/features/jobs/hooks/use-job-queries";
@@ -41,69 +42,65 @@ export function JobBoardPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Job marketplace"
         title="Job Board"
         description="Browse active jobs and apply with your profile."
+        search={
+          <SearchHeroPanel
+            value={query}
+            onChange={setQuery}
+            placeholder="Search jobs, descriptions, or hiring signals"
+            filters={
+              <>
+                <select
+                  value={type}
+                  onChange={(event) => setType(event.target.value as TypeJob | "")}
+                  className="form-input md:w-40"
+                >
+                  <option value="">All types</option>
+                  <option value="java">Java</option>
+                  <option value="python">Python</option>
+                  <option value="php">PHP</option>
+                </select>
+                <select
+                  value={companyId}
+                  onChange={(event) => setCompanyId(event.target.value)}
+                  className="form-input md:w-56"
+                >
+                  <option value="">All companies</option>
+                  {(companiesQuery.data ?? []).map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+                <label className="brand-chip min-h-10 cursor-pointer bg-white/90 text-emerald-800">
+                  <input
+                    type="checkbox"
+                    checked={openOnly}
+                    onChange={(event) => setOpenOnly(event.target.checked)}
+                  />
+                  Open only
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setType("");
+                    setCompanyId("");
+                    setOpenOnly(false);
+                  }}
+                  className="btn-secondary focus-ring h-10 bg-white"
+                >
+                  <SlidersHorizontal size={16} />
+                  Clear
+                </button>
+              </>
+            }
+          />
+        }
       />
-
-      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1fr_150px_220px_auto_auto]">
-          <label className="relative block">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search jobs"
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-            />
-          </label>
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as TypeJob | "")}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-          >
-            <option value="">All types</option>
-            <option value="java">Java</option>
-            <option value="python">Python</option>
-            <option value="php">PHP</option>
-          </select>
-          <select
-            value={companyId}
-            onChange={(event) => setCompanyId(event.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-          >
-            <option value="">All companies</option>
-            {(companiesQuery.data ?? []).map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
-            <input
-              type="checkbox"
-              checked={openOnly}
-              onChange={(event) => setOpenOnly(event.target.checked)}
-            />
-            Open only
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setType("");
-              setCompanyId("");
-              setOpenOnly(false);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
-          >
-            <SlidersHorizontal size={16} />
-            Clear
-          </button>
-        </div>
-      </div>
 
       {jobsQuery.isLoading ? (
         <LoadingSkeleton variant="cardGrid" />
@@ -117,8 +114,8 @@ export function JobBoardPage() {
         />
       ) : (
         <StaggerList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredJobs.map((job) => (
-            <StaggerItem key={job.id}>
+          {filteredJobs.map((job, index) => (
+            <StaggerItem key={job.id} index={index}>
               <JobCard
                 job={job}
                 profileId={profile?.id}

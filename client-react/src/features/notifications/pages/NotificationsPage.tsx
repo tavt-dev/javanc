@@ -37,7 +37,7 @@ export function NotificationsPage() {
         description="Track application and workspace updates."
       />
 
-      <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-card p-2 shadow-sm">
+      <div className="surface flex flex-wrap gap-2 p-2">
         {(["all", "unread", "read"] as const).map((item) => (
           <button
             key={item}

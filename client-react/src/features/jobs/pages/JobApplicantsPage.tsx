@@ -94,7 +94,7 @@ export function JobApplicantsPage() {
         }
       />
 
-      <div className="flex gap-2 rounded-lg border border-border bg-card p-2">
+      <div className="surface flex gap-2 p-2">
         {(["pending", "accepted"] as const).map((item) => (
           <button
             key={item}
@@ -114,7 +114,7 @@ export function JobApplicantsPage() {
       ) : profiles.length ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {profiles.map((profile) => (
-            <article key={profile.id} className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <article key={profile.id} className="interactive-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="truncate font-semibold">{profile.title || `Profile #${profile.id}`}</h2>

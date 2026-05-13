@@ -3,9 +3,9 @@ import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { InlineMetric } from "@/components/shared/InlineMetric";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ManagementDialog } from "@/components/shared/ManagementDialog";
+import { MetricTile } from "@/components/shared/MetricTile";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -70,13 +70,15 @@ export function MyCompanyPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Manager workspace"
         title={company.name}
         description="Company workspace and operational profile."
         actions={
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
           >
             <Save size={16} />
             Edit company
@@ -85,12 +87,12 @@ export function MyCompanyPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <InlineMetric icon={Building} label="Jobs" value={company.idJobs?.length ?? 0} />
-        <InlineMetric icon={Building} label="HR accounts" value={company.idHR?.length ?? 0} />
-        <InlineMetric icon={Building} label="Manager ID" value={company.idManager ?? "None"} />
+        <MetricTile icon={Building} label="Jobs" value={company.idJobs?.length ?? 0} />
+        <MetricTile icon={Building} label="HR accounts" value={company.idHR?.length ?? 0} />
+        <MetricTile icon={Building} label="Manager ID" value={company.idManager ?? "None"} />
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <div className="flex flex-wrap items-center gap-2">
           {company.type && <StatusBadge tone="primary">{company.type}</StatusBadge>}
           <StatusBadge tone={company.idManager ? "success" : "warning"}>

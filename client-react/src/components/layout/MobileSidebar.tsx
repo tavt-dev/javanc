@@ -78,7 +78,7 @@ export function MobileSidebar() {
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -88,8 +88,7 @@ export function MobileSidebar() {
 
           {/* Drawer */}
           <motion.aside
-            className="fixed inset-y-0 left-0 w-[280px] bg-card border-r border-border z-50 lg:hidden
-                       flex flex-col shadow-xl"
+            className="fixed inset-y-0 left-0 z-50 flex w-[min(300px,calc(100vw-2rem))] flex-col border-r border-primary/10 bg-card shadow-2xl lg:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
@@ -103,16 +102,17 @@ export function MobileSidebar() {
             }
           >
             {/* Header */}
-            <div className="h-16 flex items-center justify-between px-4 border-b border-border">
+            <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm ring-1 ring-primary/20">
                   <span className="text-primary-foreground font-bold text-sm">J</span>
                 </div>
                 <span className="font-semibold">JavaNC</span>
               </div>
               <button
+                type="button"
                 onClick={close}
-                className="p-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="icon-button focus-ring"
                 aria-label="Close menu"
               >
                 <X size={18} />
@@ -120,7 +120,10 @@ export function MobileSidebar() {
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+            <nav className="premium-scrollbar flex-1 overflow-y-auto px-2 py-3">
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
+                Workspace
+              </p>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.path;
@@ -130,11 +133,16 @@ export function MobileSidebar() {
                     to={item.path}
                     onClick={close}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                      "relative flex min-h-11 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                       "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                      active ? "bg-primary/10 text-primary" : "text-muted-foreground",
+                      active
+                        ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10"
+                        : "text-muted-foreground",
                     )}
                   >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+                    )}
                     <Icon size={18} />
                     <span>{item.label}</span>
                   </NavLink>
@@ -144,6 +152,9 @@ export function MobileSidebar() {
               {visibleRoleItems.length > 0 && (
                 <>
                   <div className="my-3 mx-2 border-t border-border" />
+                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
+                    Role tools
+                  </p>
                   {visibleRoleItems.map((item) => {
                     const Icon = item.icon;
                     const active = location.pathname.startsWith(item.path);
@@ -153,11 +164,16 @@ export function MobileSidebar() {
                         to={item.path}
                         onClick={close}
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                          "relative flex min-h-11 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                           "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                          active ? "bg-primary/10 text-primary" : "text-muted-foreground",
+                          active
+                            ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10"
+                            : "text-muted-foreground",
                         )}
                       >
+                        {active && (
+                          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+                        )}
                         <Icon size={18} />
                         <span>{item.label}</span>
                       </NavLink>

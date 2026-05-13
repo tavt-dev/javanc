@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Mail, Phone } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { motionPresets } from "@/components/motion/motion-presets";
 import type { ProfileDTO } from "@/types/profile";
 
 export function ProfileCard({ profile }: { profile: ProfileDTO }) {
@@ -16,9 +17,9 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
 
   return (
     <motion.article
-      whileHover={reduceMotion ? undefined : { y: -1 }}
-      transition={{ duration: 0.16 }}
-      className="rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
+      transition={motionPresets.card.transition}
+      className="interactive-card border-t-2 border-t-primary/40 p-4"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-sm font-semibold text-primary">
@@ -68,7 +69,7 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
 
       <Link
         to={`/profiles/${profile.id}`}
-        className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+        className="focus-ring mt-5 inline-flex items-center gap-2 rounded-md text-sm font-medium text-primary hover:underline"
       >
         View profile
         <ArrowRight size={15} />

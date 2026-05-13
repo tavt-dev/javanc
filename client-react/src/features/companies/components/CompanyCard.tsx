@@ -3,6 +3,7 @@ import type { ElementType } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { motionPresets } from "@/components/motion/motion-presets";
 import { getCompanyLocation } from "@/features/companies/utils/company-utils";
 import type { CompanyDTO } from "@/types/company";
 
@@ -11,9 +12,9 @@ export function CompanyCard({ company }: { company: CompanyDTO }) {
 
   return (
     <motion.article
-      whileHover={reduceMotion ? undefined : { y: -1 }}
-      transition={{ duration: 0.16 }}
-      className="rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
+      transition={motionPresets.card.transition}
+      className="interactive-card border-t-2 border-t-primary/40 p-4"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -44,7 +45,7 @@ export function CompanyCard({ company }: { company: CompanyDTO }) {
 
       <Link
         to={`/companies/${company.id}`}
-        className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+        className="focus-ring mt-5 inline-flex items-center gap-2 rounded-md text-sm font-medium text-primary hover:underline"
       >
         View company
         <ArrowRight size={15} />

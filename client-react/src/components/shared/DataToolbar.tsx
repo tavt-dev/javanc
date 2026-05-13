@@ -8,6 +8,8 @@ export function DataToolbar({
   action,
   onSearchChange,
   onClear,
+  activeFilterCount = 0,
+  variant = "default",
 }: {
   search: string;
   searchPlaceholder?: string;
@@ -15,9 +17,17 @@ export function DataToolbar({
   action?: ReactNode;
   onSearchChange: (value: string) => void;
   onClear: () => void;
+  activeFilterCount?: number;
+  variant?: "default" | "prominent";
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    <div
+      className={
+        variant === "prominent"
+          ? "brand-search flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between"
+          : "surface flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between"
+      }
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">{searchPlaceholder}</span>
@@ -29,20 +39,26 @@ export function DataToolbar({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            className={variant === "prominent" ? "form-input h-11 pl-9" : "form-input h-10 pl-9"}
           />
         </label>
         {filters}
         <button
           type="button"
           onClick={onClear}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-medium transition-colors hover:bg-accent"
+          aria-label="Clear"
+          className="btn-secondary focus-ring h-10"
         >
           <X size={15} />
           Clear
+          {activeFilterCount > 0 && (
+            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">
+              {activeFilterCount}
+            </span>
+          )}
         </button>
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="flex shrink-0 flex-wrap gap-2">{action}</div>}
     </div>
   );
 }

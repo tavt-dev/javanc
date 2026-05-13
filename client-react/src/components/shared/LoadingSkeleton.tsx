@@ -54,7 +54,7 @@ export function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse bg-muted motion-reduce:animate-none",
+        "skeleton-shimmer bg-muted motion-reduce:animate-none",
         className,
       )}
     />

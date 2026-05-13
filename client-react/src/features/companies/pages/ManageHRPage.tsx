@@ -69,7 +69,7 @@ export function ManageHRPage() {
         <InlineMetric icon={Building} label="Company" value={company.name} />
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <h2 className="text-lg font-semibold">Assigned HR accounts</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {company.idHR?.length ? (

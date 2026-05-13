@@ -10,7 +10,7 @@ export function InlineMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="interactive-card p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">{label}</span>
         <Icon size={17} className="text-muted-foreground" />

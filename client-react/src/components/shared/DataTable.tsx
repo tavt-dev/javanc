@@ -6,9 +6,10 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, FileText } from "lucide-react";
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { EmptyState } from "./EmptyState";
 
 // TanStack columns are intentionally value-variant; table callers mix accessor and display columns.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,10 +19,12 @@ export function DataTable<T>({
   data,
   columns,
   empty,
+  stickyHeader = false,
 }: {
   data: T[];
   columns: LooseColumnDef<T>[];
   empty: string;
+  stickyHeader?: boolean;
 }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const reduceMotion = useReducedMotion();
@@ -36,10 +39,10 @@ export function DataTable<T>({
   });
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="surface overflow-hidden">
+      <div className="premium-scrollbar overflow-x-auto">
         <table className="min-w-full divide-y divide-border text-sm">
-          <thead className="bg-muted/50">
+          <thead className={stickyHeader ? "sticky top-0 z-10 bg-muted/80 backdrop-blur" : "bg-muted/50"}>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -61,7 +64,9 @@ export function DataTable<T>({
                           header.column.columnDef.header,
                           header.getContext(),
                         )}
-                        {header.column.getCanSort() && <ArrowUpDown size={13} />}
+                        {header.column.getCanSort() && (
+                          <ArrowUpDown size={13} className="opacity-70" />
+                        )}
                       </button>
                     )}
                   </th>
@@ -81,10 +86,10 @@ export function DataTable<T>({
                     reduceMotion || index > 19 ? undefined : { opacity: 1, y: 0 }
                   }
                   transition={{ duration: 0.16, delay: Math.min(index, 12) * 0.02 }}
-                  className="transition-colors hover:bg-accent/50"
+                  className="transition-colors hover:bg-accent/45"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 align-middle">
+                    <td key={cell.id} className="px-4 py-3 align-middle text-foreground">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -94,13 +99,15 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center"
+                  className="px-4 py-8 text-center"
                 >
-                  <div
-                    role="status"
-                    className="mx-auto max-w-sm rounded-lg border border-dashed border-border bg-muted/30 px-4 py-5 text-sm text-muted-foreground"
-                  >
-                    {empty}
+                  <div role="status">
+                    <EmptyState
+                      compact
+                      icon={FileText}
+                      title={empty}
+                      description="Adjust filters or create a new record to populate this table."
+                    />
                   </div>
                 </td>
               </tr>

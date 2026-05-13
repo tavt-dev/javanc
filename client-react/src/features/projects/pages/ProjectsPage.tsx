@@ -89,7 +89,7 @@ export function ProjectsPage() {
           action={
             <Link
               to="/profile"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-primary focus-ring"
             >
               Go to profile
             </Link>
@@ -110,7 +110,7 @@ export function ProjectsPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="btn-primary focus-ring"
           >
             <Plus size={16} />
             New project
@@ -131,7 +131,7 @@ export function ProjectsPage() {
             <button
               type="button"
               onClick={openCreate}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-primary focus-ring"
             >
               New project
             </button>
@@ -139,8 +139,8 @@ export function ProjectsPage() {
         />
       ) : (
         <StaggerList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {projects.map((project) => (
-            <StaggerItem key={project.id}>
+          {projects.map((project, index) => (
+            <StaggerItem key={project.id} index={index}>
               <ProjectCard project={project} onEdit={openEdit} />
             </StaggerItem>
           ))}

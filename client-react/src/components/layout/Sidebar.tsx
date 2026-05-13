@@ -91,15 +91,15 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden lg:flex flex-col border-r border-border bg-card",
-        "h-screen sticky top-0 transition-all duration-200 ease-out",
+        "hidden lg:flex flex-col border-r border-primary/10 bg-card/95 backdrop-blur",
+        "h-screen sticky top-0 shadow-sm transition-all duration-200 ease-out",
         collapsed ? "w-[68px]" : "w-[240px]",
       )}
     >
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm ring-1 ring-primary/20">
             <span className="text-primary-foreground font-bold text-sm">J</span>
           </div>
           {!collapsed && (
@@ -111,7 +111,12 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      <nav className="premium-scrollbar flex-1 overflow-y-auto px-2 py-3">
+        {!collapsed && (
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
+            Workspace
+          </p>
+        )}
         {navItems.map((item) => (
           <SidebarLink
             key={item.path}
@@ -124,6 +129,11 @@ export function Sidebar() {
         {visibleRoleItems.length > 0 && (
           <>
             <div className="my-3 mx-2 border-t border-border" />
+            {!collapsed && (
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
+                Role tools
+              </p>
+            )}
             {visibleRoleItems.map((item) => (
               <SidebarLink
                 key={item.path}
@@ -138,9 +148,9 @@ export function Sidebar() {
 
       {/* Collapse toggle */}
       <button
+        type="button"
         onClick={toggleCollapsed}
-        className="h-12 flex items-center justify-center border-t border-border
-                   text-muted-foreground hover:text-foreground transition-colors"
+        className="focus-ring flex h-12 items-center justify-center border-t border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         <ChevronLeft
@@ -169,16 +179,26 @@ function SidebarLink({
     <NavLink
       to={item.path}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
         "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active
-          ? "bg-primary/10 text-primary"
+          ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15"
           : "text-muted-foreground",
         collapsed && "justify-center px-0",
       )}
       title={collapsed ? item.label : undefined}
     >
-      <Icon size={18} className="shrink-0" />
+      {active && (
+        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+      )}
+      <span
+        className={cn(
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
+          active ? "bg-primary/10" : "group-hover:bg-background/60",
+        )}
+      >
+        <Icon size={17} className="shrink-0" />
+      </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
     </NavLink>
   );

@@ -3,13 +3,14 @@ import { Briefcase, FileEdit, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
+import { BrandPanel } from "@/components/shared/BrandPanel";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable } from "@/components/shared/DataTable";
 import { DataToolbar } from "@/components/shared/DataToolbar";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { InlineMetric } from "@/components/shared/InlineMetric";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ManagementDialog } from "@/components/shared/ManagementDialog";
+import { MetricTile } from "@/components/shared/MetricTile";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -168,6 +169,8 @@ export function ManageJobsPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="HR hiring console"
         title="Manage Jobs"
         description={`Hiring workspace for ${company?.name ?? "your company"}.`}
         actions={
@@ -177,7 +180,7 @@ export function ManageJobsPage() {
               setEditingJob(null);
               setDialogOpen(true);
             }}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
           >
             <Plus size={16} />
             New job
@@ -185,17 +188,20 @@ export function ManageJobsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <InlineMetric icon={Briefcase} label="Jobs" value={jobs.length} />
-        <InlineMetric icon={Briefcase} label="Open jobs" value={jobs.filter((job) => (job.size ?? 0) > 0).length} />
-        <InlineMetric icon={Users} label="Pending applicants" value={jobs.reduce((sum, job) => sum + getPendingApplicantCount(job), 0)} />
-      </div>
+      <BrandPanel className="p-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <MetricTile variant="dark" icon={Briefcase} label="Jobs" value={jobs.length} />
+          <MetricTile variant="dark" icon={Briefcase} label="Open jobs" value={jobs.filter((job) => (job.size ?? 0) > 0).length} />
+          <MetricTile variant="dark" icon={Users} label="Pending applicants" value={jobs.reduce((sum, job) => sum + getPendingApplicantCount(job), 0)} />
+        </div>
+      </BrandPanel>
 
       <DataToolbar
         search={search}
         searchPlaceholder="Search jobs"
         onSearchChange={setSearch}
         onClear={() => setSearch("")}
+        variant="prominent"
       />
 
       {jobsQuery.isLoading ? (

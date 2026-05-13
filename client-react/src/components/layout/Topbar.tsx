@@ -8,10 +8,12 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState, useRef, useEffect, useId } from "react";
 import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { motionPresets } from "@/components/motion/motion-presets";
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
@@ -27,6 +29,7 @@ export function Topbar() {
   const themeMenuRef = useRef<HTMLDivElement>(null);
   const userMenuId = useId();
   const themeMenuId = useId();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -65,12 +68,12 @@ export function Topbar() {
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
 
   return (
-    <header className="h-16 border-b border-border bg-card flex min-w-0 items-center px-3 sm:px-4 gap-2 sm:gap-3 sticky top-0 z-30">
+    <header className="sticky top-0 z-30 flex h-16 min-w-0 items-center gap-2 border-b border-primary/10 bg-card/95 px-3 shadow-sm shadow-[hsl(var(--brand-forest)/0.04)] backdrop-blur supports-[backdrop-filter]:bg-card/88 sm:gap-3 sm:px-4">
       {/* Mobile hamburger */}
       <button
         type="button"
         onClick={toggleSidebar}
-        className="lg:hidden p-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="icon-button focus-ring lg:hidden"
         aria-label="Toggle menu"
       >
         <Menu size={20} />
@@ -78,7 +81,7 @@ export function Topbar() {
 
       {/* Mobile logo */}
       <div className="lg:hidden flex min-w-0 items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-sm ring-1 ring-primary/20">
           <span className="text-primary-foreground font-bold text-xs">J</span>
         </div>
         <span className="hidden min-[380px]:inline font-semibold text-sm">
@@ -93,8 +96,7 @@ export function Topbar() {
         <button
           type="button"
           onClick={() => setThemeMenuOpen(!themeMenuOpen)}
-          className="p-2 rounded-md hover:bg-accent text-muted-foreground
-                     hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="icon-button focus-ring"
           aria-label="Change theme"
           aria-expanded={themeMenuOpen}
           aria-controls={themeMenuId}
@@ -102,11 +104,19 @@ export function Topbar() {
         >
           <ThemeIcon size={18} />
         </button>
-        {themeMenuOpen && (
-          <div
+        <AnimatePresence>
+          {themeMenuOpen && (
+          <motion.div
             id={themeMenuId}
             role="menu"
-            className="absolute right-0 mt-1 w-36 bg-popover border border-border rounded-lg shadow-lg py-1 z-50"
+            initial={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.enter}
+            animate={motionPresets.dropdown.center}
+            exit={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.exit}
+            transition={{
+              ...motionPresets.dropdown.transition,
+              duration: reduceMotion ? 0 : motionPresets.dropdown.transition.duration,
+            }}
+            className="brand-card absolute right-0 z-50 mt-2 w-40 origin-top-right bg-popover p-1 shadow-xl"
           >
             {(["light", "dark", "system"] as const).map((t) => (
               <button
@@ -117,8 +127,8 @@ export function Topbar() {
                   setThemeMenuOpen(false);
                 }}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm flex items-center gap-2",
-                  "hover:bg-accent transition-colors capitalize focus-visible:outline-none focus-visible:bg-accent",
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm capitalize",
+                  "transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
                   theme === t && "text-primary font-medium",
                 )}
                 role="menuitem"
@@ -129,8 +139,9 @@ export function Topbar() {
                 {t}
               </button>
             ))}
-          </div>
-        )}
+          </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <NotificationBell />
@@ -140,13 +151,13 @@ export function Topbar() {
         <button
           type="button"
           onClick={() => setUserMenuOpen(!userMenuOpen)}
-          className="flex min-w-0 items-center gap-2 p-1.5 pr-2 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="focus-ring flex min-w-0 items-center gap-2 rounded-md p-1.5 pr-2 transition-colors hover:bg-accent"
           aria-label="Open user menu"
           aria-expanded={userMenuOpen}
           aria-controls={userMenuId}
           aria-haspopup="menu"
         >
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
             <span className="text-primary text-sm font-semibold">
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </span>
@@ -162,13 +173,21 @@ export function Topbar() {
           <ChevronDown size={14} className="text-muted-foreground" />
         </button>
 
-        {userMenuOpen && (
-          <div
+        <AnimatePresence>
+          {userMenuOpen && (
+          <motion.div
             id={userMenuId}
             role="menu"
-            className="absolute right-0 mt-1 w-48 bg-popover border border-border rounded-lg shadow-lg py-1 z-50"
+            initial={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.enter}
+            animate={motionPresets.dropdown.center}
+            exit={reduceMotion ? { opacity: 1 } : motionPresets.dropdown.exit}
+            transition={{
+              ...motionPresets.dropdown.transition,
+              duration: reduceMotion ? 0 : motionPresets.dropdown.transition.duration,
+            }}
+            className="brand-card absolute right-0 z-50 mt-2 w-56 origin-top-right bg-popover p-1 shadow-xl"
           >
-            <div className="px-3 py-2 border-b border-border">
+            <div className="border-b border-border px-3 py-2">
               <p className="text-sm font-medium truncate">{user?.name}</p>
               <p className="text-xs text-muted-foreground truncate">
                 {user?.email}
@@ -178,17 +197,15 @@ export function Topbar() {
               type="button"
               onClick={handleLogout}
               disabled={logoutMutation.isPending}
-              className="w-full text-left px-3 py-2 text-sm text-destructive
-                         hover:bg-accent transition-colors flex items-center gap-2
-                         focus-visible:outline-none focus-visible:bg-accent
-                         disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
               role="menuitem"
             >
               <LogOut size={14} />
               {logoutMutation.isPending ? "Logging out..." : "Logout"}
             </button>
-          </div>
-        )}
+          </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );

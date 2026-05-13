@@ -1,25 +1,34 @@
-import { RefreshCcw } from "lucide-react";
+import { AlertCircle, RefreshCcw } from "lucide-react";
 import { extractErrorMessage } from "@/lib/api-error";
 
 export function RetryState({
   error,
   onRetry,
   title = "Unable to load data",
+  description,
 }: {
   error: unknown;
   onRetry: () => void;
   title?: string;
+  description?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {extractErrorMessage(error)}
-      </p>
+    <div className="surface p-6">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+          <AlertCircle size={20} />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {description ?? extractErrorMessage(error)}
+          </p>
+        </div>
+      </div>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        className="btn-primary focus-ring mt-5"
       >
         <RefreshCcw size={16} />
         Retry

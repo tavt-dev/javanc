@@ -67,7 +67,7 @@ export function ProfileForm({
   return (
     <form
       onSubmit={handleSubmit(submit)}
-      className="rounded-lg border border-border bg-card p-5 shadow-sm"
+      className="surface p-5"
     >
       <div className="mb-5">
         <h2 className="text-lg font-semibold">

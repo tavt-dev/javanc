@@ -7,11 +7,13 @@ export function MotionDialog({
   children,
   onClose,
   closeOnOverlayClick = true,
+  className = "w-full max-w-lg",
 }: {
   open: boolean;
   children: ReactNode;
   onClose?: () => void;
   closeOnOverlayClick?: boolean;
+  className?: string;
 }) {
   const reduceMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export function MotionDialog({
           transition={{
             duration: reduceMotion ? 0 : motionPresets.dialog.overlayTransition.duration,
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]"
           onMouseDown={(event) => {
             if (closeOnOverlayClick && event.target === event.currentTarget) {
               onClose?.();
@@ -65,7 +67,7 @@ export function MotionDialog({
                 ? 0
                 : motionPresets.dialog.panelTransition.duration,
             }}
-            className="w-full max-w-lg"
+            className={className}
           >
             {children}
           </motion.div>

@@ -9,9 +9,10 @@ import {
 import type { ElementType } from "react";
 import { Link } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
-import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
+import { BrandPanel } from "@/components/shared/BrandPanel";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
+import { MetricTile } from "@/components/shared/MetricTile";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -66,40 +67,64 @@ export function DashboardPage() {
 
   return (
     <PageTransition>
-      <PageHeader
-        title={`Welcome back${user?.name ? `, ${user.name}` : ""}`}
-        description="Your profile, portfolio, and workspace signals in one place."
-      />
-
-      <StaggerList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Profile status"
-          value={profile ? `${completion.percent}%` : "Missing"}
-          detail={profile ? "Profile completion" : "Create your profile"}
-          icon={User}
-        />
-        <StatCard
-          label="Projects"
-          value={String(projects.length)}
-          detail={projectsQuery.isFetching ? "Refreshing" : "Portfolio items"}
-          icon={FolderKanban}
-        />
-        <StatCard
-          label="Public projects"
-          value={String(publicProjects)}
-          detail="Visible on profile"
-          icon={Search}
-        />
-        <StatCard
-          label={roleStat.label}
-          value={roleStat.value}
-          detail="Role workspace"
-          icon={Shield}
-        />
-      </StaggerList>
+      <BrandPanel className="p-5 sm:p-6">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/75">
+              Workspace command center
+            </p>
+            <h1 className="mt-2 max-w-3xl break-words text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              Welcome back{user?.name ? `, ${user.name}` : ""}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/75">
+              Track profile quality, portfolio visibility, and role workspace signals from one emerald console.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {user?.role && <StatusBadge tone="lime">{user.role}</StatusBadge>}
+              <span className="brand-chip border-white/15 bg-white/10 text-emerald-50">
+                {profile ? "Profile active" : "Profile onboarding"}
+              </span>
+            </div>
+          </div>
+          <Link to="/jobs" className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50">
+            <Search size={16} />
+            Explore jobs
+          </Link>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            variant="dark"
+            label="Profile status"
+            value={profile ? `${completion.percent}%` : "Missing"}
+            detail={profile ? "Profile completion" : "Create your profile"}
+            icon={User}
+          />
+          <MetricTile
+            variant="dark"
+            label="Projects"
+            value={projects.length}
+            detail={projectsQuery.isFetching ? "Refreshing" : "Portfolio items"}
+            icon={FolderKanban}
+          />
+          <MetricTile
+            variant="dark"
+            label="Public projects"
+            value={publicProjects}
+            detail="Visible on profile"
+            icon={Search}
+          />
+          <MetricTile
+            variant="dark"
+            label={roleStat.label}
+            value={roleStat.value}
+            detail="Role workspace"
+            icon={Shield}
+          />
+        </div>
+      </BrandPanel>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="surface p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Profile completion</h2>
@@ -112,9 +137,9 @@ export function DashboardPage() {
             </StatusBadge>
           </div>
 
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-muted ring-1 ring-border">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-300"
+              className="h-full rounded-full bg-primary shadow-sm transition-all duration-300"
               style={{ width: `${completion.percent}%` }}
             />
           </div>
@@ -123,7 +148,7 @@ export function DashboardPage() {
             {completion.items.map((item) => (
               <div
                 key={item.label}
-                className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2 text-sm"
               >
                 <span className="text-muted-foreground">{item.label}</span>
                 <StatusBadge tone={item.done ? "success" : "neutral"}>
@@ -135,14 +160,14 @@ export function DashboardPage() {
 
           <Link
             to="/profile"
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="btn-primary focus-ring mt-5"
           >
             <User size={16} />
             {profile ? "Edit profile" : "Create profile"}
           </Link>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="surface p-5">
           <h2 className="text-lg font-semibold">Quick actions</h2>
           <div className="mt-4 grid gap-3">
             <QuickAction to="/profile" icon={User} label="My Profile" />
@@ -157,7 +182,7 @@ export function DashboardPage() {
         </section>
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <h2 className="text-lg font-semibold">Recent activity</h2>
         <div className="mt-4">
           {profile || projects.length ? (
@@ -205,31 +230,6 @@ function getProfileCompletion(profile: ProfileDTO | null) {
   return { items, percent: Math.round((done / items.length) * 100) };
 }
 
-function StatCard({
-  label,
-  value,
-  detail,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  icon: ElementType;
-}) {
-  return (
-    <StaggerItem>
-      <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <Icon size={18} className="text-muted-foreground" />
-        </div>
-        <p className="mt-3 text-2xl font-semibold">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-      </div>
-    </StaggerItem>
-  );
-}
-
 function QuickAction({
   to,
   icon: Icon,
@@ -242,7 +242,7 @@ function QuickAction({
   return (
     <Link
       to={to}
-      className="flex items-center justify-between rounded-md border border-border px-3 py-3 text-sm font-medium transition-colors hover:bg-accent"
+      className="focus-ring flex items-center justify-between rounded-md border border-border bg-background/40 px-3 py-3 text-sm font-medium transition-colors hover:bg-accent"
     >
       <span className="inline-flex items-center gap-2">
         <Icon size={16} />
@@ -255,7 +255,7 @@ function QuickAction({
 
 function ActivityItem({ label, date }: { label: string; date?: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2 text-sm">
       <span className="truncate text-foreground">{label}</span>
       <span className="shrink-0 text-xs text-muted-foreground">
         {formatDate(date)}

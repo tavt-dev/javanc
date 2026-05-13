@@ -23,16 +23,16 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   return (
-    <MotionDialog open={open} onClose={onCancel}>
+    <MotionDialog open={open} onClose={onCancel} className="w-full max-w-md">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
-        className="rounded-lg border border-border bg-popover p-6 shadow-xl"
+        className="surface max-h-[calc(100dvh-2rem)] overflow-y-auto bg-popover p-6 shadow-2xl"
       >
         <div className="flex gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-destructive/10 ring-1 ring-destructive/20">
             <AlertTriangle size={20} className="text-destructive" />
           </div>
           <div className="min-w-0">
@@ -56,7 +56,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70"
+            className="btn-secondary focus-ring"
           >
             {cancelLabel}
           </button>
@@ -66,8 +66,8 @@ export function ConfirmDialog({
             disabled={loading}
             className={
               destructive
-                ? "inline-flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-70"
-                : "inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                ? "btn-danger focus-ring min-w-28"
+                : "btn-primary focus-ring min-w-28"
             }
           >
             {loading && <Loader2 size={16} className="animate-spin" />}

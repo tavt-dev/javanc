@@ -33,7 +33,7 @@ export function CompanyDetailPage() {
           action={
             <Link
               to="/companies"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              className="btn-primary focus-ring"
             >
               Back to companies
             </Link>
@@ -66,6 +66,8 @@ export function CompanyDetailPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Company profile"
         title={company.name}
         description={company.description || "Company profile and jobs."}
         actions={
@@ -73,14 +75,14 @@ export function CompanyDetailPage() {
             <button
               type="button"
               onClick={() => navigate("/companies")}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+              className="btn-secondary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
             >
               <ArrowLeft size={16} />
               Back
             </button>
             <Link
               to="/jobs"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
             >
               <Briefcase size={16} />
               Browse jobs
@@ -89,7 +91,7 @@ export function CompanyDetailPage() {
         }
       />
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Building2 size={28} />
@@ -111,7 +113,7 @@ export function CompanyDetailPage() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <h2 className="text-lg font-semibold">Company jobs</h2>
         {jobsQuery.isLoading ? (
           <div className="mt-4">

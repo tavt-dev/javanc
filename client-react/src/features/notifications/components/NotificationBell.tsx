@@ -43,7 +43,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="icon-button focus-ring relative"
         aria-label="Notifications"
         aria-expanded={open}
         aria-controls={dropdownId}
@@ -72,7 +72,7 @@ export function NotificationBell() {
               ...motionPresets.dropdown.transition,
               duration: reduceMotion ? 0 : motionPresets.dropdown.transition.duration,
             }}
-            className="absolute right-0 z-50 mt-2 w-[min(360px,calc(100vw-2rem))] origin-top-right rounded-lg border border-border bg-popover p-3 shadow-xl"
+            className="surface absolute right-0 z-50 mt-2 w-[min(380px,calc(100vw-2rem))] origin-top-right bg-popover p-3 shadow-xl"
           >
             <div className="mb-3 flex items-center justify-between gap-3 px-1">
               <div>
@@ -90,9 +90,9 @@ export function NotificationBell() {
               </Link>
             </div>
 
-            <div className="max-h-[420px] space-y-2 overflow-y-auto">
+            <div className="premium-scrollbar max-h-[420px] space-y-2 overflow-y-auto">
               {notificationsQuery.isLoading ? (
-                <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+                <div className="surface-muted p-4 text-sm text-muted-foreground">
                   Loading notifications...
                 </div>
               ) : latest.length === 0 ? (

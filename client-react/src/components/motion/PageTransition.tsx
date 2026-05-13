@@ -1,8 +1,17 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 import { motionPresets } from "./motion-presets";
+import { cn } from "@/lib/utils";
 
-export function PageTransition({ children }: { children: ReactNode }) {
+export function PageTransition({
+  children,
+  className,
+  variant = "default",
+}: {
+  children: ReactNode;
+  className?: string;
+  variant?: "default" | "compact" | "wide";
+}) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -11,7 +20,12 @@ export function PageTransition({ children }: { children: ReactNode }) {
       animate={motionPresets.page.center}
       exit={reduceMotion ? { opacity: 1 } : motionPresets.page.exit}
       transition={reduceMotion ? { duration: 0 } : motionPresets.page.transition}
-      className="space-y-6"
+      className={cn(
+        "space-y-6",
+        variant === "compact" && "mx-auto max-w-5xl",
+        variant === "wide" && "max-w-[1600px]",
+        className,
+      )}
     >
       {children}
     </motion.div>

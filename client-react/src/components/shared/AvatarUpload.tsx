@@ -43,8 +43,8 @@ export function AvatarUpload({
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-xl font-semibold text-primary">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-xl font-semibold text-primary shadow-sm ring-1 ring-primary/15">
         {preview || src ? (
           <img
             src={preview || src}
@@ -73,7 +73,7 @@ export function AvatarUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={disabled || loading}
-          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-secondary focus-ring"
         >
           <Upload size={16} />
           Upload avatar

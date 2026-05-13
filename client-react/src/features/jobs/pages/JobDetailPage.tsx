@@ -43,7 +43,7 @@ export function JobDetailPage() {
           action={
             <Link
               to="/jobs"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              className="btn-primary focus-ring"
             >
               Back to jobs
             </Link>
@@ -74,13 +74,15 @@ export function JobDetailPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Job detail"
         title={job.title}
         description={companyQuery.data?.name || `Company #${job.idCompany}`}
         actions={
           <button
             type="button"
             onClick={() => navigate("/jobs")}
-            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+            className="btn-secondary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
           >
             <ArrowLeft size={16} />
             Back
@@ -90,7 +92,7 @@ export function JobDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <section className="space-y-4">
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+          <div className="surface p-5">
             <div className="flex flex-wrap gap-2">
               {job.typeJob && <StatusBadge tone="primary">{job.typeJob}</StatusBadge>}
               <StatusBadge tone={(job.size ?? 0) > 0 ? "success" : "neutral"}>
@@ -103,7 +105,7 @@ export function JobDetailPage() {
             </p>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+          <div className="surface p-5">
             <h2 className="text-lg font-semibold">Company</h2>
             {companyQuery.isLoading ? (
               <p className="mt-3 text-sm text-muted-foreground">Loading company...</p>
@@ -126,7 +128,7 @@ export function JobDetailPage() {
           </div>
         </section>
 
-        <aside className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <aside className="surface p-5">
           <h2 className="text-lg font-semibold">Application</h2>
           {user?.role !== "user" ? (
             <StatusPanel

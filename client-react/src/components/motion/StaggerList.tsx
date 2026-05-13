@@ -5,9 +5,13 @@ import { motionPresets } from "./motion-presets";
 export function StaggerList({
   children,
   className,
+  limit = 12,
+  delay = 0,
 }: {
   children: ReactNode;
   className?: string;
+  limit?: number;
+  delay?: number;
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -20,9 +24,11 @@ export function StaggerList({
         show: {
           transition: {
             staggerChildren: reduceMotion ? 0 : motionPresets.list.staggerChildren,
+            delayChildren: reduceMotion ? 0 : delay,
           },
         },
       }}
+      data-stagger-limit={limit}
       className={className}
     >
       {children}
@@ -33,21 +39,26 @@ export function StaggerList({
 export function StaggerItem({
   children,
   className,
+  index = 0,
+  limit = 12,
 }: {
   children: ReactNode;
   className?: string;
+  index?: number;
+  limit?: number;
 }) {
   const reduceMotion = useReducedMotion();
+  const shouldAnimate = !reduceMotion && index < limit;
 
   return (
     <motion.div
       variants={{
-        hidden: reduceMotion ? { opacity: 1 } : motionPresets.list.itemEnter,
+        hidden: shouldAnimate ? motionPresets.list.itemEnter : { opacity: 1 },
         show: motionPresets.list.itemCenter,
       }}
       transition={{
         ...motionPresets.list.itemTransition,
-        duration: reduceMotion ? 0 : motionPresets.list.itemTransition.duration,
+        duration: shouldAnimate ? motionPresets.list.itemTransition.duration : 0,
       }}
       className={className}
     >

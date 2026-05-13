@@ -15,7 +15,7 @@ export function NotificationItem({
   onMarkRead?: (notification: NotificationDTO) => void;
 }) {
   return (
-    <article className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <article className="surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="break-words text-sm font-medium text-foreground">
@@ -33,7 +33,7 @@ export function NotificationItem({
       {!compact && notification.url && (
         <a
           href={notification.url}
-          className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          className="focus-ring mt-3 inline-flex items-center gap-2 rounded-md text-sm font-medium text-primary hover:underline"
         >
           Open link
           <ExternalLink size={14} />
@@ -45,7 +45,7 @@ export function NotificationItem({
           type="button"
           onClick={() => onMarkRead(notification)}
           disabled={marking}
-          className="mt-3 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-70"
+          className="btn-secondary focus-ring mt-3"
         >
           <Check size={15} />
           Mark read

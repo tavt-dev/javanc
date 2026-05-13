@@ -24,14 +24,15 @@ export function SettingsPage() {
   return (
     <PageTransition>
       <PageHeader
+        eyebrow="Preferences"
         title="Settings"
         description="Account, appearance, and workspace preferences."
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="surface p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/15">
               <Shield size={20} className="text-primary" />
             </div>
             <div className="min-w-0">
@@ -62,9 +63,9 @@ export function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="surface p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/15">
               <Monitor size={20} className="text-primary" />
             </div>
             <div>
@@ -85,7 +86,7 @@ export function SettingsPage() {
                   type="button"
                   onClick={() => setTheme(option.value)}
                   className={cn(
-                    "flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
+                    "focus-ring flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
                     active
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border hover:bg-accent",
@@ -103,7 +104,7 @@ export function SettingsPage() {
         </section>
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <PreferenceRow
             icon={LayoutPanelLeft}
@@ -134,7 +135,7 @@ function InfoRow({
   value: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-border px-3 py-2">
+    <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-background/40 px-3 py-2">
       <span className="text-muted-foreground">{label}</span>
       <span className="min-w-0 truncate text-right font-medium">{value}</span>
     </div>
@@ -157,9 +158,9 @@ function PreferenceRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background/40 p-4">
       <div className="flex min-w-0 gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted ring-1 ring-border">
           <Icon size={18} className="text-muted-foreground" />
         </div>
         <div>
@@ -174,7 +175,7 @@ function PreferenceRow({
         aria-pressed={enabled}
         aria-label={`Toggle ${title}`}
         className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-70",
+          "focus-ring relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-70",
           enabled ? "bg-primary" : "bg-muted",
         )}
       >

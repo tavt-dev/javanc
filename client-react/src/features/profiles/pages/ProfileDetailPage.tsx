@@ -36,7 +36,7 @@ export function ProfileDetailPage() {
             <button
               type="button"
               onClick={() => navigate("/profiles")}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              className="btn-primary focus-ring"
             >
               Back to profiles
             </button>
@@ -67,6 +67,8 @@ export function ProfileDetailPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Profile detail"
         title={profile.title || "Untitled profile"}
         description="Read-only professional profile details."
         actions={
@@ -74,7 +76,7 @@ export function ProfileDetailPage() {
             <button
               type="button"
               onClick={() => navigate("/profiles")}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+              className="btn-secondary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
             >
               <ArrowLeft size={16} />
               Back
@@ -82,7 +84,7 @@ export function ProfileDetailPage() {
             {isOwner && (
               <Link
                 to="/profile"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50"
               >
                 <Pencil size={16} />
                 Edit my profile
@@ -92,7 +94,7 @@ export function ProfileDetailPage() {
         }
       />
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-xl font-semibold text-primary">
             {profile.url ? (
@@ -129,7 +131,7 @@ export function ProfileDetailPage() {
         />
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="surface p-5">
         <h2 className="text-lg font-semibold">Projects</h2>
         {projectsQuery.isLoading ? (
           <div className="mt-4">
@@ -157,7 +159,7 @@ export function ProfileDetailPage() {
 
 function DetailSection({ title, value }: { title: string; value?: string }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <section className="surface p-5">
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
         {value || "Not provided."}

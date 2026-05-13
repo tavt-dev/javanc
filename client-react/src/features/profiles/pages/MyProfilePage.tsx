@@ -118,7 +118,7 @@ export function MyProfilePage() {
 
       {profile && !editing && (
         <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
-          <aside className="rounded-lg border border-border bg-card p-5 shadow-sm">
+          <aside className="surface p-5">
             <AvatarUpload
               src={profile.url}
               name={profile.title || user?.name}
@@ -184,7 +184,7 @@ function InfoLine({ label, value }: { label: string; value?: string }) {
 
 function ProfileSection({ title, value }: { title: string; value?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <div className="surface p-5">
       <h3 className="text-base font-semibold">{title}</h3>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
         {value || "Not provided yet."}

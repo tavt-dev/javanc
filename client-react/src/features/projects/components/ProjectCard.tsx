@@ -1,6 +1,7 @@
 import { ExternalLink, Pencil } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { motionPresets } from "@/components/motion/motion-presets";
 import { formatDate } from "@/lib/utils";
 import type { ProjectDTO } from "@/types/project";
 
@@ -15,9 +16,9 @@ export function ProjectCard({
 
   return (
     <motion.article
-      whileHover={reduceMotion ? undefined : { y: -1 }}
-      transition={{ duration: 0.16 }}
-      className="rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
+      transition={motionPresets.card.transition}
+      className="interactive-card p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -43,7 +44,7 @@ export function ProjectCard({
             href={project.url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            className="focus-ring inline-flex items-center gap-2 rounded-md text-sm font-medium text-primary hover:underline"
           >
             Open
             <ExternalLink size={15} />
@@ -55,7 +56,7 @@ export function ProjectCard({
           <button
             type="button"
             onClick={() => onEdit(project)}
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+            className="btn-secondary focus-ring"
           >
             <Pencil size={15} />
             Edit

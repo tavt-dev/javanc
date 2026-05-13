@@ -132,10 +132,12 @@ export function UserManagementPage() {
   return (
     <PageTransition>
       <PageHeader
+        variant="brand"
+        eyebrow="Admin console"
         title="User Management"
         description="Manage internal accounts, roles, and active status."
         actions={
-          <button type="button" onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50">
             <Plus size={16} />
             Create account
           </button>
@@ -151,6 +153,7 @@ export function UserManagementPage() {
           setRole("all");
           setActive("all");
         }}
+        variant="prominent"
         filters={
           <>
             <select className="form-input sm:w-36" value={role} onChange={(event) => setRole(event.target.value as "all" | Role)}>
