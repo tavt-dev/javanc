@@ -12,6 +12,7 @@ export const jobKeys = {
   company: (companyId: number) => ["jobs", "company", companyId] as const,
   pending: (profileId: number) => ["jobs", "pending", profileId] as const,
   accepted: (profileId: number) => ["jobs", "accepted", profileId] as const,
+  applicationStatus: (jobId: number) => ["jobs", "application-status", jobId] as const,
 };
 
 export function useJobBoardQuery(profileId?: number | null) {
@@ -72,6 +73,23 @@ export function useAcceptedJobsQuery(profileId?: number | null) {
   });
 }
 
+export function useJobApplicationStatusQuery(
+  jobId?: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: jobId
+      ? jobKeys.applicationStatus(jobId)
+      : ["jobs", "application-status", "missing"],
+    queryFn: async () => {
+      if (!jobId) return "open";
+      return (await jobsApi.applicationStatus(jobId)).data;
+    },
+    enabled: Boolean(jobId) && enabled,
+    retry: false,
+  });
+}
+
 export function useApplyJobMutation(profileId: number) {
   return useMutation({
     mutationFn: (jobId: number) => jobsApi.apply({ jobId, profileId }),
@@ -80,6 +98,42 @@ export function useApplyJobMutation(profileId: number) {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
       toast.success("Application submitted");
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error));
+    },
+  });
+}
+
+export function useApplyCurrentUserJobMutation() {
+  return useMutation({
+    mutationFn: (jobId: number) => jobsApi.applyCurrentUser(jobId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
+      queryClient.invalidateQueries({
+        queryKey: jobKeys.applicationStatus(response.data.id),
+      });
+      toast.success("Application submitted");
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error));
+    },
+  });
+}
+
+export function useLeaveCurrentUserJobMutation() {
+  return useMutation({
+    mutationFn: (jobId: number) => jobsApi.leaveCurrentUser(jobId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
+      queryClient.invalidateQueries({
+        queryKey: jobKeys.applicationStatus(response.data.id),
+      });
+      toast.success("Application withdrawn");
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));

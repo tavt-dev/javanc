@@ -8,8 +8,11 @@ export function extractErrorMessage(error: unknown): string {
       | undefined;
     if (body?.message) return body.message;
     if (error.response?.status === 401) return "Session expired";
-    if (error.response?.status === 403) return "Access denied";
+    if (error.response?.status === 403)
+      return "Access denied or account is not active";
     if (error.response?.status === 404) return "Not found";
+    if (error.response?.status === 409)
+      return "Request conflicts with the current account state";
     if (error.response?.status && error.response.status >= 500)
       return "Server error";
   }

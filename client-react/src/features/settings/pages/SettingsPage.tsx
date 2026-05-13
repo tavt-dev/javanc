@@ -1,12 +1,32 @@
-import { Bell, LayoutPanelLeft, Monitor, Moon, Shield, Sun } from "lucide-react";
+import {
+  Bell,
+  Check,
+  LayoutPanelLeft,
+  Monitor,
+  Moon,
+  Send,
+  Shield,
+  Sun,
+  X,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  useAcceptHrPromotionWithCompanyMutation,
+  useLeaveHrCompanyMutation,
+} from "@/features/companies/hooks/use-company-queries";
+import {
+  useMyHrPromotionsQuery,
+  useMyRoleRequestsQuery,
+  useRejectHrPromotionMutation,
+  useRequestManagerUpgradeMutation,
+} from "@/features/users/hooks/use-user-queries";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 const themeOptions = [
   { value: "light", label: "Light", icon: Sun },
@@ -20,6 +40,21 @@ export function SettingsPage() {
   const setTheme = useUIStore((s) => s.setTheme);
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebarCollapsed = useUIStore((s) => s.toggleSidebarCollapsed);
+  const roleRequestsQuery = useMyRoleRequestsQuery();
+  const hrPromotionsQuery = useMyHrPromotionsQuery();
+  const requestManagerMutation = useRequestManagerUpgradeMutation();
+  const acceptHrMutation = useAcceptHrPromotionWithCompanyMutation();
+  const rejectHrMutation = useRejectHrPromotionMutation();
+  const leaveHrMutation = useLeaveHrCompanyMutation();
+  const managerRequestPending = (roleRequestsQuery.data ?? []).some(
+    (request) =>
+      request.type === "MANAGER_UPGRADE" &&
+      (request.status === "PENDING_SYSADMIN" ||
+        request.status === "PENDING_USER_CONFIRMATION"),
+  );
+  const pendingHrInvitations = (hrPromotionsQuery.data ?? []).filter(
+    (request) => request.status === "PENDING_USER_CONFIRMATION",
+  );
 
   return (
     <PageTransition>
@@ -105,6 +140,108 @@ export function SettingsPage() {
       </div>
 
       <section className="surface p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Role requests</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Request manager access and respond to HR invitations.
+            </p>
+          </div>
+          {user?.role === "user" && (
+            <button
+              type="button"
+              disabled={managerRequestPending || requestManagerMutation.isPending}
+              onClick={() => requestManagerMutation.mutate({})}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Send size={16} />
+              {managerRequestPending ? "Manager request pending" : "Request manager"}
+            </button>
+          )}
+          {user?.role === "hr" && (
+            <button
+              type="button"
+              disabled={leaveHrMutation.isPending}
+              onClick={() => leaveHrMutation.mutate()}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-70"
+            >
+              <X size={16} />
+              Leave HR role
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          {pendingHrInvitations.map((request) => (
+            <div
+              key={request.id}
+              className="rounded-lg border border-border bg-background/40 p-4"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge tone="primary">HR_PROMOTION</StatusBadge>
+                    <StatusBadge tone="warning">{request.status}</StatusBadge>
+                  </div>
+                  <p className="mt-2 font-medium">
+                    {request.companyName || `Company #${request.companyId}`}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Invited by {request.requesterName || `user #${request.requesterUserId}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={acceptHrMutation.isPending}
+                    onClick={() => acceptHrMutation.mutate(request.id)}
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-70"
+                  >
+                    <Check size={15} />
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    disabled={rejectHrMutation.isPending}
+                    onClick={() => rejectHrMutation.mutate(request.id)}
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-70"
+                  >
+                    <X size={15} />
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {(roleRequestsQuery.data ?? []).slice(0, 5).map((request) => (
+            <div
+              key={request.id}
+              className="flex flex-col gap-2 rounded-md border border-border bg-background/40 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="font-medium">{request.type}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(request.createdAt)}
+                  {request.companyName ? ` - ${request.companyName}` : ""}
+                </p>
+              </div>
+              <StatusBadge tone={roleRequestTone(request.status)}>
+                {request.status}
+              </StatusBadge>
+            </div>
+          ))}
+
+          {!pendingHrInvitations.length &&
+            !(roleRequestsQuery.data ?? []).length && (
+              <p className="text-sm text-muted-foreground">
+                No role requests or HR invitations yet.
+              </p>
+            )}
+        </div>
+      </section>
+
+      <section className="surface p-5">
         <div className="grid gap-4 md:grid-cols-2">
           <PreferenceRow
             icon={LayoutPanelLeft}
@@ -140,6 +277,12 @@ function InfoRow({
       <span className="min-w-0 truncate text-right font-medium">{value}</span>
     </div>
   );
+}
+
+function roleRequestTone(status: string) {
+  if (status === "APPROVED") return "success";
+  if (status === "REJECTED" || status === "CANCELLED") return "danger";
+  return "warning";
 }
 
 function PreferenceRow({

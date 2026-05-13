@@ -19,13 +19,29 @@ describe("jobsApi", () => {
 
   it("applies using backend query names", async () => {
     mockedApiClient.put.mockResolvedValueOnce({ data: { data: {} } });
+    mockedApiClient.post.mockResolvedValue({ data: { data: {} } });
+    mockedApiClient.get.mockResolvedValueOnce({ data: { data: "pending" } });
 
     await jobsApi.apply({ jobId: 5, profileId: 11 });
+    await jobsApi.applyCurrentUser(5);
+    await jobsApi.leaveCurrentUser(5);
+    await jobsApi.applicationStatus(5);
 
     expect(mockedApiClient.put).toHaveBeenCalledWith(
       "/manager/user/job/apply",
       null,
       { params: { jobDTO: 5, idProfile: 11 } },
+    );
+    expect(mockedApiClient.post).toHaveBeenNthCalledWith(
+      1,
+      "/manager/user/jobs/5/applications",
+    );
+    expect(mockedApiClient.post).toHaveBeenNthCalledWith(
+      2,
+      "/manager/user/jobs/5/leave",
+    );
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/manager/user/jobs/5/application-status",
     );
   });
 

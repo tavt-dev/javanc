@@ -94,7 +94,15 @@ export function CompanyDetailPage() {
       <section className="surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Building2 size={28} />
+            {company.url ? (
+              <img
+                src={company.url}
+                alt={`${company.name} logo`}
+                className="h-full w-full rounded-lg object-cover"
+              />
+            ) : (
+              <Building2 size={28} />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap gap-2">

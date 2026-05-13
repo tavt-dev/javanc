@@ -49,4 +49,21 @@ describe("profilesApi", () => {
     expect(formData).toBeInstanceOf(FormData);
     expect((formData as FormData).get("image")).toBe(file);
   });
+
+  it("serializes batch ids for JAX-RS list query params", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({ data: { data: [] } });
+
+    await profilesApi.batch([1, 2]);
+
+    const config = mockedApiClient.get.mock.calls[0]?.[1];
+    const serializer = config?.paramsSerializer as
+      | { serialize?: (params: Record<string, unknown>) => string }
+      | undefined;
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/profiles/batch", {
+      params: { ids: [1, 2] },
+      paramsSerializer: expect.any(Object),
+    });
+    expect(serializer?.serialize?.({ ids: [1, 2] })).toBe("ids=1&ids=2");
+  });
 });

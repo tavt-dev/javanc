@@ -28,6 +28,20 @@ describe("notificationsApi", () => {
     );
   });
 
+  it("creates notifications and checks service health", async () => {
+    mockedApiClient.post.mockResolvedValueOnce({ data: { data: "true" } });
+    mockedApiClient.get.mockResolvedValueOnce({ data: { data: "ok" } });
+
+    await notificationsApi.create({ id: 7, message: "Hello" });
+    await notificationsApi.healthCheck();
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith(
+      "/notification/create",
+      { id: 7, message: "Hello" },
+    );
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/notification/getAll");
+  });
+
   it("posts full notification payload when marking read", async () => {
     mockedApiClient.post.mockResolvedValueOnce({ data: { data: {} } });
     const notification: NotificationDTO = {

@@ -6,3 +6,8 @@ export interface NotificationDTO {
   read: boolean;
   idUser: number;
 }
+
+export interface MessageDTO {
+  message: string;
+  id: number;
+}

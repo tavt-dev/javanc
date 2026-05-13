@@ -11,8 +11,10 @@ import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useCompanyDetailQuery } from "@/features/companies/hooks/use-company-queries";
 import {
-  useApplyJobMutation,
+  useApplyCurrentUserJobMutation,
+  useJobApplicationStatusQuery,
   useJobDetailQuery,
+  useLeaveCurrentUserJobMutation,
 } from "@/features/jobs/hooks/use-job-queries";
 import { getJobApplicationState } from "@/features/jobs/utils/job-utils";
 import { useMyProfileQuery } from "@/features/profiles/hooks/use-profile-queries";
@@ -29,9 +31,18 @@ export function JobDetailPage() {
   const profile = profileQuery.profile;
   const job = jobQuery.data;
   const companyQuery = useCompanyDetailQuery(job?.idCompany ?? null);
-  const applyMutation = useApplyJobMutation(profile?.id ?? 0);
+  const statusQuery = useJobApplicationStatusQuery(
+    validJobId,
+    user?.role === "user" && Boolean(profile),
+  );
+  const applyMutation = useApplyCurrentUserJobMutation();
+  const leaveMutation = useLeaveCurrentUserJobMutation();
   const [confirmApply, setConfirmApply] = useState(false);
-  const state = job ? getJobApplicationState(job, profile?.id) : "open";
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const state = normalizeApplicationState(
+    statusQuery.data,
+    job ? getJobApplicationState(job, profile?.id) : "open",
+  );
 
   if (!validJobId) {
     return (
@@ -155,12 +166,30 @@ export function JobDetailPage() {
               icon={CheckCircle}
               title="Accepted"
               description="Your profile has been accepted for this job."
+              action={
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeave(true)}
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Leave application
+                </button>
+              }
             />
           ) : state === "pending" ? (
             <StatusPanel
               icon={Send}
               title="Pending"
               description="Your application is waiting for HR review."
+              action={
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeave(true)}
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Withdraw
+                </button>
+              }
             />
           ) : state === "closed" ? (
             <StatusPanel
@@ -201,8 +230,32 @@ export function JobDetailPage() {
           })
         }
       />
+      <ConfirmDialog
+        open={confirmLeave}
+        title="Leave this application?"
+        description="Your profile will be removed from this job application."
+        confirmLabel="Leave"
+        destructive
+        loading={leaveMutation.isPending}
+        onCancel={() => setConfirmLeave(false)}
+        onConfirm={() =>
+          leaveMutation.mutate(job.id, {
+            onSuccess: () => setConfirmLeave(false),
+          })
+        }
+      />
     </PageTransition>
   );
+}
+
+function normalizeApplicationState(
+  backendStatus: string | undefined,
+  fallback: "accepted" | "pending" | "closed" | "open",
+) {
+  if (backendStatus === "ACCEPTED") return "accepted";
+  if (backendStatus === "PENDING") return "pending";
+  if (backendStatus === "NONE") return fallback === "closed" ? "closed" : "open";
+  return fallback;
 }
 
 function StatusPanel({

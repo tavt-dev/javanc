@@ -18,6 +18,15 @@ function cleanProfilePayload(input: ProfileFormValues) {
   };
 }
 
+const repeatedIdsSerializer = {
+  serialize: (params: Record<string, unknown>) => {
+    const searchParams = new URLSearchParams();
+    const values = params.ids as number[] | undefined;
+    values?.forEach((id) => searchParams.append("ids", String(id)));
+    return searchParams.toString();
+  },
+};
+
 export const profilesApi = {
   async me() {
     const response = await apiClient.get<ApiResponse<ProfileDTO>>(
@@ -90,7 +99,7 @@ export const profilesApi = {
   async batch(ids: number[]) {
     const response = await apiClient.get<ApiResponse<ProfileDTO[]>>(
       "/profiles/batch",
-      { params: { ids } },
+      { params: { ids }, paramsSerializer: repeatedIdsSerializer },
     );
     return response.data;
   },

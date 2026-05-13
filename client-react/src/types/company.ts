@@ -8,6 +8,7 @@ export interface CompanyDTO {
   phone?: string;
   city?: string;
   country?: string;
+  url?: string;
   idManager?: number;
   idHR?: number[];
   idJobs?: number[];

@@ -64,12 +64,14 @@ export function ProfileDetailPage() {
     );
   }
 
+  const displayName = profile.name || profile.title || "Untitled profile";
+
   return (
     <PageTransition>
       <PageHeader
         variant="console"
         eyebrow="Profile detail"
-        title={profile.title || "Untitled profile"}
+        title={displayName}
         description="Read-only professional profile details."
         actions={
           <>
@@ -100,7 +102,7 @@ export function ProfileDetailPage() {
             {profile.url ? (
               <img
                 src={profile.url}
-                alt={`${profile.title || "Profile"} avatar`}
+                alt={`${displayName} avatar`}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -108,7 +110,12 @@ export function ProfileDetailPage() {
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold">{profile.title}</h2>
+            <h2 className="text-xl font-semibold">{displayName}</h2>
+            {profile.name && profile.title && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {profile.title}
+              </p>
+            )}
             <div className="mt-2 flex flex-wrap gap-2">
               {profile.typeProfile && (
                 <StatusBadge tone="primary">{profile.typeProfile}</StatusBadge>

@@ -94,6 +94,7 @@ The React dev server runs on port `3000` by default because the Quarkus gateway 
 | `/image/**` | image-service | 8083 | PUBLIC |
 
 Frontend still sends `Authorization` for notification calls, but backend must protect `/notification` before this data is considered secure.
+Role-request and HR-invitation UI added in `client-react` depends on user-specific notifications and role state. Keep `Authorization` on all notification calls, and add `/notification` to `gateway.auth.protected-prefixes` before treating notification data as private in production. `/image` may remain public only for non-sensitive public asset delivery.
 
 ### Core Types
 

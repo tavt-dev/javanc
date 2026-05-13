@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState, useRef, useEffect, useId } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { useMyHrPromotionsQuery } from "@/features/users/hooks/use-user-queries";
 import { motionPresets } from "@/components/motion/motion-presets";
 import { DesktopNavbar } from "./DesktopNavbar";
 
@@ -23,6 +25,10 @@ export function Topbar() {
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
   const logoutMutation = useLogoutMutation();
+  const hrPromotionsQuery = useMyHrPromotionsQuery();
+  const pendingHrInvitations = (hrPromotionsQuery.data ?? []).filter(
+    (request) => request.status === "PENDING_USER_CONFIRMATION",
+  ).length;
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -148,6 +154,15 @@ export function Topbar() {
       </div>
 
       <NotificationBell />
+
+      {pendingHrInvitations > 0 && (
+        <Link
+          to="/settings"
+          className="focus-ring hidden rounded-md bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning ring-1 ring-warning/20 sm:inline-flex"
+        >
+          {pendingHrInvitations} HR invite
+        </Link>
+      )}
 
       {/* User menu */}
       <div className="relative" ref={userMenuRef}>

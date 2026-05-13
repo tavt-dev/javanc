@@ -13,6 +13,7 @@ export interface ProfileDTO {
   education?: string;
   workExperience?: string;
   skills?: string;
+  name?: string;
   contact?: Contact;
   typeProfile?: TypeProfile;
   idUser: number;

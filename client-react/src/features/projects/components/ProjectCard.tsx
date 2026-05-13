@@ -1,4 +1,4 @@
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { motionPresets } from "@/components/motion/motion-presets";
@@ -7,9 +7,11 @@ import type { ProjectDTO } from "@/types/project";
 
 export function ProjectCard({
   project,
+  onDelete,
   onEdit,
 }: {
   project: ProjectDTO;
+  onDelete?: (project: ProjectDTO) => void;
   onEdit?: (project: ProjectDTO) => void;
 }) {
   const reduceMotion = useReducedMotion();
@@ -52,15 +54,29 @@ export function ProjectCard({
         ) : (
           <span className="text-sm text-muted-foreground">No URL</span>
         )}
-        {onEdit && (
-          <button
-            type="button"
-            onClick={() => onEdit(project)}
-            className="btn-secondary focus-ring"
-          >
-            <Pencil size={15} />
-            Edit
-          </button>
+        {(onEdit || onDelete) && (
+          <div className="flex shrink-0 gap-2">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(project)}
+                className="btn-secondary focus-ring"
+              >
+                <Pencil size={15} />
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(project)}
+                className="inline-flex items-center gap-2 rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
+            )}
+          </div>
         )}
       </div>
     </motion.article>

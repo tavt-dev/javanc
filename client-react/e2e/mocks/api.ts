@@ -17,6 +17,20 @@ type MockOptions = {
   refreshFails?: boolean;
 };
 
+type RoleRequestMock = {
+  id: number;
+  requesterUserId: number;
+  targetUserId: number;
+  requesterName?: string;
+  targetName?: string;
+  requestedRole: string;
+  type: string;
+  status: string;
+  companyId?: number;
+  companyName?: string;
+  createdAt?: string;
+};
+
 export type MockState = ReturnType<typeof createMockState>;
 
 export function createMockState() {
@@ -27,6 +41,7 @@ export function createMockState() {
     profile: structuredClone(baseProfile),
     projects: structuredClone(baseProjects),
     users: Object.values(users).map((user) => ({ ...user, idEmployee: `EMP-${user.id}` })),
+    roleRequests: [] as RoleRequestMock[],
     refreshCount: 0,
   };
 }
@@ -87,6 +102,47 @@ async function handleApiRoute(
 
   if (method === "POST" && path === "/auth/logout") return ok(route, true);
 
+  if (path === "/users/me" && method === "GET") return ok(route, users[role]);
+  if (path === "/users/me/role-requests" && method === "GET") return ok(route, state.roleRequests);
+  if (path === "/users/me/hr-promotion-requests" && method === "GET") {
+    return ok(route, state.roleRequests.filter((request) => request.type === "HR_PROMOTION"));
+  }
+  if (path === "/users/me/manager-upgrade-requests" && method === "POST") {
+    const request = {
+      id: 100 + state.roleRequests.length,
+      requesterUserId: users[role].id,
+      targetUserId: users[role].id,
+      requesterName: users[role].name,
+      targetName: users[role].name,
+      requestedRole: "manager",
+      type: "MANAGER_UPGRADE",
+      status: "PENDING_SYSADMIN",
+      createdAt: new Date().toISOString(),
+    };
+    state.roleRequests.push(request);
+    return ok(route, request);
+  }
+  if (path === "/users/admin/role-requests" && method === "GET") return ok(route, state.roleRequests);
+  if (path.includes("/users/admin/role-requests/") && method === "PATCH") {
+    const id = Number(path.split("/").at(-2));
+    const status = path.endsWith("/approve") ? "APPROVED" : "REJECTED";
+    state.roleRequests = state.roleRequests.map((request) =>
+      request.id === id ? { ...request, status } : request,
+    );
+    return ok(route, state.roleRequests.find((request) => request.id === id) ?? null);
+  }
+  if (path.includes("/users/me/hr-promotion-requests/") && method === "PATCH") {
+    const id = Number(path.split("/").at(-2));
+    const status = path.endsWith("/accept") ? "APPROVED" : "REJECTED";
+    state.roleRequests = state.roleRequests.map((request) =>
+      request.id === id ? { ...request, status } : request,
+    );
+    return ok(route, state.roleRequests.find((request) => request.id === id) ?? null);
+  }
+  if (path === "/users/me/leave-hr" && method === "PATCH") {
+    return ok(route, { ...users.user, id: users[role].id, role: "user" });
+  }
+
   if (path === "/users" && method === "GET") return ok(route, state.users);
   if (path.startsWith("/users/") && method === "GET") {
     const id = Number(path.split("/").at(-1));
@@ -126,7 +182,33 @@ async function handleApiRoute(
   if (path.startsWith("/profiles/") && method === "GET") return ok(route, state.profile);
   if (path === "/profiles" && method === "GET") return ok(route, [state.profile]);
 
+  if (path === "/project/user/getProfile") return ok(route, [state.profile]);
   if (path === "/project/user/getProject") return ok(route, state.projects);
+  if (path === "/project/user/get1") return ok(route, "ok");
+  if (path === "/project/user/projects" && method === "GET") return ok(route, state.projects);
+  if (path === "/project/user/projects" && method === "POST") {
+    const body = readJson(request);
+    const project = { ...body, id: 900 + state.projects.length, createAt: new Date().toISOString() };
+    state.projects.push(project);
+    return ok(route, project);
+  }
+  if (path.startsWith("/project/user/projects/") && method === "GET") {
+    const id = Number(path.split("/").at(-1));
+    return ok(route, state.projects.find((project) => project.id === id) ?? null);
+  }
+  if (path.startsWith("/project/user/projects/") && method === "PATCH") {
+    const id = Number(path.split("/").at(-1));
+    const body = readJson(request);
+    state.projects = state.projects.map((project) =>
+      project.id === id ? { ...project, ...body, id } : project,
+    );
+    return ok(route, state.projects.find((project) => project.id === id));
+  }
+  if (path.startsWith("/project/user/projects/") && method === "DELETE") {
+    const id = Number(path.split("/").at(-1));
+    state.projects = state.projects.filter((project) => project.id !== id);
+    return ok(route, null);
+  }
   if (path === "/project/user/save" && method === "POST") {
     const body = readJson(request);
     const project = { ...body, id: 900 + state.projects.length, createAt: new Date().toISOString() };
@@ -156,6 +238,7 @@ async function handleApiRoute(
     return ok(route, state.companies.find((company) => company.id === id) ?? null);
   }
   if (path === "/manager/user/company/getcompanybytype") return ok(route, state.companies);
+  if (path === "/manager/manager/company/me") return ok(route, state.companies[0]);
   if (path === "/manager/company/getcompanybyidmanager") return ok(route, state.companies[0]);
   if (path === "/manager/hr/findByIdHr") {
     if (options.hrUnassigned) return fail(route, 404, "HR company not assigned");
@@ -175,6 +258,28 @@ async function handleApiRoute(
   }
   if (path === "/manager/admin/company/delete" && method === "POST") return ok(route, true);
   if (path.includes("sethrto") || path.includes("setmaanagerto")) return ok(route, true);
+  if (path === "/manager/manager/hr-candidates" && method === "GET") return ok(route, state.users);
+  if (path === "/manager/manager/hr-promotions" && method === "POST") {
+    const targetUserId = Number(url.searchParams.get("targetUserId"));
+    const target = state.users.find((user) => user.id === targetUserId) ?? state.users[0];
+    const request = {
+      id: 100 + state.roleRequests.length,
+      requesterUserId: users[role].id,
+      targetUserId,
+      requesterName: users[role].name,
+      targetName: target.name,
+      requestedRole: "hr",
+      type: "HR_PROMOTION",
+      status: "PENDING_USER_CONFIRMATION",
+      companyId: state.companies[0].id,
+      companyName: state.companies[0].name,
+      createdAt: new Date().toISOString(),
+    };
+    state.roleRequests.push(request);
+    return ok(route, request);
+  }
+  if (path.includes("/manager/user/hr-promotions/") && method === "PATCH") return ok(route, state.companies[0]);
+  if (path === "/manager/hr/leave" && method === "PATCH") return ok(route, state.companies[0]);
 
   if (path === "/manager/user/job/getall") return ok(route, state.jobs);
   if (path === "/manager/user/job/getnewjob") return ok(route, state.jobs);
@@ -198,6 +303,35 @@ async function handleApiRoute(
     state.jobs = state.jobs.map((job) =>
       job.id === jobId
         ? { ...job, idProfiePending: unique([...job.idProfiePending, profileId]) }
+        : job,
+    );
+    return ok(route, state.jobs.find((job) => job.id === jobId));
+  }
+  if (path.includes("/manager/user/jobs/") && path.endsWith("/application-status")) {
+    const jobId = Number(path.split("/").at(-2));
+    const job = state.jobs.find((item) => item.id === jobId);
+    if (job?.idProfile.includes(state.profile.id)) return ok(route, "ACCEPTED");
+    if (job?.idProfiePending.includes(state.profile.id)) return ok(route, "PENDING");
+    return ok(route, "NONE");
+  }
+  if (path.includes("/manager/user/jobs/") && path.endsWith("/applications") && method === "POST") {
+    const jobId = Number(path.split("/").at(-2));
+    state.jobs = state.jobs.map((job) =>
+      job.id === jobId
+        ? { ...job, idProfiePending: unique([...job.idProfiePending, state.profile.id]) }
+        : job,
+    );
+    return ok(route, state.jobs.find((job) => job.id === jobId));
+  }
+  if (path.includes("/manager/user/jobs/") && path.endsWith("/leave") && method === "POST") {
+    const jobId = Number(path.split("/").at(-2));
+    state.jobs = state.jobs.map((job) =>
+      job.id === jobId
+        ? {
+            ...job,
+            idProfiePending: job.idProfiePending.filter((id) => id !== state.profile.id),
+            idProfile: job.idProfile.filter((id) => id !== state.profile.id),
+          }
         : job,
     );
     return ok(route, state.jobs.find((job) => job.id === jobId));

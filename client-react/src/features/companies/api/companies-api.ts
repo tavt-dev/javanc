@@ -1,7 +1,11 @@
 import apiClient from "@/lib/api-client";
 import type { ApiResponse } from "@/types/api";
 import type { CompanyDTO, CompanyFormValues } from "@/types/company";
-import type { InternalAccountFormValues } from "@/types/user";
+import type {
+  AdminUserDTO,
+  InternalAccountFormValues,
+  RoleRequestDTO,
+} from "@/types/user";
 
 function appendIfPresent(formData: FormData, key: string, value: unknown) {
   if (value === undefined || value === null || value === "") return;
@@ -63,6 +67,13 @@ export const companiesApi = {
     return response.data;
   },
 
+  async myManagedCompany() {
+    const response = await apiClient.get<ApiResponse<CompanyDTO>>(
+      "/manager/manager/company/me",
+    );
+    return response.data;
+  },
+
   async findByHrId(hrId: number) {
     const response = await apiClient.get<ApiResponse<CompanyDTO>>(
       "/manager/hr/findByIdHr",
@@ -114,6 +125,52 @@ export const companiesApi = {
       "/manager/manager/setmaanagertocompany",
       toAccountRequest(input),
       { params: { idCompany: companyId } },
+    );
+    return response.data;
+  },
+
+  async hrCandidates(params: { query?: string; page?: number; size?: number }) {
+    const response = await apiClient.get<ApiResponse<AdminUserDTO[]>>(
+      "/manager/manager/hr-candidates",
+      {
+        params: {
+          query: params.query || undefined,
+          page: params.page ?? 0,
+          size: params.size ?? 10,
+        },
+      },
+    );
+    return response.data;
+  },
+
+  async requestHrPromotion(targetUserId: number) {
+    const response = await apiClient.post<ApiResponse<RoleRequestDTO>>(
+      "/manager/manager/hr-promotions",
+      null,
+      { params: { targetUserId } },
+    );
+    return response.data;
+  },
+
+  async promoteUserToHr(userId: number, companyId: number) {
+    const response = await apiClient.put<ApiResponse<CompanyDTO>>(
+      "/manager/manager/promotehrtocompany",
+      null,
+      { params: { idUser: userId, idCompany: companyId } },
+    );
+    return response.data;
+  },
+
+  async acceptHrPromotion(requestId: number) {
+    const response = await apiClient.patch<ApiResponse<CompanyDTO>>(
+      `/manager/user/hr-promotions/${requestId}/accept`,
+    );
+    return response.data;
+  },
+
+  async leaveHr() {
+    const response = await apiClient.patch<ApiResponse<CompanyDTO>>(
+      "/manager/hr/leave",
     );
     return response.data;
   },

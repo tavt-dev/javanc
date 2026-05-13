@@ -176,7 +176,7 @@ export function CompanyManagementPage() {
         <DataTable data={filteredCompanies} columns={columns} empty="No companies found." />
       )}
 
-      <ManagementDialog open={createOpen} title="Create company" description="Company image is accepted by the backend but not displayed by the current DTO." onClose={() => setCreateOpen(false)}>
+      <ManagementDialog open={createOpen} title="Create company" description="Company image is uploaded through the backend and shown when a logo URL is returned." onClose={() => setCreateOpen(false)}>
         <CompanyForm allowImage loading={createMutation.isPending} onSubmit={createCompany} onCancel={() => setCreateOpen(false)} />
       </ManagementDialog>
 

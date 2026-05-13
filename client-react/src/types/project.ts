@@ -5,6 +5,7 @@ export interface ProjectDTO {
   createAt?: string;
   url?: string;
   imageId?: string;
+  imageFile?: unknown;
   display: boolean;
   idProfile: number;
 }

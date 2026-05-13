@@ -11,16 +11,14 @@ import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { CompanyForm } from "@/features/companies/components/CompanyForm";
 import {
-  useManagerCompanyQuery,
+  useMyManagedCompanyQuery,
   useUpdateCompanyMutation,
 } from "@/features/companies/hooks/use-company-queries";
-import { useAuthStore } from "@/stores/auth-store";
 import type { CompanyFormValues } from "@/types/company";
 
 export function MyCompanyPage() {
-  const user = useAuthStore((s) => s.user);
   const [editing, setEditing] = useState(false);
-  const companyQuery = useManagerCompanyQuery(user?.id);
+  const companyQuery = useMyManagedCompanyQuery();
   const updateMutation = useUpdateCompanyMutation();
   const company = companyQuery.data ?? null;
 

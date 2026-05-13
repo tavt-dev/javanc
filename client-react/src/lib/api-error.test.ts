@@ -21,7 +21,12 @@ describe("extractErrorMessage", () => {
 
   it("maps common HTTP statuses", () => {
     expect(extractErrorMessage(axiosError(401))).toBe("Session expired");
-    expect(extractErrorMessage(axiosError(403))).toBe("Access denied");
+    expect(extractErrorMessage(axiosError(403))).toBe(
+      "Access denied or account is not active",
+    );
+    expect(extractErrorMessage(axiosError(409))).toBe(
+      "Request conflicts with the current account state",
+    );
     expect(extractErrorMessage(axiosError(429))).toBe("Something went wrong");
     expect(extractErrorMessage(axiosError(500))).toBe("Server error");
   });

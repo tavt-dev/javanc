@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Edit, Plus, Shield, Trash2 } from "lucide-react";
+import { Check, ClipboardList, Edit, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -13,17 +13,26 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { InternalAccountForm } from "@/features/users/components/InternalAccountForm";
 import { UserEditForm } from "@/features/users/components/UserEditForm";
 import {
-  useChangeUserRoleMutation,
+  useAdminRoleRequestsQuery,
+  useApproveRoleRequestMutation,
   useChangeUserStatusMutation,
   useCreateUserAccountMutation,
   useDeleteUserMutation,
+  useRejectRoleRequestMutation,
   useUpdateUserMutation,
   useUsersQuery,
 } from "@/features/users/hooks/use-user-queries";
 import { canDeactivateUser, filterUsers } from "@/features/users/utils/user-utils";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Role } from "@/types/auth";
-import type { AdminUserDTO, InternalAccountFormValues, UpdateUserRequest } from "@/types/user";
+import type {
+  AdminUserDTO,
+  InternalAccountFormValues,
+  RoleRequestDTO,
+  RoleRequestStatus,
+  RoleRequestType,
+  UpdateUserRequest,
+} from "@/types/user";
 
 const columnHelper = createColumnHelper<AdminUserDTO>();
 
@@ -32,18 +41,30 @@ export function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<"all" | Role>("all");
   const [active, setActive] = useState<"all" | "active" | "inactive">("all");
+  const [tab, setTab] = useState<"users" | "roleRequests">("users");
+  const [requestStatus, setRequestStatus] = useState<RoleRequestStatus | "">(
+    "PENDING_SYSADMIN",
+  );
+  const [requestType, setRequestType] = useState<RoleRequestType | "">("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUserDTO | null>(null);
-  const [roleUser, setRoleUser] = useState<AdminUserDTO | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUserDTO | null>(null);
+  const [rejectingRequest, setRejectingRequest] =
+    useState<RoleRequestDTO | null>(null);
+  const [adminNote, setAdminNote] = useState("");
 
   const usersQuery = useUsersQuery();
+  const roleRequestsQuery = useAdminRoleRequestsQuery({
+    status: requestStatus,
+    type: requestType,
+  });
   const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const createMutation = useCreateUserAccountMutation();
   const updateMutation = useUpdateUserMutation(editingUser?.id ?? 0);
-  const roleMutation = useChangeUserRoleMutation(roleUser?.id ?? 0);
   const statusMutation = useChangeUserStatusMutation(deleteUser?.id ?? 0);
   const deleteMutation = useDeleteUserMutation(deleteUser?.id ?? 0);
+  const approveMutation = useApproveRoleRequestMutation();
+  const rejectMutation = useRejectRoleRequestMutation();
 
   const filteredUsers = useMemo(
     () => filterUsers(users, { search, role, active }),
@@ -88,10 +109,6 @@ export function UserManagementPage() {
                 <Edit size={13} />
                 Edit
               </button>
-              <button type="button" onClick={() => setRoleUser(row.original)} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium hover:bg-accent">
-                <Shield size={13} />
-                Role
-              </button>
               <button
                 type="button"
                 disabled={selfProtected}
@@ -135,7 +152,7 @@ export function UserManagementPage() {
         variant="console"
         eyebrow="Admin console"
         title="User Management"
-        description="Manage internal accounts, roles, and active status."
+        description="Manage internal accounts, account status, and role request approvals."
         actions={
           <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary focus-ring bg-white text-emerald-800 hover:bg-emerald-50">
             <Plus size={16} />
@@ -144,40 +161,139 @@ export function UserManagementPage() {
         }
       />
 
-      <DataToolbar
-        search={search}
-        searchPlaceholder="Search users"
-        onSearchChange={setSearch}
-        onClear={() => {
-          setSearch("");
-          setRole("all");
-          setActive("all");
-        }}
-        variant="job-search"
-        filters={
-          <>
-            <select className="form-input sm:w-36" value={role} onChange={(event) => setRole(event.target.value as "all" | Role)}>
-              <option value="all">All roles</option>
-              <option value="user">User</option>
-              <option value="hr">HR</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-            <select className="form-input sm:w-36" value={active} onChange={(event) => setActive(event.target.value as "all" | "active" | "inactive")}>
-              <option value="all">All status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </>
-        }
-      />
+      <div className="inline-flex rounded-lg border border-border bg-card p-1">
+        <button
+          type="button"
+          onClick={() => setTab("users")}
+          className={`rounded-md px-3 py-2 text-sm font-medium ${
+            tab === "users" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+          }`}
+        >
+          Users
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("roleRequests")}
+          className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
+            tab === "roleRequests" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+          }`}
+        >
+          <ClipboardList size={15} />
+          Role requests
+        </button>
+      </div>
 
-      {usersQuery.isLoading ? (
-        <LoadingSkeleton variant="detail" />
-      ) : usersQuery.error ? (
-        <RetryState error={usersQuery.error} onRetry={usersQuery.refetch} />
+      {tab === "users" ? (
+        <>
+          <DataToolbar
+            search={search}
+            searchPlaceholder="Search users"
+            onSearchChange={setSearch}
+            onClear={() => {
+              setSearch("");
+              setRole("all");
+              setActive("all");
+            }}
+            variant="job-search"
+            filters={
+              <>
+                <select className="form-input sm:w-36" value={role} onChange={(event) => setRole(event.target.value as "all" | Role)}>
+                  <option value="all">All roles</option>
+                  <option value="user">User</option>
+                  <option value="hr">HR</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <select className="form-input sm:w-36" value={active} onChange={(event) => setActive(event.target.value as "all" | "active" | "inactive")}>
+                  <option value="all">All status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </>
+            }
+          />
+
+          {usersQuery.isLoading ? (
+            <LoadingSkeleton variant="detail" />
+          ) : usersQuery.error ? (
+            <RetryState error={usersQuery.error} onRetry={usersQuery.refetch} />
+          ) : (
+            <DataTable data={filteredUsers} columns={columns} empty="No users found." />
+          )}
+        </>
       ) : (
-        <DataTable data={filteredUsers} columns={columns} empty="No users found." />
+        <section className="surface p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Role requests</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Direct role changes are disabled by the backend. Approve or reject requests here.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="form-input sm:w-56"
+                value={requestStatus}
+                onChange={(event) =>
+                  setRequestStatus(event.target.value as RoleRequestStatus | "")
+                }
+              >
+                <option value="">All status</option>
+                <option value="PENDING_SYSADMIN">Pending admin</option>
+                <option value="PENDING_USER_CONFIRMATION">Pending user</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+              <select
+                className="form-input sm:w-48"
+                value={requestType}
+                onChange={(event) =>
+                  setRequestType(event.target.value as RoleRequestType | "")
+                }
+              >
+                <option value="">All types</option>
+                <option value="MANAGER_UPGRADE">Manager upgrade</option>
+                <option value="HR_PROMOTION">HR promotion</option>
+              </select>
+            </div>
+          </div>
+
+          {roleRequestsQuery.isLoading ? (
+            <div className="mt-4">
+              <LoadingSkeleton variant="detail" />
+            </div>
+          ) : roleRequestsQuery.error ? (
+            <div className="mt-4">
+              <RetryState
+                error={roleRequestsQuery.error}
+                onRetry={roleRequestsQuery.refetch}
+              />
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3">
+              {(roleRequestsQuery.data ?? []).length ? (
+                (roleRequestsQuery.data ?? []).map((request) => (
+                  <RoleRequestRow
+                    key={request.id}
+                    request={request}
+                    approving={approveMutation.isPending}
+                    rejecting={rejectMutation.isPending}
+                    onApprove={() => approveMutation.mutate(request.id)}
+                    onReject={() => {
+                      setAdminNote("");
+                      setRejectingRequest(request);
+                    }}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No role requests found.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       <ManagementDialog open={createOpen} title="Create account" description="For assigned HR/manager accounts, prefer company assignment workflows." onClose={() => setCreateOpen(false)}>
@@ -190,17 +306,49 @@ export function UserManagementPage() {
         </ManagementDialog>
       )}
 
-      {roleUser && (
-        <ManagementDialog open title="Change role" description="Role changes affect access immediately after the next session refresh." onClose={() => setRoleUser(null)}>
+      {rejectingRequest && (
+        <ManagementDialog
+          open
+          title="Reject role request"
+          description={`Reject request #${rejectingRequest.id}.`}
+          onClose={() => setRejectingRequest(null)}
+        >
           <div className="space-y-4">
-            <select className="form-input" defaultValue={roleUser.role} onChange={(event) => {
-              roleMutation.mutate({ role: event.target.value as Role }, { onSuccess: () => setRoleUser(null) });
-            }}>
-              <option value="user">User</option>
-              <option value="hr">HR</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium text-foreground">Admin note</span>
+              <textarea
+                className="form-input min-h-24 resize-y"
+                value={adminNote}
+                onChange={(event) => setAdminNote(event.target.value)}
+                placeholder="Optional rejection reason"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+                onClick={() => setRejectingRequest(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+                disabled={rejectMutation.isPending}
+                onClick={() =>
+                  rejectMutation.mutate(
+                    {
+                      requestId: rejectingRequest.id,
+                      input: { adminNote: adminNote || undefined },
+                    },
+                    { onSuccess: () => setRejectingRequest(null) },
+                  )
+                }
+              >
+                <X size={16} />
+                Reject
+              </button>
+            </div>
           </div>
         </ManagementDialog>
       )}
@@ -223,4 +371,83 @@ export function UserManagementPage() {
       />
     </PageTransition>
   );
+}
+
+function RoleRequestRow({
+  request,
+  approving,
+  rejecting,
+  onApprove,
+  onReject,
+}: {
+  request: RoleRequestDTO;
+  approving: boolean;
+  rejecting: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const canAdminDecide =
+    request.type === "MANAGER_UPGRADE" &&
+    request.status === "PENDING_SYSADMIN";
+
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge tone="primary">{request.type}</StatusBadge>
+            <StatusBadge tone={roleRequestTone(request.status)}>
+              {request.status}
+            </StatusBadge>
+            <StatusBadge tone="neutral">{request.requestedRole}</StatusBadge>
+          </div>
+          <h3 className="mt-3 font-semibold">
+            {request.targetName || `User #${request.targetUserId}`}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Requested by {request.requesterName || `user #${request.requesterUserId}`}
+            {request.companyName ? ` for ${request.companyName}` : ""}
+          </p>
+          {request.reason && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {request.reason}
+            </p>
+          )}
+          {request.adminNote && (
+            <p className="mt-2 text-sm text-destructive">
+              {request.adminNote}
+            </p>
+          )}
+        </div>
+        {canAdminDecide && (
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              disabled={approving}
+              onClick={onApprove}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-70"
+            >
+              <Check size={15} />
+              Approve
+            </button>
+            <button
+              type="button"
+              disabled={rejecting}
+              onClick={onReject}
+              className="inline-flex items-center gap-2 rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-70"
+            >
+              <X size={15} />
+              Reject
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function roleRequestTone(status: RoleRequestStatus) {
+  if (status === "APPROVED") return "success";
+  if (status === "REJECTED" || status === "CANCELLED") return "danger";
+  return "warning";
 }

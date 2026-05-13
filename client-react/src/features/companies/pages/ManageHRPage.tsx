@@ -1,5 +1,5 @@
-import { Building, UserPlus, Users } from "lucide-react";
-import { useState } from "react";
+import { Building, Search, Send, UserPlus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { InlineMetric } from "@/components/shared/InlineMetric";
@@ -9,17 +9,32 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { InternalAccountForm } from "@/features/users/components/InternalAccountForm";
 import {
   useCreateHrAccountAndAssignMutation,
-  useManagerCompanyQuery,
+  useHrCandidatesQuery,
+  useMyManagedCompanyQuery,
+  useRequestHrPromotionMutation,
 } from "@/features/companies/hooks/use-company-queries";
-import { useAuthStore } from "@/stores/auth-store";
 import type { InternalAccountFormValues } from "@/types/user";
 
 export function ManageHRPage() {
-  const user = useAuthStore((s) => s.user);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const companyQuery = useManagerCompanyQuery(user?.id);
+  const [candidateSearch, setCandidateSearch] = useState("");
+  const [debouncedCandidateSearch, setDebouncedCandidateSearch] = useState("");
+  const companyQuery = useMyManagedCompanyQuery();
   const company = companyQuery.data ?? null;
   const assignMutation = useCreateHrAccountAndAssignMutation(company?.id ?? 0);
+  const candidatesQuery = useHrCandidatesQuery(
+    debouncedCandidateSearch,
+    Boolean(company),
+  );
+  const requestHrMutation = useRequestHrPromotionMutation();
+
+  useEffect(() => {
+    const timeout = window.setTimeout(
+      () => setDebouncedCandidateSearch(candidateSearch),
+      300,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [candidateSearch]);
 
   if (companyQuery.isLoading) {
     return (
@@ -83,6 +98,66 @@ export function ManageHRPage() {
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No HR accounts assigned yet.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="surface p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Invite existing users</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Search normal user accounts and send an HR promotion invitation.
+            </p>
+          </div>
+          <div className="relative sm:w-80">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              className="form-input pl-9"
+              value={candidateSearch}
+              onChange={(event) => setCandidateSearch(event.target.value)}
+              placeholder="Search by name or email"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          {candidatesQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading candidates...</p>
+          ) : candidatesQuery.error ? (
+            <p className="text-sm text-destructive">
+              Unable to load HR candidates.
+            </p>
+          ) : (candidatesQuery.data ?? []).length ? (
+            (candidatesQuery.data ?? []).map((candidate) => (
+              <div
+                key={candidate.id}
+                className="flex flex-col gap-3 rounded-md border border-border bg-background/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium">{candidate.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {candidate.email}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={requestHrMutation.isPending}
+                  onClick={() => requestHrMutation.mutate(candidate.id)}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-70"
+                >
+                  <Send size={15} />
+                  Invite HR
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No candidates found.
+            </p>
           )}
         </div>
       </section>

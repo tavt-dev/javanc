@@ -5,6 +5,7 @@ import { companiesApi } from "./companies-api";
 vi.mock("@/lib/api-client", () => ({
   default: {
     get: vi.fn(),
+    patch: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
   },
@@ -18,13 +19,19 @@ describe("companiesApi", () => {
   });
 
   it("gets company detail with id query param", async () => {
-    mockedApiClient.get.mockResolvedValueOnce({ data: { data: {} } });
+    mockedApiClient.get.mockResolvedValue({ data: { data: {} } });
 
     await companiesApi.getById(9);
+    await companiesApi.myManagedCompany();
 
-    expect(mockedApiClient.get).toHaveBeenCalledWith(
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      1,
       "/manager/user/company/getbyid",
       { params: { id: 9 } },
+    );
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      2,
+      "/manager/manager/company/me",
     );
   });
 
@@ -78,5 +85,37 @@ describe("companiesApi", () => {
       },
       { params: { idCompany: 5 } },
     );
+  });
+
+  it("uses HR promotion and leave endpoints", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({ data: { data: [] } });
+    mockedApiClient.post.mockResolvedValueOnce({ data: { data: { id: 3 } } });
+    mockedApiClient.put.mockResolvedValueOnce({ data: { data: { id: 4 } } });
+    mockedApiClient.patch.mockResolvedValue({ data: { data: { id: 4 } } });
+
+    await companiesApi.hrCandidates({ query: "ana", page: 1, size: 20 });
+    await companiesApi.requestHrPromotion(7);
+    await companiesApi.promoteUserToHr(8, 4);
+    await companiesApi.acceptHrPromotion(9);
+    await companiesApi.leaveHr();
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/manager/manager/hr-candidates",
+      { params: { query: "ana", page: 1, size: 20 } },
+    );
+    expect(mockedApiClient.post).toHaveBeenCalledWith(
+      "/manager/manager/hr-promotions",
+      null,
+      { params: { targetUserId: 7 } },
+    );
+    expect(mockedApiClient.put).toHaveBeenCalledWith(
+      "/manager/manager/promotehrtocompany",
+      null,
+      { params: { idUser: 8, idCompany: 4 } },
+    );
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/manager/user/hr-promotions/9/accept",
+    );
+    expect(mockedApiClient.patch).toHaveBeenCalledWith("/manager/hr/leave");
   });
 });

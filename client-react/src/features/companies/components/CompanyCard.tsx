@@ -11,7 +11,15 @@ export function CompanyCard({ company }: { company: CompanyDTO }) {
     <PremiumCompanyCard>
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--job-cyan)/0.12)] text-[hsl(var(--job-cyan))]">
-          <Building2 size={22} />
+          {company.url ? (
+            <img
+              src={company.url}
+              alt={`${company.name} logo`}
+              className="h-full w-full rounded-lg object-cover"
+            />
+          ) : (
+            <Building2 size={22} />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="display-title truncate text-base font-semibold text-foreground">

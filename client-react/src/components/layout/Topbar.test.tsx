@@ -19,6 +19,10 @@ vi.mock("@/features/auth/hooks/use-auth-mutations", () => ({
   useLogoutMutation: () => ({ mutate: logoutMutateMock, isPending: false }),
 }));
 
+vi.mock("@/features/users/hooks/use-user-queries", () => ({
+  useMyHrPromotionsQuery: () => ({ data: [] }),
+}));
+
 describe("Topbar", () => {
   beforeEach(() => {
     logoutMutateMock.mockClear();

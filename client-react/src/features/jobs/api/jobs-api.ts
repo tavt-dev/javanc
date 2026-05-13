@@ -65,6 +65,27 @@ export const jobsApi = {
     return response.data;
   },
 
+  async applyCurrentUser(jobId: number) {
+    const response = await apiClient.post<ApiResponse<JobDTO>>(
+      `/manager/user/jobs/${jobId}/applications`,
+    );
+    return response.data;
+  },
+
+  async leaveCurrentUser(jobId: number) {
+    const response = await apiClient.post<ApiResponse<JobDTO>>(
+      `/manager/user/jobs/${jobId}/leave`,
+    );
+    return response.data;
+  },
+
+  async applicationStatus(jobId: number) {
+    const response = await apiClient.get<ApiResponse<string>>(
+      `/manager/user/jobs/${jobId}/application-status`,
+    );
+    return response.data;
+  },
+
   async create(job: JobDTO) {
     const response = await apiClient.post<ApiResponse<JobDTO>>(
       "/manager/hr/job/create",

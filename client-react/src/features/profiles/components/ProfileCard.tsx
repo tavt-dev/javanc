@@ -5,9 +5,10 @@ import { PremiumProfileCard } from "@/components/shared/PremiumProfileCard";
 import type { ProfileDTO } from "@/types/profile";
 
 export function ProfileCard({ profile }: { profile: ProfileDTO }) {
+  const displayName = profile.name || profile.title || "Untitled profile";
   const initials =
-    profile.title
-      ?.split(" ")
+    displayName
+      .split(" ")
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part.charAt(0).toUpperCase())
@@ -20,7 +21,7 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
           {profile.url ? (
             <img
               src={profile.url}
-              alt={`${profile.title || "Profile"} avatar`}
+              alt={`${displayName} avatar`}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -29,8 +30,13 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="display-title truncate text-base font-semibold text-foreground">
-            {profile.title || "Untitled profile"}
+            {displayName}
           </h2>
+          {profile.name && profile.title && (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {profile.title}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {profile.typeProfile && (
               <StatusBadge tone="cyan">{profile.typeProfile}</StatusBadge>

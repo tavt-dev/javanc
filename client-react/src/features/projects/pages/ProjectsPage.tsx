@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { MotionDialog } from "@/components/motion/MotionDialog";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -11,7 +12,8 @@ import { RetryState } from "@/components/shared/RetryState";
 import { ProjectCard } from "@/features/projects/components/ProjectCard";
 import { ProjectForm } from "@/features/projects/components/ProjectForm";
 import {
-  useProjectsByProfileQuery,
+  useDeleteProjectMutation,
+  useMyProjectsQuery,
   useSaveProjectMutation,
   useUpdateProjectMutation,
 } from "@/features/projects/hooks/use-project-queries";
@@ -24,11 +26,13 @@ import type { ProjectDTO, ProjectFormValues } from "@/types/project";
 export function ProjectsPage() {
   const profileQuery = useMyProfileQuery();
   const profile = profileQuery.profile;
-  const projectsQuery = useProjectsByProfileQuery(profile?.id);
+  const projectsQuery = useMyProjectsQuery(profile?.id);
   const saveMutation = useSaveProjectMutation(profile?.id ?? 0);
   const updateMutation = useUpdateProjectMutation(profile?.id ?? 0);
+  const deleteMutation = useDeleteProjectMutation(profile?.id ?? 0);
   const [formOpen, setFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDTO | null>(null);
+  const [deletingProject, setDeletingProject] = useState<ProjectDTO | null>(null);
 
   const closeForm = () => {
     setFormOpen(false);
@@ -141,7 +145,11 @@ export function ProjectsPage() {
         <StaggerList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((project, index) => (
             <StaggerItem key={project.id} index={index}>
-              <ProjectCard project={project} onEdit={openEdit} />
+              <ProjectCard
+                project={project}
+                onDelete={setDeletingProject}
+                onEdit={openEdit}
+              />
             </StaggerItem>
           ))}
         </StaggerList>
@@ -156,6 +164,22 @@ export function ProjectsPage() {
           onCancel={closeForm}
         />
       </MotionDialog>
+
+      <ConfirmDialog
+        open={Boolean(deletingProject)}
+        title="Delete project"
+        description={`Delete ${deletingProject?.title ?? "this project"}?`}
+        confirmLabel="Delete"
+        destructive
+        loading={deleteMutation.isPending}
+        onCancel={() => setDeletingProject(null)}
+        onConfirm={() => {
+          if (!deletingProject) return;
+          deleteMutation.mutate(deletingProject.id, {
+            onSuccess: () => setDeletingProject(null),
+          });
+        }}
+      />
     </PageTransition>
   );
 }

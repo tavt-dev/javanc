@@ -1,9 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsPage } from "./SettingsPage";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
+
+vi.mock("@/features/companies/hooks/use-company-queries", () => ({
+  useAcceptHrPromotionWithCompanyMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useLeaveHrCompanyMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/features/users/hooks/use-user-queries", () => ({
+  useMyHrPromotionsQuery: () => ({ data: [] }),
+  useMyRoleRequestsQuery: () => ({ data: [] }),
+  useRejectHrPromotionMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useRequestManagerUpgradeMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 
 describe("SettingsPage", () => {
   beforeEach(() => {

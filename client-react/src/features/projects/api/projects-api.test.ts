@@ -4,7 +4,9 @@ import { projectsApi } from "./projects-api";
 
 vi.mock("@/lib/api-client", () => ({
   default: {
+    delete: vi.fn(),
     get: vi.fn(),
+    patch: vi.fn(),
     post: vi.fn(),
   },
 }));
@@ -17,13 +19,24 @@ describe("projectsApi", () => {
   });
 
   it("gets projects by profile using id query param", async () => {
-    mockedApiClient.get.mockResolvedValueOnce({ data: { data: [] } });
+    mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
 
+    await projectsApi.profilesCompatibility();
     await projectsApi.getByProfile(42);
+    await projectsApi.imageCompatibilityStatus();
 
-    expect(mockedApiClient.get).toHaveBeenCalledWith(
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      1,
+      "/project/user/getProfile",
+    );
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      2,
       "/project/user/getProject",
       { params: { id: 42 } },
+    );
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      3,
+      "/project/user/get1",
     );
   });
 
@@ -43,5 +56,51 @@ describe("projectsApi", () => {
       display: true,
       idProfile: 7,
     });
+  });
+
+  it("uses RESTful current-user project endpoints", async () => {
+    mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
+    mockedApiClient.post.mockResolvedValue({ data: { data: {} } });
+    mockedApiClient.patch.mockResolvedValue({ data: { data: {} } });
+    mockedApiClient.delete.mockResolvedValue({ data: { data: null } });
+
+    await projectsApi.myProjects();
+    await projectsApi.myProject(4);
+    await projectsApi.createMyProject({
+      title: "New",
+      description: "Demo",
+      display: true,
+    });
+    await projectsApi.updateMyProject(4, {
+      title: "Updated",
+      description: "Demo",
+      display: false,
+    });
+    await projectsApi.deleteMyProject(4);
+
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      1,
+      "/project/user/projects",
+    );
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      2,
+      "/project/user/projects/4",
+    );
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/project/user/projects", {
+      title: "New",
+      description: "Demo",
+      display: true,
+    });
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/project/user/projects/4",
+      {
+        title: "Updated",
+        description: "Demo",
+        display: false,
+      },
+    );
+    expect(mockedApiClient.delete).toHaveBeenCalledWith(
+      "/project/user/projects/4",
+    );
   });
 });
