@@ -1,9 +1,0 @@
-spring:
-  application:
-    name: manager-service
-server:
-  port: 8091
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8671/eureka
