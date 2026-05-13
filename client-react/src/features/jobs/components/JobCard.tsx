@@ -1,8 +1,7 @@
 import { ArrowRight, Briefcase, CheckCircle, Clock, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { motionPresets } from "@/components/motion/motion-presets";
+import { PremiumJobCard } from "@/components/shared/PremiumJobCard";
 import { getJobApplicationState } from "@/features/jobs/utils/job-utils";
 import type { JobDTO } from "@/types/job";
 
@@ -15,25 +14,20 @@ export function JobCard({
   profileId?: number | null;
   companyName?: string;
 }) {
-  const reduceMotion = useReducedMotion();
   const state = getJobApplicationState(job, profileId);
 
   return (
-    <motion.article
-      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
-      transition={motionPresets.card.transition}
-      className="interactive-card border-t-2 border-t-primary/45 p-4"
-    >
+    <PremiumJobCard>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-foreground">
+          <h2 className="display-title truncate text-base font-semibold text-foreground">
             {job.title}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {companyName || `Company #${job.idCompany}`}
           </p>
         </div>
-        {job.typeJob && <StatusBadge tone="primary">{job.typeJob}</StatusBadge>}
+        {job.typeJob && <StatusBadge tone="cyan">{job.typeJob}</StatusBadge>}
       </div>
 
       <p className="mt-4 line-clamp-3 min-h-12 text-sm text-muted-foreground">
@@ -55,7 +49,7 @@ export function JobCard({
         View detail
         <ArrowRight size={15} />
       </Link>
-    </motion.article>
+    </PremiumJobCard>
   );
 }
 

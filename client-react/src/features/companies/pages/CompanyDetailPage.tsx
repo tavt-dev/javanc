@@ -66,7 +66,7 @@ export function CompanyDetailPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Company profile"
         title={company.name}
         description={company.description || "Company profile and jobs."}

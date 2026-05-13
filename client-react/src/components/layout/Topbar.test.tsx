@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import { Topbar } from "./Topbar";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -39,7 +40,7 @@ describe("Topbar", () => {
 
   it("exposes menu state through aria-expanded", async () => {
     const user = userEvent.setup();
-    render(<Topbar />);
+    renderTopbar();
 
     const themeButton = screen.getByRole("button", { name: "Change theme" });
     expect(themeButton).toHaveAttribute("aria-expanded", "false");
@@ -52,7 +53,7 @@ describe("Topbar", () => {
 
   it("closes open menus with Escape", async () => {
     const user = userEvent.setup();
-    render(<Topbar />);
+    renderTopbar();
 
     const userMenuButton = screen.getByRole("button", {
       name: "Open user menu",
@@ -68,7 +69,7 @@ describe("Topbar", () => {
 
   it("calls logout mutation with the current access token", async () => {
     const user = userEvent.setup();
-    render(<Topbar />);
+    renderTopbar();
 
     await user.click(screen.getByRole("button", { name: "Open user menu" }));
     await user.click(screen.getByRole("menuitem", { name: /logout/i }));
@@ -76,3 +77,11 @@ describe("Topbar", () => {
     expect(logoutMutateMock).toHaveBeenCalledWith("token");
   });
 });
+
+function renderTopbar() {
+  return render(
+    <MemoryRouter>
+      <Topbar />
+    </MemoryRouter>,
+  );
+}

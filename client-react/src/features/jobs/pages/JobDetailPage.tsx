@@ -74,7 +74,7 @@ export function JobDetailPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Job detail"
         title={job.title}
         description={companyQuery.data?.name || `Company #${job.idCompany}`}

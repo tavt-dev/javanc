@@ -18,13 +18,16 @@ export function DataToolbar({
   onSearchChange: (value: string) => void;
   onClear: () => void;
   activeFilterCount?: number;
-  variant?: "default" | "prominent";
+  variant?: "default" | "prominent" | "job-search";
 }) {
+  const elevated = variant === "prominent" || variant === "job-search";
   return (
     <div
       className={
-        variant === "prominent"
-          ? "brand-search flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between"
+        variant === "job-search"
+          ? "job-search-panel flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between"
+          : elevated
+            ? "brand-search flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between"
           : "surface flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between"
       }
     >
@@ -39,7 +42,7 @@ export function DataToolbar({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className={variant === "prominent" ? "form-input h-11 pl-9" : "form-input h-10 pl-9"}
+            className={elevated ? "form-input h-11 pl-9" : "form-input h-10 pl-9"}
           />
         </label>
         {filters}

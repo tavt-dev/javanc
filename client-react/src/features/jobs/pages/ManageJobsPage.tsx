@@ -169,7 +169,7 @@ export function ManageJobsPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="HR hiring console"
         title="Manage Jobs"
         description={`Hiring workspace for ${company?.name ?? "your company"}.`}
@@ -201,7 +201,7 @@ export function ManageJobsPage() {
         searchPlaceholder="Search jobs"
         onSearchChange={setSearch}
         onClear={() => setSearch("")}
-        variant="prominent"
+        variant="job-search"
       />
 
       {jobsQuery.isLoading ? (

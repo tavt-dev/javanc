@@ -70,7 +70,7 @@ export function MyCompanyPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Manager workspace"
         title={company.name}
         description="Company workspace and operational profile."

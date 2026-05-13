@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { motionPresets } from "@/components/motion/motion-presets";
+import { DesktopNavbar } from "./DesktopNavbar";
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
@@ -68,7 +69,7 @@ export function Topbar() {
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 min-w-0 items-center gap-2 border-b border-primary/10 bg-card/95 px-3 shadow-sm shadow-[hsl(var(--brand-forest)/0.04)] backdrop-blur supports-[backdrop-filter]:bg-card/88 sm:gap-3 sm:px-4">
+    <header className="sticky top-0 z-30 flex h-[var(--nav-height)] min-w-0 items-center gap-2 border-b border-primary/10 bg-card/95 px-3 shadow-sm shadow-[hsl(var(--hero-dark)/0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/88 sm:gap-3 sm:px-4 lg:px-6">
       {/* Mobile hamburger */}
       <button
         type="button"
@@ -89,7 +90,9 @@ export function Topbar() {
         </span>
       </div>
 
-      <div className="flex-1" />
+      <DesktopNavbar />
+
+      <div className="flex-1 lg:hidden" />
 
       {/* Theme toggle */}
       <div className="relative" ref={themeMenuRef}>

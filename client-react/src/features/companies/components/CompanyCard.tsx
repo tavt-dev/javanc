@@ -1,31 +1,24 @@
 import { ArrowRight, Building2, Mail, MapPin, Phone } from "lucide-react";
 import type { ElementType } from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { motionPresets } from "@/components/motion/motion-presets";
+import { PremiumCompanyCard } from "@/components/shared/PremiumCompanyCard";
 import { getCompanyLocation } from "@/features/companies/utils/company-utils";
 import type { CompanyDTO } from "@/types/company";
 
 export function CompanyCard({ company }: { company: CompanyDTO }) {
-  const reduceMotion = useReducedMotion();
-
   return (
-    <motion.article
-      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
-      transition={motionPresets.card.transition}
-      className="interactive-card border-t-2 border-t-primary/40 p-4"
-    >
+    <PremiumCompanyCard>
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--job-cyan)/0.12)] text-[hsl(var(--job-cyan))]">
           <Building2 size={22} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-foreground">
+          <h2 className="display-title truncate text-base font-semibold text-foreground">
             {company.name}
           </h2>
           <div className="mt-2 flex flex-wrap gap-2">
-            {company.type && <StatusBadge tone="primary">{company.type}</StatusBadge>}
+            {company.type && <StatusBadge tone="cyan">{company.type}</StatusBadge>}
             <StatusBadge tone="neutral">
               {`${company.idJobs?.length ?? 0} jobs`}
             </StatusBadge>
@@ -50,7 +43,7 @@ export function CompanyCard({ company }: { company: CompanyDTO }) {
         View company
         <ArrowRight size={15} />
       </Link>
-    </motion.article>
+    </PremiumCompanyCard>
   );
 }
 

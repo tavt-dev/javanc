@@ -5,8 +5,9 @@ const port = 3011;
 export default defineConfig({
   testDir: "./e2e/specs",
   timeout: 30_000,
-  expect: { timeout: 8_000 },
+  expect: { timeout: 10_000 },
   fullyParallel: true,
+  workers: 2,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {

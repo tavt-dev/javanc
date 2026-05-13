@@ -15,7 +15,7 @@ export function SearchHeroPanel({
   action?: ReactNode;
 }) {
   return (
-    <div className="brand-search p-3">
+    <div className="job-search-panel p-3">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <label className="relative block min-w-0">
           <span className="sr-only">{placeholder}</span>
@@ -40,4 +40,3 @@ export function SearchHeroPanel({
     </div>
   );
 }
-

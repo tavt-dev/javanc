@@ -58,7 +58,14 @@ async function handleApiRoute(
   }
   const url = new URL(request.url());
   const path = url.pathname;
-  if (path.startsWith("/src/") || path.startsWith("/node_modules/") || path.startsWith("/@")) {
+  if (
+    path.startsWith("/src/") ||
+    path.startsWith("/node_modules/") ||
+    path.startsWith("/@") ||
+    path.startsWith("/@fs/") ||
+    path.startsWith("/assets/") ||
+    /\.(js|ts|tsx|css|map|png|jpg|jpeg|webp|svg|woff2?)$/i.test(path)
+  ) {
     return route.fallback();
   }
   const method = request.method();

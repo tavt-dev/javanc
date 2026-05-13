@@ -32,7 +32,7 @@ export function ProfileSearchPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="hero"
         eyebrow="Talent discovery"
         title="Profiles"
         description="Search active professional profiles by title and profile type."
@@ -60,7 +60,7 @@ export function ProfileSearchPage() {
                     setDebouncedTitle("");
                     setType("");
                   }}
-                  className="btn-secondary focus-ring h-10 bg-white"
+                  className="btn-secondary focus-ring h-10 bg-card"
                 >
                   <SlidersHorizontal size={16} />
                   Clear
@@ -72,7 +72,7 @@ export function ProfileSearchPage() {
       />
 
       {query.isLoading ? (
-        <LoadingSkeleton variant="cardGrid" />
+        <LoadingSkeleton variant="search" />
       ) : query.error ? (
         <RetryState error={query.error} onRetry={query.refetch} />
       ) : profiles.length === 0 ? (

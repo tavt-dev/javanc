@@ -132,7 +132,7 @@ export function UserManagementPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Admin console"
         title="User Management"
         description="Manage internal accounts, roles, and active status."
@@ -153,7 +153,7 @@ export function UserManagementPage() {
           setRole("all");
           setActive("all");
         }}
-        variant="prominent"
+        variant="job-search"
         filters={
           <>
             <select className="form-input sm:w-36" value={role} onChange={(event) => setRole(event.target.value as "all" | Role)}>

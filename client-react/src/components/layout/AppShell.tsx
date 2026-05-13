@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { MobileSidebar } from "./MobileSidebar";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -11,14 +10,13 @@ export function AppShell() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="flex min-h-screen bg-background [background-image:linear-gradient(to_bottom,hsl(var(--brand-mint)/0.42),transparent_320px),linear-gradient(90deg,hsl(var(--primary)/0.04)_1px,transparent_1px)] [background-size:auto,48px_48px]">
+    <div className="flex min-h-screen flex-col bg-background [background-image:linear-gradient(to_bottom,hsl(var(--brand-mint)/0.5),transparent_340px),linear-gradient(90deg,hsl(var(--primary)/0.045)_1px,transparent_1px)] [background-size:auto,52px_52px]">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
       >
         Skip to content
       </a>
-      <Sidebar />
       <MobileSidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -27,7 +25,7 @@ export function AppShell() {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 p-4 sm:p-5 md:p-6"
+          className="flex-1 px-4 py-5 sm:px-5 md:px-6 lg:px-8"
         >
           <AnimatePresence mode="wait">
             <motion.div

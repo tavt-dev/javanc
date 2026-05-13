@@ -67,17 +67,17 @@ export function DashboardPage() {
 
   return (
     <PageTransition>
-      <BrandPanel className="p-5 sm:p-6">
+      <BrandPanel variant="hero" className="p-5 sm:p-6 lg:p-7">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/75">
-              Workspace command center
+              Career command center
             </p>
             <h1 className="mt-2 max-w-3xl break-words text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Welcome back{user?.name ? `, ${user.name}` : ""}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-50/75">
-              Track profile quality, portfolio visibility, and role workspace signals from one emerald console.
+              Search opportunities, improve your hiring profile, and keep role workspace signals in one focused console.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {user?.role && <StatusBadge tone="lime">{user.role}</StatusBadge>}

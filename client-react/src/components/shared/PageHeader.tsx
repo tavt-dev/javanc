@@ -20,11 +20,12 @@ export function PageHeader({
   breadcrumbs?: ReactNode;
   search?: ReactNode;
   density?: "default" | "compact";
-  variant?: "default" | "brand";
+  variant?: "default" | "brand" | "hero" | "console" | "plain";
 }) {
-  if (variant === "brand") {
+  if (variant === "brand" || variant === "hero" || variant === "console") {
+    const isHero = variant === "hero";
     return (
-      <section className="brand-panel p-5 sm:p-6">
+      <section className={cn(isHero ? "hero-panel" : "brand-panel", "p-5 sm:p-6 lg:p-7")}>
         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             {breadcrumbs && <div className="mb-2">{breadcrumbs}</div>}
@@ -35,8 +36,12 @@ export function PageHeader({
             )}
             <h1
               className={cn(
-                "max-w-4xl break-words font-semibold tracking-tight text-white",
-                density === "compact" ? "text-xl" : "text-2xl sm:text-3xl",
+                "display-title max-w-4xl break-words font-semibold text-white",
+                density === "compact"
+                  ? "text-xl"
+                  : isHero
+                    ? "text-3xl sm:text-4xl"
+                    : "text-2xl sm:text-3xl",
               )}
             >
               {title}
@@ -64,6 +69,7 @@ export function PageHeader({
       className={cn(
         "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between",
         density === "compact" && "gap-2",
+        variant === "plain" && "border-b border-border pb-4",
       )}
     >
       <div className="min-w-0">
@@ -75,7 +81,7 @@ export function PageHeader({
         )}
         <h1
           className={cn(
-            "break-words font-semibold tracking-tight text-foreground",
+            "display-title break-words font-semibold text-foreground",
             density === "compact" ? "text-xl" : "text-2xl",
           )}
         >

@@ -67,7 +67,7 @@ export function ProfileDetailPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Profile detail"
         title={profile.title || "Untitled profile"}
         description="Read-only professional profile details."

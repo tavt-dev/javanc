@@ -42,7 +42,7 @@ export function JobBoardPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="hero"
         eyebrow="Job marketplace"
         title="Job Board"
         description="Browse active jobs and apply with your profile."
@@ -91,7 +91,7 @@ export function JobBoardPage() {
                     setCompanyId("");
                     setOpenOnly(false);
                   }}
-                  className="btn-secondary focus-ring h-10 bg-white"
+                  className="btn-secondary focus-ring h-10 bg-card"
                 >
                   <SlidersHorizontal size={16} />
                   Clear
@@ -103,7 +103,7 @@ export function JobBoardPage() {
       />
 
       {jobsQuery.isLoading ? (
-        <LoadingSkeleton variant="cardGrid" />
+        <LoadingSkeleton variant="search" />
       ) : jobsQuery.error ? (
         <RetryState error={jobsQuery.error} onRetry={jobsQuery.refetch} />
       ) : filteredJobs.length === 0 ? (

@@ -135,7 +135,7 @@ export function CompanyManagementPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="console"
         eyebrow="Admin console"
         title="Company Management"
         description="Create, edit, delete, and assign company managers."
@@ -155,7 +155,7 @@ export function CompanyManagementPage() {
           setSearch("");
           setType("");
         }}
-        variant="prominent"
+        variant="job-search"
         filters={
           <select className="form-input sm:w-44" value={type} onChange={(event) => setType(event.target.value)}>
             <option value="">All types</option>

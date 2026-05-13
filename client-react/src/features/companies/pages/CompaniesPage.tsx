@@ -31,7 +31,7 @@ export function CompaniesPage() {
   return (
     <PageTransition>
       <PageHeader
-        variant="brand"
+        variant="hero"
         eyebrow="Company directory"
         title="Companies"
         description="Browse companies and their active jobs."
@@ -67,7 +67,7 @@ export function CompaniesPage() {
                     setType("");
                     setLocation("");
                   }}
-                  className="btn-secondary focus-ring h-10 bg-white"
+                  className="btn-secondary focus-ring h-10 bg-card"
                 >
                   <SlidersHorizontal size={16} />
                   Clear
@@ -79,7 +79,7 @@ export function CompaniesPage() {
       />
 
       {companiesQuery.isLoading ? (
-        <LoadingSkeleton variant="cardGrid" />
+        <LoadingSkeleton variant="search" />
       ) : companiesQuery.error ? (
         <RetryState
           error={companiesQuery.error}

@@ -15,7 +15,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
 
   return (
     <main className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]">
-      <section className="brand-panel hidden min-h-screen rounded-none border-0 text-white lg:flex lg:flex-col lg:justify-between">
+      <section className="hero-panel hidden min-h-screen rounded-none border-0 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(#ffffff_1px,transparent_1px),linear-gradient(90deg,#ffffff_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgb(16_185_129/0.22),transparent)]" />
         <motion.div
@@ -77,7 +77,9 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
                 J
               </span>
             </div>
-            <span className="text-base font-semibold">JavaNC Workspace</span>
+            <span className="font-display text-base font-semibold">
+              JavaNC Workspace
+            </span>
           </div>
         </div>
 
@@ -92,7 +94,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
               <p className="text-sm font-medium text-emerald-100/80">
                 Emerald career console
               </p>
-              <h1 className="max-w-lg text-4xl font-semibold leading-tight">
+              <h1 className="display-title max-w-lg text-4xl font-semibold leading-tight">
                 Manage profiles, jobs, teams, and applications from one focused
                 console.
               </h1>
@@ -135,7 +137,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
 
           <div className="surface p-6 shadow-xl shadow-black/[0.03] sm:p-7">
             <div className="mb-6 space-y-1 text-center">
-              <h1 className="text-2xl font-semibold tracking-normal">
+              <h1 className="display-title text-2xl font-semibold">
                 {title}
               </h1>
               <p className="text-sm text-muted-foreground">{subtitle}</p>

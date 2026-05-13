@@ -7,10 +7,12 @@ export function BrandPanel({
   children,
   className,
   floating = false,
+  variant = "brand",
 }: {
   children: ReactNode;
   className?: string;
   floating?: boolean;
+  variant?: "brand" | "hero" | "section";
 }) {
   const reduceMotion = useReducedMotion();
 
@@ -30,10 +32,16 @@ export function BrandPanel({
               duration: reduceMotion ? 0 : motionPresets.section.transition.duration,
             }
       }
-      className={cn("brand-panel", className)}
+      className={cn(
+        variant === "hero"
+          ? "hero-panel"
+          : variant === "section"
+            ? "section-dark"
+            : "brand-panel",
+        className,
+      )}
     >
       <div className="relative z-10">{children}</div>
     </motion.section>
   );
 }
-

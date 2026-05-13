@@ -9,6 +9,8 @@ const toneClass = {
   emerald: "bg-primary/10 text-primary ring-primary/25",
   mint: "bg-[hsl(var(--brand-mint)/0.9)] text-primary ring-primary/15",
   lime: "bg-[hsl(var(--brand-lime)/0.18)] text-[hsl(var(--brand-forest))] ring-[hsl(var(--brand-lime)/0.25)] dark:text-[hsl(var(--brand-lime))]",
+  cyan: "bg-[hsl(var(--job-cyan)/0.12)] text-[hsl(var(--job-cyan))] ring-[hsl(var(--job-cyan)/0.22)]",
+  navy: "bg-[hsl(var(--hero-dark)/0.08)] text-[hsl(var(--hero-dark))] ring-[hsl(var(--hero-dark)/0.14)] dark:bg-white/10 dark:text-white dark:ring-white/15",
   danger: "bg-destructive/10 text-destructive ring-destructive/20",
   destructive: "bg-destructive/10 text-destructive ring-destructive/20",
 };

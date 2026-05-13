@@ -1,12 +1,10 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Mail, Phone } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { motionPresets } from "@/components/motion/motion-presets";
+import { PremiumProfileCard } from "@/components/shared/PremiumProfileCard";
 import type { ProfileDTO } from "@/types/profile";
 
 export function ProfileCard({ profile }: { profile: ProfileDTO }) {
-  const reduceMotion = useReducedMotion();
   const initials =
     profile.title
       ?.split(" ")
@@ -16,13 +14,9 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
       .join("") || "P";
 
   return (
-    <motion.article
-      whileHover={reduceMotion ? undefined : motionPresets.card.hover}
-      transition={motionPresets.card.transition}
-      className="interactive-card border-t-2 border-t-primary/40 p-4"
-    >
+    <PremiumProfileCard>
       <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[hsl(var(--job-cyan)/0.12)] text-sm font-semibold text-[hsl(var(--job-cyan))]">
           {profile.url ? (
             <img
               src={profile.url}
@@ -34,12 +28,12 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-foreground">
+          <h2 className="display-title truncate text-base font-semibold text-foreground">
             {profile.title || "Untitled profile"}
           </h2>
           <div className="mt-2 flex flex-wrap gap-2">
             {profile.typeProfile && (
-              <StatusBadge tone="primary">{profile.typeProfile}</StatusBadge>
+              <StatusBadge tone="cyan">{profile.typeProfile}</StatusBadge>
             )}
             {profile.status && (
               <StatusBadge tone="success">{profile.status}</StatusBadge>
@@ -74,6 +68,6 @@ export function ProfileCard({ profile }: { profile: ProfileDTO }) {
         View profile
         <ArrowRight size={15} />
       </Link>
-    </motion.article>
+    </PremiumProfileCard>
   );
 }

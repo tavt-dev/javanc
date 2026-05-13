@@ -3,9 +3,35 @@ import { cn } from "@/lib/utils";
 export function LoadingSkeleton({
   variant = "page",
 }: {
-  variant?: "page" | "cardGrid" | "form" | "detail";
+  variant?: "page" | "cardGrid" | "form" | "detail" | "hero" | "search" | "cards";
 }) {
-  if (variant === "cardGrid") {
+  if (variant === "hero") {
+    return (
+      <div className="space-y-5">
+        <SkeletonBlock className="h-56 rounded-lg" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-28 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "search") {
+    return (
+      <div className="space-y-4">
+        <SkeletonBlock className="h-20 rounded-lg" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-48 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "cardGrid" || variant === "cards") {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
