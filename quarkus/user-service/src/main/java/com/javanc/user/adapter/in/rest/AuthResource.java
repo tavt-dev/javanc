@@ -3,6 +3,8 @@ package com.javanc.user.adapter.in.rest;
 import com.javanc.user.adapter.in.rest.dto.ApiResponse;
 import com.javanc.user.adapter.in.rest.dto.AuthSession;
 import com.javanc.user.adapter.in.rest.dto.LoginRequest;
+import com.javanc.user.adapter.in.rest.dto.PasswordResetConfirmRequest;
+import com.javanc.user.adapter.in.rest.dto.PasswordResetRequest;
 import com.javanc.user.adapter.in.rest.dto.RegistrationPending;
 import com.javanc.user.adapter.in.rest.dto.RefreshTokenRequest;
 import com.javanc.user.adapter.in.rest.dto.ResendVerificationOtpRequest;
@@ -55,6 +57,21 @@ public class AuthResource {
     public ApiResponse<Void> resendVerificationOtp(ResendVerificationOtpRequest request) {
         authUseCase.resendVerificationOtp(mapper.toCommand(request));
         return new ApiResponse<>(true, "If the account is pending, a verification OTP has been sent", null);
+    }
+
+    @POST
+    @Path("/password-reset/request")
+    public ApiResponse<Void> requestPasswordReset(PasswordResetRequest request) {
+        authUseCase.requestPasswordReset(request == null ? null : request.email);
+        return new ApiResponse<>(true, "If the account exists, a password reset code has been sent", null);
+    }
+
+    @POST
+    @Path("/password-reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(PasswordResetConfirmRequest request) {
+        authUseCase.confirmPasswordReset(request == null ? null : request.email, request == null ? null : request.otp,
+                request == null ? null : request.password);
+        return new ApiResponse<>(true, "Password updated successfully", null);
     }
 
     @POST

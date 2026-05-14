@@ -141,6 +141,63 @@ public class AuthUseCase {
         createAndSendOtp(user);
     }
 
+    @Transactional
+    public void requestPasswordReset(String emailValue) {
+        EmailAddress email;
+        try {
+            email = email(emailValue);
+        } catch (ApplicationException exception) {
+            return;
+        }
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.status() != AccountStatus.ACTIVE || !user.active()) {
+            return;
+        }
+
+        Instant now = clock.instant();
+        otpRepository.findLatestOpenByEmail(email).ifPresent(existing -> {
+            if (Duration.between(existing.lastSentAt(), now).getSeconds() < resendCooldownSeconds) {
+                throw new ApplicationException(ErrorCode.TOO_MANY_REQUESTS, "Please wait before requesting another OTP");
+            }
+        });
+        otpRepository.consumeOpenOtps(email);
+        String otp = otpGenerator.generate(otpLength);
+        EmailVerificationOtp resetOtp = EmailVerificationOtp.create(user.id(), user.email(),
+                otpHasher.hash(user.email(), otp), now, now.plusSeconds(otpTtlSeconds), otpMaxAttempts);
+        otpRepository.save(resetOtp);
+        verificationNotifier.sendPasswordResetOtp(user.email().value(), user.name(), otp, Math.max(1, otpTtlSeconds / 60));
+    }
+
+    @Transactional
+    public void confirmPasswordReset(String emailValue, String otpValue, String password) {
+        requirePassword(password);
+        EmailAddress email = email(emailValue);
+        String otp = required(otpValue, "OTP is required");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid password reset code"));
+        if (user.status() != AccountStatus.ACTIVE || !user.active()) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN, "User is inactive");
+        }
+
+        EmailVerificationOtp resetOtp = otpRepository.findLatestOpenByEmail(email)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid password reset code"));
+        Instant now = clock.instant();
+        if (resetOtp.expired(now)) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Password reset code expired");
+        }
+        if (resetOtp.attemptsExceeded()) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN, "Password reset attempts exceeded");
+        }
+        if (!otpHasher.matches(email, otp, resetOtp.otpHash())) {
+            otpRepository.save(resetOtp.incrementAttempts());
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid password reset code");
+        }
+
+        otpRepository.save(resetOtp.consume(now));
+        user.changePassword(passwordHasher.hash(password));
+        userRepository.save(user);
+    }
+
     public AuthSessionResult login(LoginCommand command) {
         EmailAddress email = email(command.email());
         User user = userRepository.findByEmail(email)

@@ -103,6 +103,34 @@ class NotificationResourceTest {
     }
 
     @Test
+    void seenMarksNotificationRead() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "id": 601,
+                          "message": "Unread",
+                          "url": "https://example.test",
+                          "read": false,
+                          "idUser": 42
+                        }
+                        """)
+                .post("/notification/update")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when()
+                .post("/notification/seen?id=601")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("message", equalTo("Notification marked read"))
+                .body("data.id", equalTo(601))
+                .body("data.read", equalTo(true));
+    }
+
+    @Test
     void getAllReturnsOkCompatibilityResponse() {
         given()
                 .when()

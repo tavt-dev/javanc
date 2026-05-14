@@ -52,14 +52,14 @@ export function CompanyForm({
       event.currentTarget.reset();
       onSaved?.(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save company");
+      setError(err instanceof Error ? err.message : t("companies.unableSave"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} onChange={(event) => updateDraft(event.currentTarget)} className="grid gap-4 rounded-md border border-line bg-white p-5">
+    <form onSubmit={onSubmit} onChange={(event) => updateDraft(event.currentTarget)} className="scroll-reveal grid gap-4 rounded-md border border-line bg-white p-5 text-ink shadow-soft">
       {error ? <ErrorState message={error} /> : null}
       {managerId ? <input type="hidden" name="idManager" value={managerId} /> : null}
       <div className="grid gap-4 md:grid-cols-2">
@@ -67,7 +67,7 @@ export function CompanyForm({
           <input className={inputClass} name="name" required />
         </Field>
         <Field label={t("companies.typeLabel")}>
-          <input className={inputClass} name="type" placeholder="Software, Finance, Healthcare" />
+          <input className={inputClass} name="type" placeholder={t("companies.typePlaceholder")} />
         </Field>
       </div>
       <Field label={t("companies.descriptionLabel")}>
@@ -94,10 +94,10 @@ export function CompanyForm({
       </div>
       <Field label={t("companies.logoLabel")}>
         <div className="grid gap-3 sm:grid-cols-[96px_1fr] sm:items-center">
-          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-md border border-line bg-canvas text-xl font-bold text-brand">
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-md border border-line bg-slate-50 text-xl font-bold text-brand">
             {logoPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoPreview} alt="Company logo preview" className="h-full w-full object-cover" />
+              <img src={logoPreview} alt={t("companies.logoPreview")} className="h-full w-full object-cover" />
             ) : (
               "Logo"
             )}

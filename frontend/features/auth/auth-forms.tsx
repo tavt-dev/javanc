@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
@@ -13,19 +13,14 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { useLanguage } from "@/lib/i18n";
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(1, "Password is required")
+  email: z.string().email(),
+  password: z.string().min(1)
 });
 
-const registerSchema = loginSchema
-  .extend({
-    name: z.string().min(2, "Name is required"),
-    confirmPassword: z.string().min(1, "Confirm your password")
-  })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"]
-  });
+const registerSchema = loginSchema.extend({
+  name: z.string().min(2),
+  confirmPassword: z.string().min(1)
+});
 
 type LoginInput = z.infer<typeof loginSchema>;
 type RegisterInput = z.infer<typeof registerSchema>;
@@ -33,6 +28,10 @@ type RegisterInput = z.infer<typeof registerSchema>;
 export function LoginForm() {
   const { login, savedAccounts, switchAccount } = useAuth();
   const { t } = useLanguage();
+  const schema = useMemo(() => z.object({
+    email: z.string().email(t("auth.invalidEmail")),
+    password: z.string().min(1, t("auth.passwordRequired"))
+  }), [t]);
   const [error, setError] = useState<string | null>(null);
   const [saveAccount, setSaveAccount] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +39,7 @@ export function LoginForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginInput>({ resolver: zodResolver(schema) });
 
   async function onSubmit(values: LoginInput) {
     setError(null);
@@ -48,7 +47,7 @@ export function LoginForm() {
       const auth = await authApi.signin(values);
       login(auth, saveAccount, saveAccount ? values : undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to sign in");
+      setError(err instanceof Error ? err.message : t("auth.unableSignIn"));
     }
   }
 
@@ -57,7 +56,7 @@ export function LoginForm() {
     try {
       await switchAccount(accountKey);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to sign in with saved account");
+      setError(err instanceof Error ? err.message : t("auth.unableSavedSignIn"));
     }
   }
 
@@ -101,7 +100,7 @@ export function LoginForm() {
             type="button"
             className="focus-ring pressable absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-slate-100 hover:text-ink"
             onClick={() => setShowPassword((current) => !current)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
             aria-pressed={showPassword}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -115,7 +114,7 @@ export function LoginForm() {
           checked={saveAccount}
           onChange={(event) => setSaveAccount(event.target.checked)}
         />
-        Save this account on this browser
+        {t("auth.saveThisAccount")}
       </label>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t("auth.signingIn") : t("auth.loginButton")}
@@ -133,6 +132,15 @@ export function LoginForm() {
 export function RegisterForm() {
   const { login } = useAuth();
   const { t } = useLanguage();
+  const schema = useMemo(() => z.object({
+    email: z.string().email(t("auth.invalidEmail")),
+    password: z.string().min(1, t("auth.passwordRequired")),
+    name: z.string().min(2, t("auth.nameRequired")),
+    confirmPassword: z.string().min(1, t("auth.confirmRequired"))
+  }).refine((value) => value.password === value.confirmPassword, {
+    message: t("auth.passwordMismatch"),
+    path: ["confirmPassword"]
+  }), [t]);
   const [error, setError] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
@@ -141,7 +149,7 @@ export function RegisterForm() {
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema)
+    resolver: zodResolver(schema)
   });
 
   async function onSubmit(values: RegisterInput) {
@@ -150,7 +158,7 @@ export function RegisterForm() {
       const pending = await authApi.signup(values);
       setPendingEmail(pending.email || values.email);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to register");
+      setError(err instanceof Error ? err.message : t("auth.unableRegister"));
     }
   }
 
@@ -164,7 +172,7 @@ export function RegisterForm() {
       const auth = await authApi.verifyEmail(pendingEmail, otp);
       login(auth, false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to verify email");
+      setError(err instanceof Error ? err.message : t("auth.unableVerify"));
     }
   }
 
@@ -176,7 +184,7 @@ export function RegisterForm() {
     try {
       await authApi.resendVerificationOtp(pendingEmail);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to resend verification code");
+      setError(err instanceof Error ? err.message : t("auth.unableResend"));
     }
   }
 
@@ -185,9 +193,9 @@ export function RegisterForm() {
       <form onSubmit={verifyOtp} className="space-y-4">
         {error ? <ErrorState message={error} /> : null}
         <div className="rounded-md border border-line bg-canvas p-4 text-sm text-muted">
-          We sent a verification code to <span className="font-semibold text-ink">{pendingEmail}</span>.
+          {t("auth.sentVerification", { email: pendingEmail })}
         </div>
-        <Field label="Verification code">
+        <Field label={t("auth.verificationCode")}>
           <input
             className={inputClass}
             inputMode="numeric"
@@ -198,10 +206,10 @@ export function RegisterForm() {
           />
         </Field>
         <Button type="submit" className="w-full" disabled={!otp.trim()}>
-          Verify email
+          {t("auth.verifyEmail")}
         </Button>
         <button type="button" className="w-full text-sm font-semibold text-brand" onClick={resendOtp}>
-          Resend code
+          {t("auth.resendCode")}
         </button>
       </form>
     );
@@ -227,6 +235,12 @@ export function RegisterForm() {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? t("auth.creatingAccount") : t("auth.registerButton")}
       </Button>
+      <p className="text-center text-sm text-muted">
+        {t("auth.alreadyHaveAccount")}{" "}
+        <Link href="/login" className="font-semibold text-brand">
+          {t("auth.backToLogin")}
+        </Link>
+      </p>
     </form>
   );
 }

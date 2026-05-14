@@ -70,6 +70,9 @@ export type Profile = {
   url?: string;
   title?: string;
   contact?: Contact;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Project = {

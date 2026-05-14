@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, BriefcaseBusiness, Building2, ChevronDown, Globe2, IdCard, LayoutDashboard, LogOut, Trash2, UserCircle, UserRound } from "lucide-react";
+import { Bell, BriefcaseBusiness, Building2, ChevronDown, Globe2, IdCard, LayoutDashboard, LogOut, ShieldCheck, Trash2, UserCircle, UserRound } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useLanguage } from "@/lib/i18n";
 import { notificationApi } from "@/lib/api";
@@ -20,12 +20,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { activeAccountKey, savedAccounts, signedIn, switchAccount, user, logout, removeSavedAccount } = useAuth();
   const { language, setLanguage, t } = useLanguage();
-  const notifications = useApi(() => (signedIn && user?.id ? notificationApi.byUser(user.id).catch(() => []) : Promise.resolve([])), [signedIn, user?.id]);
-  const unreadCount = notifications.data?.filter((item) => !item.read).length ?? 0;
+  const [notificationReadVersion, setNotificationReadVersion] = useState(0);
+  const notifications = useApi(() => (signedIn && user?.id ? notificationApi.byUser(user.id).catch(() => []) : Promise.resolve([])), [signedIn, user?.id, notificationReadVersion, pathname]);
+  const unreadCount = pathname.startsWith("/account/invitations") ? 0 : notifications.data?.filter((item) => !item.read).length ?? 0;
   const role = user?.role?.toLowerCase();
   const showAdmin = signedIn && role === "admin";
   const showManager = signedIn && (role === "manager" || role === "hr");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [accountSwitchError, setAccountSwitchError] = useState<string | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const navClass = (href: string) =>
@@ -37,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!accountMenuOpen) {
+      setAccountSwitchError(null);
       return;
     }
 
@@ -49,6 +52,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [accountMenuOpen]);
+
+  useEffect(() => {
+    function handleNotificationsRead() {
+      setNotificationReadVersion((current) => current + 1);
+    }
+
+    window.addEventListener("notifications-read", handleNotificationsRead);
+    return () => window.removeEventListener("notifications-read", handleNotificationsRead);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 }
+    );
+
+    const observed = new WeakSet<Element>();
+    function observeReveals() {
+      document.querySelectorAll<HTMLElement>(".scroll-reveal").forEach((item) => {
+        if (!observed.has(item)) {
+          observed.add(item);
+          observer.observe(item);
+        }
+      });
+    }
+
+    observeReveals();
+    const mutationObserver = new MutationObserver(observeReveals);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mutationObserver.disconnect();
+      observer.disconnect();
+    };
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -117,15 +162,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="relative" ref={accountMenuRef}>
                 <button
                   type="button"
-                  onClick={() => setAccountMenuOpen((open) => !open)}
-                  className="focus-ring pressable inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 pl-3 text-white hover:bg-white/15"
+                  onClick={() => {
+                    setAccountSwitchError(null);
+                    setAccountMenuOpen((open) => !open);
+                  }}
+                  className="focus-ring pressable inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2 pl-3 text-white hover:bg-white/15"
                   aria-expanded={accountMenuOpen}
                   aria-haspopup="menu"
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-ink">
                     {(user?.name || user?.email || "U").slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="hidden max-w-[140px] truncate text-sm font-semibold sm:block">{user?.name ?? t("nav.account")}</span>
+                  <span className="hidden min-w-0 sm:block">
+                    <span className="block max-w-[140px] truncate text-left text-sm font-semibold">{user?.name ?? t("nav.account")}</span>
+                    <span className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase leading-none ${roleBadgeClass(role)}`}>
+                      <ShieldCheck className="h-3 w-3" />
+                      {roleLabel(role, t)}
+                    </span>
+                  </span>
                   <ChevronDown className={`h-4 w-4 text-white/70 transition ${accountMenuOpen ? "rotate-180" : ""}`} />
                 </button>
                 {accountMenuOpen ? (
@@ -134,30 +188,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-md border border-line bg-white text-ink shadow-soft"
                   >
                     <div className="border-b border-line p-4">
-                      <p className="truncate text-sm font-bold">{user?.name ?? "Current account"}</p>
+                      <p className="truncate text-sm font-bold">{user?.name ?? t("account.current")}</p>
                       <p className="mt-1 truncate text-xs text-muted">{user?.email}</p>
-                      <p className="mt-2 inline-flex rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-brand">{user?.role ?? "user"}</p>
+                      <p className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${roleBadgeClass(role)}`}>
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        {roleLabel(role, t)}
+                      </p>
                     </div>
                     <div className="grid p-2 text-sm font-semibold">
                       <Link className="pressable flex items-center justify-between rounded-md px-3 py-2 hover:bg-slate-50" href="/account/invitations" onClick={() => setAccountMenuOpen(false)}>
                         <span className="inline-flex items-center gap-2">
                           <Bell className="h-4 w-4" />
-                          Invitations
+                          {t("nav.notifications")}
                         </span>
                         {unreadCount ? <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-ink">{unreadCount}</span> : null}
                       </Link>
                       <Link className="pressable inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50" href="/account" onClick={() => setAccountMenuOpen(false)}>
                         <IdCard className="h-4 w-4" />
-                        Account info
+                        {t("nav.account")}
                       </Link>
                       <Link className="pressable inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50" href="/profile/edit" onClick={() => setAccountMenuOpen(false)}>
                         <UserCircle className="h-4 w-4" />
-                        Profile
+                        {t("nav.profile")}
                       </Link>
                     </div>
                     {savedAccounts.length ? (
                       <div className="border-t border-line p-2">
-                        <p className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted">Switch account</p>
+                        <p className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted">{t("account.switch")}</p>
+                        {accountSwitchError ? (
+                          <div className="mx-3 mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-danger">
+                            {accountSwitchError}
+                          </div>
+                        ) : null}
                         {savedAccounts.map((account) => (
                           <div
                             key={account.key}
@@ -169,23 +231,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                               type="button"
                               className="pressable min-w-0 flex-1 px-3 py-2 text-left text-sm hover:bg-slate-50"
                               onClick={() => {
-                                void switchAccount(account.key);
-                                setAccountMenuOpen(false);
+                                setAccountSwitchError(null);
+                                void switchAccount(account.key)
+                                  .then(() => setAccountMenuOpen(false))
+                                  .catch((err) => {
+                                    setAccountSwitchError(err instanceof Error ? err.message : t("auth.unableSavedSignIn"));
+                                  });
                               }}
                             >
                               <span className="flex min-w-0 items-center justify-between gap-2">
-                                <span className="min-w-0">
-                                  <span className="block truncate font-semibold">{account.label}</span>
-                                  <span className="block truncate text-xs text-muted">{account.email ?? account.role}</span>
-                                </span>
-                                {activeAccountKey === account.key ? <span className="shrink-0 text-xs font-bold text-emerald-600">Active</span> : null}
+                                  <span className="min-w-0">
+                                    <span className="block truncate font-semibold">{account.label}</span>
+                                  <span className="block truncate text-xs text-muted">{account.email ?? roleLabel(account.role, t)}</span>
+                                  {account.role ? (
+                                    <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${roleBadgeClass(account.role)}`}>
+                                      {roleLabel(account.role, t)}
+                                    </span>
+                                  ) : null}
+                                  </span>
+                                {activeAccountKey === account.key ? <span className="shrink-0 text-xs font-bold text-emerald-600">{t("account.active")}</span> : null}
                               </span>
                             </button>
                             <button
                               type="button"
                               className="focus-ring pressable mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-danger hover:bg-red-50"
-                              aria-label={`Remove saved account ${account.label}`}
-                              title="Remove saved account"
+                              aria-label={`${t("account.removeSaved")} ${account.label}`}
+                              title={t("account.removeSaved")}
                               onClick={() => removeSavedAccount(account.key)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -204,7 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         }}
                       >
                         <LogOut className="h-4 w-4" />
-                        Logout
+                        {t("nav.logout")}
                       </button>
                     </div>
                   </div>
@@ -273,4 +344,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </footer>
     </div>
   );
+}
+
+function roleLabel(role: string | undefined | null, t: (key: string) => string) {
+  const normalized = role?.toLowerCase();
+  if (normalized === "admin") {
+    return t("account.systemAdmin");
+  }
+  if (normalized === "manager") {
+    return t("auth.managerRole");
+  }
+  if (normalized === "hr") {
+    return t("auth.hrRole");
+  }
+  return t("auth.userRole");
+}
+
+function roleBadgeClass(role: string | undefined | null) {
+  switch (role?.toLowerCase()) {
+    case "admin":
+      return "bg-red-50 text-red-700 ring-1 ring-red-200";
+    case "manager":
+      return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
+    case "hr":
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+    default:
+      return "bg-indigo-50 text-brand ring-1 ring-indigo-200";
+  }
 }

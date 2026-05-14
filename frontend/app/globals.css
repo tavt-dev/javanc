@@ -112,6 +112,30 @@ select:-webkit-autofill {
   animation: card-enter 420ms ease both;
 }
 
+.page-list-enter > * {
+  animation: page-item-enter 260ms ease both;
+}
+
+.page-list-enter > *:nth-child(2) {
+  animation-delay: 28ms;
+}
+
+.page-list-enter > *:nth-child(3) {
+  animation-delay: 56ms;
+}
+
+.page-list-enter > *:nth-child(4) {
+  animation-delay: 84ms;
+}
+
+.page-list-enter > *:nth-child(5) {
+  animation-delay: 112ms;
+}
+
+.page-list-enter > *:nth-child(6) {
+  animation-delay: 140ms;
+}
+
 .interactive-card {
   transition:
     transform 180ms ease,
@@ -124,10 +148,114 @@ select:-webkit-autofill {
   box-shadow: 0 22px 70px rgba(8, 8, 32, 0.26);
 }
 
+.glass-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.055));
+  box-shadow: 0 20px 70px rgba(8, 8, 32, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.glass-panel::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 0 42px, rgba(255, 255, 255, 0.055) 42px 43px, transparent 43px 100%),
+    linear-gradient(180deg, transparent 0 54px, rgba(255, 255, 255, 0.035) 54px 55px, transparent 55px 100%);
+  background-size: 84px 84px;
+  opacity: 0.5;
+}
+
+.glass-panel > * {
+  position: relative;
+}
+
+.glass-panel .text-ink {
+  color: #f8f7ff;
+}
+
+.glass-panel .text-muted {
+  color: rgba(248, 247, 255, 0.68);
+}
+
+.glass-panel .border-line {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.glass-panel .bg-canvas {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel .bg-white {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel input,
+.glass-panel select,
+.glass-panel textarea {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8f7ff;
+  color-scheme: dark;
+}
+
+.glass-panel select option {
+  background: #201b52;
+  color: #f8f7ff;
+}
+
+.glass-panel input::placeholder,
+.glass-panel textarea::placeholder {
+  color: rgba(248, 247, 255, 0.46);
+}
+
+.glass-panel input:-webkit-autofill,
+.glass-panel input:-webkit-autofill:hover,
+.glass-panel input:-webkit-autofill:focus,
+.glass-panel textarea:-webkit-autofill,
+.glass-panel select:-webkit-autofill {
+  -webkit-text-fill-color: #f8f7ff;
+  box-shadow: 0 0 0 1000px #201b52 inset;
+}
+
+.glass-panel .light-form-panel .text-ink {
+  color: #10103a;
+}
+
+.glass-panel .light-form-panel .text-muted {
+  color: #6b6885;
+}
+
+.glass-panel .light-form-panel input,
+.glass-panel .light-form-panel select,
+.glass-panel .light-form-panel textarea {
+  background: #ffffff;
+  color: #10103a;
+  color-scheme: light;
+}
+
+.glass-panel .light-form-panel input::placeholder,
+.glass-panel .light-form-panel textarea::placeholder {
+  color: #94a3b8;
+}
+
 .scroll-reveal {
-  animation: reveal-on-scroll both;
-  animation-timeline: view();
-  animation-range: entry 0% cover 28%;
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+  transition:
+    opacity 520ms ease,
+    transform 520ms ease;
+}
+
+.scroll-reveal.animate-card {
+  animation: none;
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .pressable {
@@ -189,6 +317,17 @@ select:-webkit-autofill {
   }
 }
 
+@keyframes page-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes reveal-on-scroll {
   from {
     opacity: 0;
@@ -208,5 +347,10 @@ select:-webkit-autofill {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

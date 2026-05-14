@@ -3,11 +3,12 @@
 import { AlertCircle } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
-export function LoadingState({ label = "Loading data" }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
   const { t } = useLanguage();
+  const resolvedLabel = label ?? t("state.loading");
 
   return (
-    <div className="rounded-md border border-line bg-white p-4 shadow-soft" aria-live="polite" aria-label={label}>
+    <div className="rounded-md border border-line bg-white p-4 shadow-soft" aria-live="polite" aria-label={resolvedLabel}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="skeleton h-4 w-36 rounded" />
@@ -20,7 +21,7 @@ export function LoadingState({ label = "Loading data" }: { label?: string }) {
         <div className="skeleton h-24 rounded-md" />
         <div className="skeleton h-24 rounded-md" />
       </div>
-      <p className="mt-4 text-sm text-muted">{label === "Loading data" ? t("state.loading") : label}</p>
+      <p className="mt-4 text-sm text-muted">{resolvedLabel}</p>
       <p className="text-xs text-muted">{t("state.loadingDetails")}</p>
     </div>
   );

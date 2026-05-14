@@ -8,9 +8,14 @@ import { Button, Pill } from "@/components/ui";
 import { companyApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { User } from "@/lib/types";
+import { useAuth } from "@/features/auth/auth-provider";
+import { useLanguage } from "@/lib/i18n";
 
 export default function ManagerHrPage() {
-  const company = useApi(() => companyApi.myManagedCompany(), []);
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const role = user?.role?.toLowerCase();
+  const company = useApi(() => (role === "manager" ? companyApi.myManagedCompany() : Promise.resolve(null)), [role]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,41 +60,45 @@ export default function ManagerHrPage() {
     setMessage(null);
     try {
       await companyApi.requestHrPromotion(selected.id);
-      setMessage(`HR invitation sent to ${selected.name || selected.email}.`);
+      setMessage(t("manager.hrInvitationSent", { user: selected.name || selected.email || `#${selected.id}` }));
       setSelected(null);
       setQuery("");
       setMenuOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to request HR promotion");
+      setError(err instanceof Error ? err.message : t("manager.unableRequestHr"));
     } finally {
       setSaving(false);
     }
   }
 
+  if (role === "hr") {
+    return <EmptyState title={t("manager.hrManagerOnly")} description={t("manager.hrManagerOnlyDescription")} />;
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <section>
-        <PageHeader eyebrow="HR" title="Manage HR" description="Invite existing users to become HR for your company." />
+        <PageHeader eyebrow="HR" title={t("manager.manageHr")} description={t("manager.manageHrDescription")} />
         {company.loading ? <LoadingState /> : null}
         {company.error ? <ErrorState message={company.error} /> : null}
-        {!company.loading && !company.data ? <EmptyState title="No company assigned" description="Create or assign your company before managing HR." /> : null}
+        {!company.loading && !company.data ? <EmptyState title={t("manager.noCompanyAssigned")} description={t("manager.noCompanyAssignedDescription")} /> : null}
         {error ? <ErrorState message={error} /> : null}
         {message ? <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{message}</div> : null}
         {company.data ? (
           <div className="mb-5 rounded-md border border-line bg-white p-4 shadow-soft">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">Selected company</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("manager.selectedCompany")}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-semibold text-ink">{company.data.name || `Company #${company.data.id}`}</h2>
-              <Pill tone="orange">{company.data.type || "Company"}</Pill>
+              <Pill tone="orange">{company.data.type || t("common.company")}</Pill>
               <Pill tone="blue">{company.data.idHR?.length ?? 0} HR</Pill>
             </div>
-            <p className="mt-2 text-sm text-muted">{[company.data.city, company.data.country].filter(Boolean).join(", ") || "Location not set"}</p>
+            <p className="mt-2 text-sm text-muted">{[company.data.city, company.data.country].filter(Boolean).join(", ") || t("state.locationNotSet")}</p>
           </div>
         ) : null}
 
         <div className="rounded-md border border-line bg-white p-5 shadow-soft">
-          <h2 className="text-lg font-semibold text-ink">Invite existing user</h2>
-          <p className="mt-1 text-sm text-muted">The user must confirm before the HR role is activated.</p>
+          <h2 className="text-lg font-semibold text-ink">{t("manager.inviteExistingUser")}</h2>
+          <p className="mt-1 text-sm text-muted">{t("manager.inviteHelp")}</p>
           <div className="relative mt-4" ref={searchRef}>
             <div className="flex items-center gap-2 rounded-md border border-line bg-white px-3 shadow-sm focus-within:border-brand">
               <Search className="h-4 w-4 text-muted" />
@@ -103,24 +112,24 @@ export default function ManagerHrPage() {
                   setMenuOpen(true);
                 }}
                 onFocus={() => setMenuOpen(true)}
-                placeholder={canSearch ? "Search by name, email, or user ID" : "Create or assign a company before inviting HR"}
+                placeholder={canSearch ? t("manager.searchHrPlaceholder") : t("manager.searchHrDisabled")}
               />
             </div>
             {!canSearch ? (
               <div className="mt-2 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-3 text-sm font-medium text-warn">
-                HR invitations require a managed company. Create a company in Manager &gt; Company first.
+                {t("manager.hrRequiresCompany")}
               </div>
             ) : null}
             {canSearch && menuOpen && query ? (
               <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-80 overflow-auto rounded-md border border-line bg-white p-2 text-ink shadow-soft">
-                {candidates.loading ? <LoadingState label="Searching users" /> : null}
+                {candidates.loading ? <LoadingState label={t("manager.searchingUsers")} /> : null}
                 {candidates.error ? (
                   <div className="rounded-md border border-red-100 bg-red-50 px-3 py-3 text-sm font-medium text-danger">
                     {candidates.error}
                   </div>
                 ) : null}
                 {!candidates.loading && !candidates.error && visibleCandidates.length === 0 ? (
-                  <div className="px-3 py-4 text-sm text-muted">No eligible normal users found.</div>
+                  <div className="px-3 py-4 text-sm text-muted">{t("manager.noEligibleUsers")}</div>
                 ) : null}
                 {visibleCandidates.map((user) => (
                   <button
@@ -151,7 +160,7 @@ export default function ManagerHrPage() {
               </div>
               <Button type="button" onClick={requestPromotion} disabled={saving}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Request HR promotion
+                {t("manager.requestHrPromotion")}
               </Button>
             </div>
           ) : null}
@@ -159,11 +168,11 @@ export default function ManagerHrPage() {
       </section>
 
       <section>
-        <PageHeader eyebrow="Workflow" title="HR invitations" description="HR access starts only after the invited user confirms." />
+        <PageHeader eyebrow={t("manager.workflow")} title={t("manager.hrInvitations")} description={t("manager.hrInvitationsDescription")} />
         <div className="grid gap-4 rounded-md border border-line bg-white p-5 text-sm text-muted shadow-soft">
-          <p>Search supports exact user IDs and partial username or email matches.</p>
-          <p>Only normal user accounts can be invited. Existing HR members are excluded from the suggestion list.</p>
-          <p>The user receives an invitation on their account invitations page and can accept or reject it.</p>
+          <p>{t("manager.hrHintSearch")}</p>
+          <p>{t("manager.hrHintEligible")}</p>
+          <p>{t("manager.hrHintUserConfirm")}</p>
         </div>
       </section>
     </div>

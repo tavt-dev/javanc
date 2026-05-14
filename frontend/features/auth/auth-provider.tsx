@@ -20,12 +20,14 @@ type AuthContextValue = {
   user: User | null;
   token: string | null;
   signedIn: boolean;
+  authReady: boolean;
   savedAccounts: SavedAccount[];
   activeAccountKey: string | null;
   login: (auth: AuthenticationResponse, saveAccount?: boolean, credentials?: { email?: string; password?: string }) => void;
   logout: () => void;
   switchAccount: (accountKey: string) => Promise<void>;
   removeSavedAccount: (accountKey: string) => void;
+  updateUser: (user: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,12 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
   const [activeAccountKey, setActiveAccountKey] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     setUser(getStoredUser());
     setToken(getToken());
     setSavedAccounts(getSavedAccounts());
     setActiveAccountKey(getActiveAccountKey());
+    setAuthReady(true);
   }, []);
 
   const syncAccounts = useCallback(() => {
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       token,
       signedIn: Boolean(token),
+      authReady,
       savedAccounts,
       activeAccountKey,
       login(auth, saveAccount = false, credentials) {
@@ -95,9 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(null);
           router.push("/login");
         }
+      },
+      updateUser(updatedUser) {
+        setUser(updatedUser);
       }
     }),
-    [activeAccountKey, router, savedAccounts, syncAccounts, token, user]
+    [activeAccountKey, authReady, router, savedAccounts, syncAccounts, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,8 +8,10 @@ import { Button, Pill } from "@/components/ui";
 import { roleRequestApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import type { RoleRequest } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n";
 
 export default function AdminRoleRequestsPage() {
+  const { t } = useLanguage();
   const requests = useApi(() => roleRequestApi.adminList({ status: "PENDING_SYSADMIN" }), []);
   const [items, setItems] = useState<RoleRequest[] | null>(null);
   const [working, setWorking] = useState<number | null>(null);
@@ -26,7 +28,7 @@ export default function AdminRoleRequestsPage() {
       const saved = action === "approve" ? await roleRequestApi.approve(request.id) : await roleRequestApi.reject(request.id);
       setItems((current) => (current ?? visible).map((item) => (item.id === saved.id ? saved : item)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to update request");
+      setError(err instanceof Error ? err.message : t("admin.unableUpdateRequest"));
     } finally {
       setWorking(null);
     }
@@ -34,11 +36,11 @@ export default function AdminRoleRequestsPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="System Admin" title="Role requests" description="Review manager upgrade requests before account roles change." />
+      <PageHeader eyebrow={t("account.systemAdmin")} title={t("admin.roleRequests")} description={t("admin.roleRequestsDescription")} />
       {requests.loading ? <LoadingState /> : null}
       {requests.error ? <ErrorState message={requests.error} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      {!requests.loading && visible.length === 0 ? <EmptyState title="No pending requests" description="New manager upgrade requests will appear here." /> : null}
+      {!requests.loading && visible.length === 0 ? <EmptyState title={t("admin.noPendingRequests")} description={t("admin.noPendingRequestsDescription")} /> : null}
       <div className="grid gap-4">
         {visible.map((request) => (
           <article key={request.id} className="interactive-card rounded-md border border-line bg-white p-5 shadow-soft">
@@ -56,11 +58,11 @@ export default function AdminRoleRequestsPage() {
                 <div className="flex gap-2">
                   <Button type="button" variant="secondary" onClick={() => decide(request, "reject")} disabled={working === request.id}>
                     <X className="mr-2 h-4 w-4" />
-                    Reject
+                    {t("admin.reject")}
                   </Button>
                   <Button type="button" onClick={() => decide(request, "approve")} disabled={working === request.id}>
                     <Check className="mr-2 h-4 w-4" />
-                    Approve
+                    {t("admin.approve")}
                   </Button>
                 </div>
               ) : null}

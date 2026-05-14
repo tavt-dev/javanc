@@ -13,6 +13,8 @@ import type {
   User
 } from "@/lib/types";
 
+export type ListingSort = "newest" | "hot";
+
 export const authApi = {
   signup: (user: User) =>
     apiRequest<RegistrationPending>("/auth/register", {
@@ -37,6 +39,18 @@ export const authApi = {
       method: "POST",
       auth: false,
       ...jsonBody({ email })
+    }),
+  requestPasswordReset: (email: string) =>
+    apiRequest<void>("/auth/password-reset/request", {
+      method: "POST",
+      auth: false,
+      ...jsonBody({ email })
+    }),
+  confirmPasswordReset: (email: string, otp: string, password: string) =>
+    apiRequest<void>("/auth/password-reset/confirm", {
+      method: "POST",
+      auth: false,
+      ...jsonBody({ email, otp, password })
     }),
   currentUser: () => apiRequest<User>("/users/me"),
   getAll: () => apiRequest<User[]>("/users"),
@@ -159,10 +173,10 @@ function normalizeAuthSession(auth: AuthenticationResponse): AuthenticationRespo
 }
 
 export const profileApi = {
-  list: (params: { type?: string; title?: string; page?: number; size?: number } = {}) =>
-    apiRequest<Profile[]>(`/profiles?${profileSearchParams(params)}`),
+  list: (params: { type?: string; title?: string; page?: number; size?: number; sort?: ListingSort } = {}) =>
+    apiRequest<Profile[]>(`/profiles?${profileSearchParams(params)}`, { auth: false }),
   me: () => apiRequest<Profile>("/profiles/me"),
-  findById: (id: number) => apiRequest<Profile>(`/profiles/${id}`),
+  findById: (id: number) => apiRequest<Profile>(`/profiles/${id}`, { auth: false }),
   findByUserId: (userId: number) => apiRequest<Profile>(`/profiles/by-user/${userId}`),
   findByType: (typeProfile: string) =>
     apiRequest<Profile[]>(`/profiles?${profileSearchParams({ type: typeProfile })}`),
@@ -192,7 +206,7 @@ export const profileApi = {
     apiRequest<Profile[]>(`/profiles/batch?${ids.map((id) => `ids=${encodeURIComponent(id)}`).join("&")}`)
 };
 
-function profileSearchParams(params: { type?: string; title?: string; page?: number; size?: number }) {
+function profileSearchParams(params: { type?: string; title?: string; page?: number; size?: number; sort?: ListingSort }) {
   const search = new URLSearchParams();
   if (params.type) {
     search.set("type", params.type);
@@ -202,6 +216,9 @@ function profileSearchParams(params: { type?: string; title?: string; page?: num
   }
   search.set("page", String(params.page ?? 0));
   search.set("size", String(params.size ?? 20));
+  if (params.sort) {
+    search.set("sort", params.sort);
+  }
   return search.toString();
 }
 
@@ -262,13 +279,19 @@ export const notificationApi = {
       method: "POST",
       ...jsonBody(notification)
     }),
-  byUser: (userId: number) => apiRequest<Notification[]>(`/notification/user/findByUser?userId=${userId}`)
+  byUser: (userId: number) => apiRequest<Notification[]>(`/notification/user/findByUser?userId=${userId}`),
+  markRead: (id: number) =>
+    apiRequest<Notification>(`/notification/seen?id=${id}`, {
+      method: "POST"
+    })
 };
 
 export const companyApi = {
-  list: () => apiRequest<Company[]>("/manager/user/company/getcompany"),
-  byId: (id?: number) => apiRequest<Company>(`/manager/user/company/getbyid?id=${id ?? ""}`),
-  byType: (type: string) => apiRequest<Company[]>(`/manager/user/company/getcompanybytype?type=${type}`),
+  list: (params: { query?: string; type?: string; page?: number; size?: number; sort?: ListingSort } = {}) =>
+    apiRequest<Company[]>(`/manager/user/company/getcompany?${listingSearchParams(params)}`, { auth: false }),
+  byId: (id?: number) => apiRequest<Company>(`/manager/user/company/getbyid?id=${id ?? ""}`, { auth: false }),
+  byType: (type: string, params: { query?: string; page?: number; size?: number; sort?: ListingSort } = {}) =>
+    apiRequest<Company[]>(`/manager/user/company/getcompanybytype?${listingSearchParams({ ...params, type })}`, { auth: false }),
   byManager: (managerId?: number) =>
     apiRequest<Company>(`/manager/company/getcompanybyidmanager?managerId=${managerId ?? ""}`),
   myManagedCompany: () => apiRequest<Company>("/manager/manager/company/me"),
@@ -318,9 +341,11 @@ export const companyApi = {
 };
 
 export const jobApi = {
-  list: () => apiRequest<Job[]>("/manager/user/job/getall"),
-  byId: (id: number) => apiRequest<Job>(`/manager/user/job/findbyid?id=${id}`),
-  byCompany: (id: number) => apiRequest<Job[]>(`/manager/user/job/getjobbycompany?id=${id}`),
+  list: (params: { query?: string; page?: number; size?: number; sort?: ListingSort } = {}) =>
+    apiRequest<Job[]>(`/manager/user/job/getall?${listingSearchParams(params)}`, { auth: false }),
+  byId: (id: number) => apiRequest<Job>(`/manager/user/job/findbyid?id=${id}`, { auth: false }),
+  byCompany: (id: number, params: { query?: string; page?: number; size?: number; sort?: ListingSort } = {}) =>
+    apiRequest<Job[]>(`/manager/user/job/getjobbycompany?${listingSearchParams({ ...params, id })}`, { auth: false }),
   pending: (id: number) => apiRequest<Job[]>(`/manager/user/job/getjobpending?id=${id}`),
   accepted: (id: number) => apiRequest<Job[]>(`/manager/user/job/getjobaccepted?id=${id}`),
   newJobs: (id: number) => apiRequest<Job[]>(`/manager/user/job/getnewjob?id=${id}`),
@@ -361,5 +386,31 @@ export const jobApi = {
       method: "PUT"
     })
 };
+
+function listingSearchParams(params: {
+  id?: number;
+  query?: string;
+  type?: string;
+  page?: number;
+  size?: number;
+  sort?: ListingSort;
+}) {
+  const search = new URLSearchParams();
+  if (params.id !== undefined) {
+    search.set("id", String(params.id));
+  }
+  if (params.query) {
+    search.set("query", params.query);
+  }
+  if (params.type) {
+    search.set("type", params.type);
+  }
+  search.set("page", String(params.page ?? 0));
+  search.set("size", String(params.size ?? 20));
+  if (params.sort) {
+    search.set("sort", params.sort);
+  }
+  return search.toString();
+}
 
 export type Wrapped<T> = ApiResponse<T>;

@@ -50,7 +50,7 @@ export function ProjectForm({
       }
       onSaved?.(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save project");
+      setError(err instanceof Error ? err.message : t("projects.unableSave"));
     } finally {
       setSaving(false);
     }
@@ -60,7 +60,7 @@ export function ProjectForm({
     <form onSubmit={onSubmit} className="grid gap-4 rounded-md border border-line bg-white p-5">
       {error ? <ErrorState message={error} /> : null}
       <Field label={t("projects.titleLabel")}>
-        <input className={inputClass} name="title" placeholder="Portfolio platform" defaultValue={initialProject?.title} required />
+        <input className={inputClass} name="title" placeholder={t("projects.titlePlaceholder")} defaultValue={initialProject?.title} required />
       </Field>
       <Field label={t("projects.descriptionLabel")}>
         <textarea className={inputClass} name="description" rows={3} defaultValue={initialProject?.description} required />
@@ -82,11 +82,11 @@ export function ProjectForm({
       <div className="flex justify-end gap-2">
         {onCancel ? (
           <Button type="button" variant="secondary" onClick={onCancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         ) : null}
         <Button type="submit" disabled={saving}>
-          {saving ? t("projects.saving") : initialProject?.id ? "Update project" : t("projects.create")}
+          {saving ? t("projects.saving") : initialProject?.id ? t("projects.update") : t("projects.create")}
         </Button>
       </div>
     </form>

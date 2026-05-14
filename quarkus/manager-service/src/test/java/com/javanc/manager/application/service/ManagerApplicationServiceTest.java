@@ -50,6 +50,7 @@ class ManagerApplicationServiceTest {
         FakeCompanyRepository repository = new FakeCompanyRepository();
         Company company = new Company();
         company.id = 1;
+        company.idManager = 77;
         repository.saved = company;
         AuthenticationRequest request = new AuthenticationRequest();
         CapturingUserAccountPort userAccount = new CapturingUserAccountPort(77);
@@ -66,6 +67,7 @@ class ManagerApplicationServiceTest {
         FakeCompanyRepository repository = new FakeCompanyRepository();
         Company company = new Company();
         company.id = 1;
+        company.idManager = 77;
         repository.saved = company;
         CapturingUserAccountPort userAccount = new CapturingUserAccountPort(77);
         CompanyApplicationService service = newCompanyService(repository, imageFile -> "", userAccount);
@@ -85,6 +87,7 @@ class ManagerApplicationServiceTest {
         job.title = "Developer";
         job.typeJob = com.javanc.manager.domain.model.TypeJob.java;
         job.size = 2;
+        job.idCompany = 1;
         job.idProfiePending = new ArrayList<>(List.of(10));
         repository.saved = job;
         CapturingNotificationPort notification = new CapturingNotificationPort();
@@ -107,9 +110,9 @@ class ManagerApplicationServiceTest {
 
         assertEquals(1, result.size);
         assertEquals(List.of(10), result.idProfile);
-        assertEquals("accept job successful byjava", notification.message.message);
+        assertEquals("Your application for Developer was accepted", notification.message.message);
         assertEquals(33, notification.message.id);
-        assertEquals("accept job successful byjava", email.message.message);
+        assertEquals("Your application for Developer was accepted", email.message.message);
     }
 
     @Test
@@ -127,6 +130,7 @@ class ManagerApplicationServiceTest {
         FakeJobRepository repository = new FakeJobRepository();
         Job job = new Job();
         job.id = 5;
+        job.idCompany = 1;
         repository.saved = job;
         JobApplicationService service = newJobService(repository, new ProfileLookupPort() {
             @Override
@@ -144,7 +148,7 @@ class ManagerApplicationServiceTest {
                 profile.idUser = 33;
                 return profile;
             }
-        }, new CapturingNotificationPort(), new CapturingEmailPort());
+        }, new CapturingNotificationPort(), new CapturingEmailPort(), "user");
 
         JobDTO result = service.applyCurrentUser(5);
 
@@ -176,8 +180,20 @@ class ManagerApplicationServiceTest {
 
     private JobApplicationService newJobService(JobRepository repository, ProfileLookupPort profileLookupPort,
             NotificationPort notificationPort, EmailPort emailPort) {
+        return newJobService(repository, profileLookupPort, notificationPort, emailPort, "manager");
+    }
+
+    private JobApplicationService newJobService(JobRepository repository, ProfileLookupPort profileLookupPort,
+            NotificationPort notificationPort, EmailPort emailPort, String role) {
+        CapturingUserAccountPort userAccount = new CapturingUserAccountPort(33);
+        userAccount.currentRole = role;
+        FakeCompanyRepository companyRepository = new FakeCompanyRepository();
+        Company company = new Company();
+        company.id = 1;
+        company.idManager = 33;
+        companyRepository.saved = company;
         return new JobApplicationService(repository, new JobMapper(), new FixedIdGenerator(123), profileLookupPort,
-                new CapturingUserAccountPort(33), notificationPort, emailPort);
+                userAccount, notificationPort, emailPort, companyRepository);
     }
 
     private static class FixedIdGenerator extends ManagerIdGenerator {
@@ -293,7 +309,7 @@ class ManagerApplicationServiceTest {
         private AuthenticationRequest request;
         private Integer changedUserId;
         private String changedRole;
-        private String currentRole = "user";
+        private String currentRole = "manager";
 
         private CapturingUserAccountPort(Integer id) {
             this.id = id;

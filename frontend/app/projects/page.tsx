@@ -23,7 +23,7 @@ export default function ProjectsPage() {
   }, [projects.data]);
 
   async function deleteProject(id?: number) {
-    if (!id || !window.confirm("Delete this project?")) {
+    if (!id || !window.confirm(t("projects.deleteConfirm"))) {
       return;
     }
     await projectApi.deleteMine(id);
@@ -45,7 +45,7 @@ export default function ProjectsPage() {
         />
       </section>
       <section>
-        <PageHeader eyebrow={t("projects.directoryEyebrow")} title="My projects" />
+        <PageHeader eyebrow={t("projects.directoryEyebrow")} title={t("projects.myProjects")} />
         {projects.loading ? <LoadingState /> : null}
         {projects.error ? <ErrorState message={projects.error} /> : null}
         {!projects.loading && items.length === 0 ? (
@@ -58,10 +58,10 @@ export default function ProjectsPage() {
                 <h2 className="font-semibold text-ink">{project.title}</h2>
                 <div className="flex gap-2">
                   <button className="text-sm font-semibold text-brand" type="button" onClick={() => setEditing(project)}>
-                    Edit
+                    {t("common.edit")}
                   </button>
                   <button className="text-sm font-semibold text-danger" type="button" onClick={() => deleteProject(project.id)}>
-                    Delete
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>

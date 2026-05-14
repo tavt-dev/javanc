@@ -82,6 +82,25 @@ class EmailResourceTest {
                 .body("success", equalTo(false));
     }
 
+    @Test
+    void internalPasswordResetOtpSendsTemplatedMail() {
+        given()
+                .contentType("application/json")
+                .body("{\"to\":\"reset@example.test\",\"name\":\"Reset User\",\"otp\":\"654321\",\"expiresInMinutes\":10}")
+                .when().post("/internal/emails/password-reset-otp")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("message", equalTo("Password reset OTP email sent"));
+
+        org.junit.jupiter.api.Assertions.assertEquals("reset@example.test", TestMailSenderPort.sentMessage.getMailTo());
+        org.junit.jupiter.api.Assertions.assertEquals("Reset your Javanc password",
+                TestMailSenderPort.sentMessage.getMailSubject());
+        org.junit.jupiter.api.Assertions.assertEquals("text/html", TestMailSenderPort.sentMessage.getContentType());
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("Reset your password"));
+        org.junit.jupiter.api.Assertions.assertTrue(TestMailSenderPort.sentMessage.getMailContent().contains("654321"));
+    }
+
     @Alternative
     @Priority(1)
     @ApplicationScoped

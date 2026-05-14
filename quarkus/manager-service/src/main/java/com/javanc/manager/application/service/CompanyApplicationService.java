@@ -39,6 +39,10 @@ public class CompanyApplicationService {
     }
 
     public CompanyDTO create(CompanyDTO companyDTO, FileUpload image) {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"manager".equalsIgnoreCase(currentUser.role) && !"admin".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
         Company company = new Company();
         company.id = idGenerator.nextId();
         company.name = companyDTO.name;
@@ -49,16 +53,23 @@ public class CompanyApplicationService {
         company.phone = companyDTO.phone;
         company.email = companyDTO.email;
         company.country = companyDTO.country;
-        company.idManager = companyDTO.idManager;
+        company.idManager = companyDTO.idManager == null && "manager".equalsIgnoreCase(currentUser.role)
+                ? currentUser.id
+                : companyDTO.idManager;
         company.url = image == null ? "" : imageStoragePort.uploadCompanyImage(image);
         return companyMapper.toDto(companyRepository.create(company));
     }
 
     public CompanyDTO update(CompanyDTO companyDTO) {
+        requireCanManageCompany(companyDTO.id);
         return companyMapper.toDto(companyRepository.save(companyMapper.toDomain(companyDTO)));
     }
 
     public void deleteById(Integer id) {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"admin".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
         companyRepository.deleteByCompanyId(id);
     }
 
@@ -76,6 +87,7 @@ public class CompanyApplicationService {
     }
 
     public CompanyDTO setHRToCompany(AuthenticationRequest request, Integer idCompany) {
+        requireManagerCompany(idCompany);
         Integer hrId = userAccountPort.createAccount(accountRequest(request, "hr"));
         return appendHrToCompany(idCompany, hrId);
     }
@@ -84,6 +96,7 @@ public class CompanyApplicationService {
         if (userId == null || userId <= 0) {
             throw new ApplicationException(ErrorCode.BAD_REQUEST);
         }
+        requireManagerCompany(idCompany);
         CompanyDTO companyDTO = findById(idCompany);
         userAccountPort.requestHrPromotion(userId, companyDTO.id, companyDTO.name);
         return companyDTO;
@@ -131,12 +144,16 @@ public class CompanyApplicationService {
         if (companyDTO.idHR != null) {
             companyDTO.idHR.remove(currentUser.id);
         }
-        CompanyDTO updated = update(companyDTO);
+        CompanyDTO updated = saveCompany(companyDTO);
         userAccountPort.leaveHr();
         return updated;
     }
 
     public CompanyDTO setManagerToCompany(AuthenticationRequest request, Integer idCompany) {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"admin".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
         Integer managerId = userAccountPort.createAccount(accountRequest(request, "manager"));
         CompanyDTO companyDTO = findById(idCompany);
         companyDTO.idManager = managerId;
@@ -171,6 +188,35 @@ public class CompanyApplicationService {
         if (!companyDTO.idHR.contains(hrId)) {
             companyDTO.idHR.add(hrId);
         }
-        return update(companyDTO);
+        return saveCompany(companyDTO);
+    }
+
+    private CompanyDTO saveCompany(CompanyDTO companyDTO) {
+        return companyMapper.toDto(companyRepository.save(companyMapper.toDomain(companyDTO)));
+    }
+
+    private void requireCanManageCompany(Integer companyId) {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if ("admin".equalsIgnoreCase(currentUser.role)) {
+            return;
+        }
+        if ("manager".equalsIgnoreCase(currentUser.role)) {
+            CompanyDTO company = findById(companyId);
+            if (currentUser.id != null && currentUser.id.equals(company.idManager)) {
+                return;
+            }
+        }
+        throw new ApplicationException(ErrorCode.FORBIDDEN);
+    }
+
+    private void requireManagerCompany(Integer companyId) {
+        UserDTO currentUser = userAccountPort.currentUser();
+        if (!"manager".equalsIgnoreCase(currentUser.role)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
+        CompanyDTO company = findById(companyId);
+        if (currentUser.id == null || !currentUser.id.equals(company.idManager)) {
+            throw new ApplicationException(ErrorCode.FORBIDDEN);
+        }
     }
 }

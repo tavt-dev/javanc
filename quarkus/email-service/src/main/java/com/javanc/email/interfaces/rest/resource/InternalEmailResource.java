@@ -28,4 +28,11 @@ public class InternalEmailResource {
         emailApplicationService.sendVerificationOtp(request);
         return new ApiResponse<>(true, "Verification OTP email sent", null);
     }
+
+    @POST
+    @Path("/password-reset-otp")
+    public ApiResponse<Void> sendPasswordResetOtp(VerificationOtpEmailDTO request) {
+        emailApplicationService.sendPasswordResetOtp(request);
+        return new ApiResponse<>(true, "Password reset OTP email sent", null);
+    }
 }

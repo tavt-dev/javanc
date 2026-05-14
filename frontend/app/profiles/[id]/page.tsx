@@ -6,20 +6,21 @@ import { useRouter } from "next/navigation";
 import { Mail, Phone } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-state";
-import { Protected } from "@/components/protected";
 import { Button, LinkButton, Pill } from "@/components/ui";
 import { imageApi, profileApi, projectApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useAuth } from "@/features/auth/auth-provider";
 import { ProjectForm } from "@/features/projects/project-form";
 import type { Project } from "@/lib/types";
+import { useLanguage } from "@/lib/i18n";
 
 export default function ProfileDetailPage() {
+  const { t } = useLanguage();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = Number(params.id);
   const { signedIn, user } = useAuth();
-  const profile = useApi(() => (signedIn ? profileApi.findById(id) : Promise.resolve(null)), [id, signedIn]);
+  const profile = useApi(() => profileApi.findById(id), [id]);
   const projects = useApi(() => (signedIn ? projectApi.byProfile(id) : Promise.resolve([])), [id, signedIn]);
   const [projectItems, setProjectItems] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -34,7 +35,7 @@ export default function ProfileDetailPage() {
   }, [projects.data]);
 
   async function deleteProfile() {
-    if (!window.confirm("Remove your profile? This cannot be undone from the frontend.")) {
+    if (!window.confirm(t("profile.removeConfirm"))) {
       return;
     }
     await profileApi.deleteMe();
@@ -42,23 +43,15 @@ export default function ProfileDetailPage() {
   }
 
   async function deleteProject(projectId?: number) {
-    if (!projectId || !window.confirm("Delete this project?")) {
+    if (!projectId || !window.confirm(t("projects.deleteConfirm"))) {
       return;
     }
     await projectApi.deleteMine(projectId);
     setProjectItems((current) => current.filter((project) => project.id !== projectId));
   }
 
-  if (!signedIn) {
-    return (
-      <Protected>
-        <LoadingState label="Checking session" />
-      </Protected>
-    );
-  }
-
   if (profile.loading) {
-    return <LoadingState label="Loading profile" />;
+    return <LoadingState label={t("state.loading")} />;
   }
 
   if (profile.error) {
@@ -66,21 +59,21 @@ export default function ProfileDetailPage() {
   }
 
   if (!profile.data) {
-    return <EmptyState title="Profile not found" description="This profile may have been removed or is no longer available." />;
+    return <EmptyState title={t("profile.notFound")} description={t("profile.notFoundDescription")} />;
   }
 
   return (
-    <Protected>
+    <div>
       <PageHeader
-        eyebrow="Profile"
+        eyebrow={t("profile.createEyebrow")}
         title={profile.data.name || profile.data.title || profile.data.objective || `Profile #${profile.data.id}`}
         description={profile.data.objective}
-        breadcrumbs={[{ label: "Profiles", href: "/profiles" }, { label: profile.data.name || profile.data.title || `Profile #${profile.data.id}` }]}
+        breadcrumbs={[{ label: t("nav.profiles"), href: "/profiles" }, { label: profile.data.name || profile.data.title || `Profile #${profile.data.id}` }]}
         actions={
           canManage ? (
             <div className="flex gap-2">
-              <LinkButton href="/profile/edit" variant="secondary">Edit</LinkButton>
-              <Button type="button" variant="danger" onClick={deleteProfile}>Remove</Button>
+              <LinkButton href="/profile/edit" variant="secondary">{t("common.edit")}</LinkButton>
+              <Button type="button" variant="danger" onClick={deleteProfile}>{t("common.delete")}</Button>
             </div>
           ) : null
         }
@@ -96,29 +89,29 @@ export default function ProfileDetailPage() {
             </div>
           ) : null}
           {profile.data.title ? <h2 className="mb-3 font-serif text-2xl font-bold text-ink">{profile.data.title}</h2> : null}
-          <Pill tone="blue">{profile.data.typeProfile || "Profile"}</Pill>
+          <Pill tone="blue">{profile.data.typeProfile || t("common.profile")}</Pill>
           <div className="mt-5 space-y-3 text-sm text-muted">
-            <p>{profile.data.education || "Education not provided"}</p>
-            <p>{profile.data.workExperience || "Work experience not provided"}</p>
-            <p className="font-medium text-ink">{profile.data.skills || "Skills not provided"}</p>
+            <p>{profile.data.education || t("profile.educationMissing")}</p>
+            <p>{profile.data.workExperience || t("profile.experienceMissing")}</p>
+            <p className="font-medium text-ink">{profile.data.skills || t("profile.skillsMissing")}</p>
           </div>
           <div className="mt-5 space-y-2 border-t border-line pt-4 text-sm text-muted">
             <p className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
-              {profile.data.contact?.email || "Email not set"}
+              {profile.data.contact?.email || t("state.emailNotSet")}
             </p>
             <p className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              {profile.data.contact?.phone || "Phone not set"}
+              {profile.data.contact?.phone || t("state.phoneNotSet")}
             </p>
           </div>
         </aside>
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">Projects</h2>
+            <h2 className="text-lg font-semibold text-white">{t("nav.projects")}</h2>
             {canManage && !editingProject ? (
               <button type="button" className="text-sm font-semibold text-accent" onClick={() => setEditingProject({})}>
-                Add project
+                {t("projects.create")}
               </button>
             ) : null}
           </div>
@@ -137,7 +130,7 @@ export default function ProfileDetailPage() {
           {projects.loading ? <LoadingState /> : null}
           {projects.error ? <ErrorState message={projects.error} /> : null}
           {!projects.loading && projectItems.length === 0 ? (
-            <EmptyState title="No projects" description="Projects connected to this profile will appear here." />
+            <EmptyState title={t("projects.emptyTitle")} description={t("projects.emptyDescription")} />
           ) : null}
           <div className="grid gap-4">
             {projectItems.map((project) => (
@@ -147,10 +140,10 @@ export default function ProfileDetailPage() {
                   {canManage ? (
                     <div className="flex gap-2">
                       <button type="button" className="text-sm font-semibold text-brand" onClick={() => setEditingProject(project)}>
-                        Edit
+                        {t("common.edit")}
                       </button>
                       <button type="button" className="text-sm font-semibold text-danger" onClick={() => deleteProject(project.id)}>
-                        Delete
+                        {t("common.delete")}
                       </button>
                     </div>
                   ) : null}
@@ -158,7 +151,7 @@ export default function ProfileDetailPage() {
                 <p className="mt-2 text-sm text-muted">{project.description}</p>
                 {project.url ? (
                   <a className="mt-3 inline-flex text-sm font-semibold text-brand" href={project.url} target="_blank" rel="noreferrer">
-                    View project
+                    {t("projects.urlLabel")}
                   </a>
                 ) : null}
               </article>
@@ -166,6 +159,6 @@ export default function ProfileDetailPage() {
           </div>
         </section>
       </div>
-    </Protected>
+    </div>
   );
 }

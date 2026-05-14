@@ -66,6 +66,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new ApiError(payload?.message ?? "Too many requests. Please wait and try again.", 429);
+    }
     throw new ApiError(payload?.message ?? `Request failed with ${response.status}`, response.status);
   }
 

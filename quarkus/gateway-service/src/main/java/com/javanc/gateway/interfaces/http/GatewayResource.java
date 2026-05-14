@@ -7,6 +7,9 @@ import com.javanc.gateway.application.service.GatewayAuthService;
 import com.javanc.gateway.application.service.RouteMatcher;
 import com.javanc.gateway.domain.model.GatewayRoute;
 import com.javanc.gateway.infrastructure.client.dto.AuthenticationResponse;
+import com.javanc.gateway.infrastructure.client.dto.ApiResponse;
+import com.javanc.gateway.infrastructure.ratelimit.RateLimitDecision;
+import com.javanc.gateway.infrastructure.ratelimit.TokenBucketRateLimiter;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -39,13 +42,15 @@ public class GatewayResource {
     private final RouteMatcher routeMatcher;
     private final GatewayAuthService authService;
     private final RequestForwardingPort forwardingPort;
+    private final TokenBucketRateLimiter rateLimiter;
 
     @Inject
     public GatewayResource(RouteMatcher routeMatcher, GatewayAuthService authService,
-            RequestForwardingPort forwardingPort) {
+            RequestForwardingPort forwardingPort, TokenBucketRateLimiter rateLimiter) {
         this.routeMatcher = routeMatcher;
         this.authService = authService;
         this.forwardingPort = forwardingPort;
+        this.rateLimiter = rateLimiter;
     }
 
     @GET
@@ -108,6 +113,10 @@ public class GatewayResource {
 
     private Uni<Response> authorizeAndForward(String method, String rawPath, String rawQuery, HttpHeaders headers,
             byte[] body, GatewayRoute route) {
+        RateLimitDecision rateLimit = rateLimiter.check(method, rawPath, headers, body);
+        if (!rateLimit.allowed()) {
+            return Uni.createFrom().item(rateLimited(rateLimit));
+        }
         if (!route.protectedRoute()) {
             LOG.debugf("Route matched route=%s policy=PUBLIC target=%s", route.id(), route.targetBaseUrl());
             return forward(method, rawPath, rawQuery, headers, body, route);
@@ -150,6 +159,18 @@ public class GatewayResource {
         return Response.status(Response.Status.UNAUTHORIZED)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(AuthenticationResponse.unauthenticated())
+                .build();
+    }
+
+    private Response rateLimited(RateLimitDecision decision) {
+        LOG.warn("Gateway rejected request due to rate limit");
+        return Response.status(429)
+                .type(MediaType.APPLICATION_JSON)
+                .header("X-RateLimit-Limit", decision.limit())
+                .header("X-RateLimit-Remaining", decision.remaining())
+                .header("X-RateLimit-Reset", decision.resetEpochSeconds())
+                .header("Retry-After", decision.retryAfterSeconds())
+                .entity(new ApiResponse<>(false, "Too many requests. Please try again later.", null))
                 .build();
     }
 }

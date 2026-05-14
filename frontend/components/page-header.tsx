@@ -1,6 +1,7 @@
 "use client";
 
 import { Breadcrumbs } from "@/components/ui";
+import { useLanguage } from "@/lib/i18n";
 
 export function PageHeader({
   eyebrow,
@@ -8,7 +9,7 @@ export function PageHeader({
   description,
   actions,
   backHref,
-  backLabel = "Back",
+  backLabel,
   breadcrumbs
 }: {
   eyebrow?: string;
@@ -19,10 +20,12 @@ export function PageHeader({
   backLabel?: string;
   breadcrumbs?: Array<{ label: string; href?: string }>;
 }) {
+  const { t } = useLanguage();
+  const resolvedBackLabel = backLabel ?? t("common.back");
   return (
     <div className="mb-6 flex flex-col justify-between gap-4 border-b border-white/15 pb-5 md:flex-row md:items-end">
       <div>
-        {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : backHref !== undefined ? <Breadcrumbs items={[{ label: backLabel, href: backHref || undefined }, { label: title }]} /> : null}
+        {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : backHref !== undefined ? <Breadcrumbs items={[{ label: resolvedBackLabel, href: backHref || undefined }, { label: title }]} /> : null}
         {eyebrow ? <p className="text-xs font-semibold uppercase tracking-wide text-accent">{eyebrow}</p> : null}
         <h1 className="mt-1 font-serif text-2xl font-bold text-white md:text-3xl">{title}</h1>
         {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">{description}</p> : null}

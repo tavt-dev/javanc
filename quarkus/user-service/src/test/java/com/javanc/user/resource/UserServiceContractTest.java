@@ -432,6 +432,56 @@ class UserServiceContractTest {
     }
 
     @Test
+    void passwordResetRequiresEmailOtpBeforeChangingPassword() {
+        String email = "contract.reset@example.com";
+        registerVerifyAndToken(email);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email))
+                .when()
+                .post("/auth/password-reset/request")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", "000000", "password", "Password2!"))
+                .when()
+                .post("/auth/password-reset/confirm")
+                .then()
+                .statusCode(400)
+                .body("message", equalTo("Invalid password reset code"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "otp", TestEmailVerificationNotifier.otps.get(email), "password", "Password2!"))
+                .when()
+                .post("/auth/password-reset/confirm")
+                .then()
+                .statusCode(200)
+                .body("message", equalTo("Password updated successfully"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "password", "Password1!"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(401);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "password", "Password2!"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .body("data.user.email", equalTo(email));
+    }
+
+    @Test
     void publicRegisterRejectsRoleAndEmployeeId() {
         given()
                 .contentType(ContentType.JSON)

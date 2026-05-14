@@ -49,6 +49,13 @@ public class NotificationResource {
         return new ApiResponse<>(true, "Find is success", result);
     }
 
+    @POST
+    @Path("/seen")
+    public ApiResponse<NotificationDTO> seen(@QueryParam("id") Integer id) {
+        NotificationDTO result = notificationService.seenNotification(id);
+        return new ApiResponse<>(true, "Notification marked read", result);
+    }
+
     @GET
     @Path("/getAll")
     public ApiResponse<String> ok() {

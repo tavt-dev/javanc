@@ -15,4 +15,8 @@ public interface EmailServiceClient {
     @POST
     @Path("/internal/emails/verification-otp")
     void sendVerificationOtp(VerificationOtpEmailRequest request);
+
+    @POST
+    @Path("/internal/emails/password-reset-otp")
+    void sendPasswordResetOtp(VerificationOtpEmailRequest request);
 }

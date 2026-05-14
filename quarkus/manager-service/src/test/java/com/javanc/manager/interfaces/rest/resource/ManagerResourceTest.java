@@ -56,6 +56,11 @@ class ManagerResourceTest {
 
     @Test
     void createJobPreservesSuccessWrapperAndTypeField() {
+        Company company = new Company();
+        company.id = 9;
+        company.idManager = 1;
+        TestCompanyRepository.company = company;
+
         given()
                 .contentType("application/json")
                 .body("{\"title\":\"Java Dev\",\"description\":\"Build\",\"typeJob\":\"java\",\"size\":2,\"idCompany\":9}")
@@ -74,8 +79,13 @@ class ManagerResourceTest {
         job.title = "Java Dev";
         job.typeJob = TypeJob.java;
         job.size = 2;
+        job.idCompany = 1;
         job.idProfiePending = new ArrayList<>(List.of(11));
         TestJobRepository.job = job;
+        Company company = new Company();
+        company.id = 1;
+        company.idManager = 1;
+        TestCompanyRepository.company = company;
 
         given()
                 .when().put("/manager/hr/job/accept?jobDTO=5&idProfile=11")
@@ -86,7 +96,7 @@ class ManagerResourceTest {
                 .body("data.size", equalTo(1))
                 .body("data.idProfile[0]", equalTo(11));
 
-        org.junit.jupiter.api.Assertions.assertEquals("accept job successful byjava", TestNotificationPort.message.message);
+        org.junit.jupiter.api.Assertions.assertEquals("Your application for Java Dev was accepted", TestNotificationPort.message.message);
         org.junit.jupiter.api.Assertions.assertEquals(42, TestEmailPort.message.id);
     }
 

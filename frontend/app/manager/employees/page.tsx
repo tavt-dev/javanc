@@ -1,40 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-state";
-import { Button, Pill } from "@/components/ui";
-import { authApi, companyApi } from "@/lib/api";
+import { Button, PaginationControls, Pill } from "@/components/ui";
+import { companyApi, jobApi, profileApi } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 import { useLanguage } from "@/lib/i18n";
-import type { User } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import { useAuth } from "@/features/auth/auth-provider";
+
+const PAGE_SIZE = 8;
 
 export default function ManagerEmployeesPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { data, error, loading } = useApi(() => authApi.getAll(), []);
-  const company = useApi(() => (user?.id ? companyApi.byManager(user.id).catch(() => null) : Promise.resolve(null)), [user?.id]);
-  const [users, setUsers] = useState<User[] | null>(null);
+  const role = user?.role?.toLowerCase();
+  const company = useApi(
+    () => {
+      if (!user?.id) {
+        return Promise.resolve(null);
+      }
+      return role === "hr" ? companyApi.byHr(user.id).catch(() => null) : companyApi.myManagedCompany().catch(() => companyApi.byManager(user.id).catch(() => null));
+    },
+    [role, user?.id]
+  );
+  const jobs = useApi(() => (company.data?.id ? jobApi.byCompany(company.data.id) : Promise.resolve([])), [company.data?.id]);
+  const acceptedProfileIds = useMemo(
+    () => Array.from(new Set((jobs.data ?? []).flatMap((job) => job.idProfile ?? []).filter((id): id is number => Boolean(id)))),
+    [jobs.data]
+  );
+  const acceptedProfileKey = acceptedProfileIds.join(",");
+  const profiles = useApi(
+    () => (acceptedProfileIds.length ? profileApi.pendingJobProfiles(acceptedProfileIds) : Promise.resolve([])),
+    [acceptedProfileKey]
+  );
+  const employees = useMemo(
+    () => (profiles.data ?? []).filter((profile) => acceptedProfileIds.includes(Number(profile.id))),
+    [acceptedProfileIds, profiles.data]
+  );
   const [working, setWorking] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const employees = (users ?? data ?? []).filter((user) => ["user", "hr", "manager"].includes((user.role ?? "").toLowerCase()));
+  const [message, setMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const pagedEmployees = employees.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
-  async function promoteToHr(user: User) {
-    if (!user.id) {
+  useEffect(() => {
+    setPage(0);
+  }, [acceptedProfileKey]);
+
+  async function promoteToHr(profile: Profile) {
+    if (!profile.idUser) {
       return;
     }
-    setWorking(user.id);
+    setWorking(profile.idUser);
     setActionError(null);
+    setMessage(null);
     try {
       if (!company.data?.id) {
-        throw new Error("No company assigned to this manager.");
+        throw new Error(t("manager.noCompanyAssignedError"));
       }
-      await companyApi.promoteHr(user.id, company.data.id);
-      const updated = { ...user, role: "hr" };
-      setUsers((current) => (current ?? data ?? []).map((item) => (item.id === updated.id ? updated : item)));
+      await companyApi.requestHrPromotion(profile.idUser);
+      setMessage(t("manager.hrInviteSentLong"));
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Unable to promote user");
+      setActionError(err instanceof Error ? err.message : t("manager.unableInviteEmployeeHr"));
     } finally {
       setWorking(null);
     }
@@ -42,24 +71,31 @@ export default function ManagerEmployeesPage() {
 
   return (
     <div>
-      <PageHeader eyebrow={t("manager.peopleEyebrow")} title={t("manager.employeesTitle")} description={t("manager.employeesDescription")} />
-      {loading ? <LoadingState /> : null}
-      {error ? <ErrorState message={error} /> : null}
+      <PageHeader eyebrow={t("manager.peopleEyebrow")} title={t("manager.employeesTitle")} description={t("manager.employeesCompanyDescription")} />
+      {company.loading || jobs.loading || profiles.loading ? <LoadingState /> : null}
+      {company.error ? <ErrorState message={company.error} /> : null}
+      {jobs.error ? <ErrorState message={jobs.error} /> : null}
+      {profiles.error ? <ErrorState message={profiles.error} /> : null}
       {actionError ? <ErrorState message={actionError} /> : null}
-      {!loading && employees.length === 0 ? <EmptyState title={t("manager.noEmployees")} description={t("manager.noEmployeesDescription")} /> : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        {employees.map((user) => (
-          <article key={user.id} className="rounded-md border border-line bg-white p-5 shadow-soft">
+      {message ? <div className="mb-6 rounded-md border border-emerald-300/40 bg-emerald-400/10 px-4 py-3 text-sm font-medium text-emerald-100">{message}</div> : null}
+      {!company.loading && !company.data ? <EmptyState title={t("manager.noCompanyAssigned")} description={t("manager.noCompanyForEmployees")} /> : null}
+      {!company.loading && !jobs.loading && !profiles.loading && company.data && employees.length === 0 ? (
+        <EmptyState title={t("manager.noEmployees")} description={t("manager.noEmployeesJoined")} />
+      ) : null}
+      <div key={`${page}-${acceptedProfileKey}`} className="page-list-enter grid gap-4 md:grid-cols-2">
+        {pagedEmployees.map((profile) => (
+          <article key={profile.id} className="glass-panel scroll-reveal rounded-md p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-semibold text-ink">{user.name || t("state.unknown")}</h2>
-                <p className="mt-1 text-sm text-muted">{user.email}</p>
+                <h2 className="font-semibold text-ink">{profile.name || profile.title || t("state.unknown")}</h2>
+                <p className="mt-1 text-sm text-muted">{profile.title || profile.typeProfile || t("manager.acceptedEmployee")}</p>
+                <p className="mt-2 text-sm text-muted">{profile.contact?.email || `User #${profile.idUser ?? "unknown"}`}</p>
               </div>
               <div className="flex flex-col items-end gap-3">
-                <Pill tone="blue">{user.role || "user"}</Pill>
-                {(user.role ?? "user") === "user" ? (
-                  <Button type="button" variant="secondary" onClick={() => promoteToHr(user)} disabled={working === user.id || company.loading || !company.data?.id}>
-                    Promote to HR
+                <Pill tone="green">{t("manager.employee")}</Pill>
+                {role === "manager" ? (
+                  <Button type="button" variant="secondary" onClick={() => promoteToHr(profile)} disabled={working === profile.idUser || company.loading || !company.data?.id || !profile.idUser}>
+                    {t("manager.promoteToHr")}
                   </Button>
                 ) : null}
               </div>
@@ -67,6 +103,7 @@ export default function ManagerEmployeesPage() {
           </article>
         ))}
       </div>
+      <PaginationControls page={page} canNext={(page + 1) * PAGE_SIZE < employees.length} onPageChange={setPage} />
     </div>
   );
 }
