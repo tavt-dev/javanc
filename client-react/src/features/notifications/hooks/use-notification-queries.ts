@@ -7,6 +7,7 @@ import { sortNotificationsNewestFirst } from "@/features/notifications/utils/not
 import type { NotificationDTO } from "@/types/notification";
 
 export const notificationKeys = {
+  all: ["notifications"] as const,
   user: (userId: number) => ["notifications", "user", userId] as const,
 };
 

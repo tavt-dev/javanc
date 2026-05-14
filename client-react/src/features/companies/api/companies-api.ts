@@ -28,11 +28,27 @@ function toCompanyFormData(input: CompanyFormValues) {
 
 function toAccountRequest(input: InternalAccountFormValues) {
   return {
-    name: input.name,
-    email: input.email,
+    name: input.name.trim(),
+    email: input.email.trim(),
     password: input.password,
-    employeeId: input.employeeId || undefined,
+    employeeId: input.employeeId?.trim() || undefined,
   };
+}
+
+function normalizeCompany(company: CompanyDTO): CompanyDTO {
+  return {
+    ...company,
+    idHR: company.idHR ?? [],
+    idJobs: company.idJobs ?? [],
+  };
+}
+
+function normalizeCompanyResponse(response: ApiResponse<CompanyDTO>) {
+  return { ...response, data: normalizeCompany(response.data) };
+}
+
+function normalizeCompaniesResponse(response: ApiResponse<CompanyDTO[]>) {
+  return { ...response, data: (response.data ?? []).map(normalizeCompany) };
 }
 
 export const companiesApi = {
@@ -40,7 +56,7 @@ export const companiesApi = {
     const response = await apiClient.get<ApiResponse<CompanyDTO[]>>(
       "/manager/user/company/getcompany",
     );
-    return response.data;
+    return normalizeCompaniesResponse(response.data);
   },
 
   async getByType(type: string) {
@@ -48,7 +64,7 @@ export const companiesApi = {
       "/manager/user/company/getcompanybytype",
       { params: { type } },
     );
-    return response.data;
+    return normalizeCompaniesResponse(response.data);
   },
 
   async getById(companyId: number) {
@@ -56,7 +72,7 @@ export const companiesApi = {
       "/manager/user/company/getbyid",
       { params: { id: companyId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async getByManagerId(managerId: number) {
@@ -64,14 +80,14 @@ export const companiesApi = {
       "/manager/company/getcompanybyidmanager",
       { params: { managerId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async myManagedCompany() {
     const response = await apiClient.get<ApiResponse<CompanyDTO>>(
       "/manager/manager/company/me",
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async findByHrId(hrId: number) {
@@ -79,7 +95,7 @@ export const companiesApi = {
       "/manager/hr/findByIdHr",
       { params: { id: hrId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async create(input: CompanyFormValues) {
@@ -88,7 +104,7 @@ export const companiesApi = {
       toCompanyFormData(input),
       { headers: { "Content-Type": "multipart/form-data" } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async update(company: CompanyDTO) {
@@ -96,7 +112,7 @@ export const companiesApi = {
       "/manager/manager/company/update",
       company,
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async delete(companyId: number) {
@@ -114,7 +130,7 @@ export const companiesApi = {
       toAccountRequest(input),
       { params: { idCompany: companyId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async createManagerAccountAndAssign(
@@ -126,7 +142,7 @@ export const companiesApi = {
       toAccountRequest(input),
       { params: { idCompany: companyId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async hrCandidates(params: { query?: string; page?: number; size?: number }) {
@@ -158,20 +174,20 @@ export const companiesApi = {
       null,
       { params: { idUser: userId, idCompany: companyId } },
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async acceptHrPromotion(requestId: number) {
     const response = await apiClient.patch<ApiResponse<CompanyDTO>>(
       `/manager/user/hr-promotions/${requestId}/accept`,
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 
   async leaveHr() {
     const response = await apiClient.patch<ApiResponse<CompanyDTO>>(
       "/manager/hr/leave",
     );
-    return response.data;
+    return normalizeCompanyResponse(response.data);
   },
 };

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { FileText } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
+import i18n from "@/i18n";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DataTable } from "./DataTable";
 import { DataToolbar } from "./DataToolbar";
@@ -69,7 +70,7 @@ describe("shared state components", () => {
     const onRetry = vi.fn();
     render(<RetryState error={new Error("Failed")} onRetry={onRetry} />);
 
-    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await user.click(screen.getByRole("button", { name: i18n.t("common.retry") }));
 
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -132,7 +133,11 @@ describe("shared state components", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Sort by Name" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", {
+        name: i18n.t("common.sortBy", { field: "Name" }),
+      }),
+    ).toBeEnabled();
 
     rerender(
       <DataTable<Row> data={[]} columns={columns} empty="No rows found." />,
@@ -157,7 +162,7 @@ describe("shared state components", () => {
     );
 
     await user.type(screen.getByLabelText("Search records"), "abc");
-    await user.click(screen.getByRole("button", { name: "Clear" }));
+    await user.click(screen.getByRole("button", { name: i18n.t("common.clear") }));
 
     expect(onSearchChange).toHaveBeenCalled();
     expect(onClear).toHaveBeenCalledTimes(1);

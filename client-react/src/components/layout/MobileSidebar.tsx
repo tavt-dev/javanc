@@ -5,51 +5,12 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
-import {
-  LayoutDashboard,
-  User,
-  Search,
-  FolderKanban,
-  Bell,
-  Building2,
-  Briefcase,
-  Settings,
-  ClipboardList,
-  FileEdit,
-  Users,
-  UserPlus,
-  Building,
-  X,
-} from "lucide-react";
-import type { Role } from "@/types/auth";
-
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ElementType;
-  roles?: Role[];
-}
-
-const navItems: NavItem[] = [
-  { label: "My Profile", path: "/profile", icon: User },
-  { label: "Profiles", path: "/profiles", icon: Search },
-  { label: "My Projects", path: "/projects", icon: FolderKanban },
-  { label: "Notifications", path: "/notifications", icon: Bell },
-  { label: "Companies", path: "/companies", icon: Building2 },
-  { label: "Job Board", path: "/jobs", icon: Briefcase },
-  { label: "Settings", path: "/settings", icon: Settings },
-];
-
-const roleNavItems: NavItem[] = [
-  { label: "My Applications", path: "/my-applications", icon: ClipboardList, roles: ["user"] },
-  { label: "Manage Jobs", path: "/hr/jobs", icon: FileEdit, roles: ["hr"] },
-  { label: "My Company", path: "/manager/company", icon: Building, roles: ["manager"] },
-  { label: "Manage HR", path: "/manager/hr", icon: UserPlus, roles: ["manager"] },
-  { label: "User Management", path: "/admin/users", icon: Users, roles: ["admin"] },
-  { label: "Company Mgmt", path: "/admin/companies", icon: Building2, roles: ["admin"] },
-];
+import { LayoutDashboard, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { mainNavItems, visibleRoleNavItems } from "./navigation";
 
 export function MobileSidebar() {
+  const { t } = useTranslation();
   const isOpen = useUIStore((s) => s.sidebarOpen);
   const close = useUIStore((s) => s.closeSidebar);
   const user = useAuthStore((s) => s.user);
@@ -69,9 +30,7 @@ export function MobileSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [close, isOpen]);
 
-  const visibleRoleItems = roleNavItems.filter(
-    (item) => role && item.roles?.includes(role),
-  );
+  const visibleRoleItems = visibleRoleNavItems(role);
 
   return (
     <AnimatePresence>
@@ -92,7 +51,7 @@ export function MobileSidebar() {
             className="fixed inset-y-0 left-0 z-50 flex w-[min(300px,calc(100vw-2rem))] flex-col border-r border-primary/10 bg-card shadow-2xl lg:hidden"
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={t("nav.mobileMenu")}
             initial={reduceMotion ? { opacity: 1 } : { x: "-100%" }}
             animate={{ x: 0 }}
             exit={reduceMotion ? { opacity: 1 } : { x: "-100%" }}
@@ -114,7 +73,7 @@ export function MobileSidebar() {
                 type="button"
                 onClick={close}
                 className="icon-button focus-ring"
-                aria-label="Close menu"
+                aria-label={t("nav.closeMenu")}
               >
                 <X size={18} />
               </button>
@@ -123,9 +82,9 @@ export function MobileSidebar() {
             {/* Nav */}
             <nav className="premium-scrollbar flex-1 overflow-y-auto px-2 py-3">
               <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
-                Workspace
+                {t("common.workspace")}
               </p>
-              {[{ label: "Dashboard", path: dashboardPath, icon: LayoutDashboard }, ...navItems].map((item) => {
+              {[{ labelKey: "common.dashboard", path: dashboardPath, icon: LayoutDashboard }, ...mainNavItems].map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.path;
                 return (
@@ -144,8 +103,8 @@ export function MobileSidebar() {
                     {active && (
                       <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
                     )}
-                    <Icon size={18} />
-                    <span>{item.label}</span>
+                    {Icon && <Icon size={18} />}
+                    <span>{t(item.labelKey)}</span>
                   </NavLink>
                 );
               })}
@@ -154,7 +113,7 @@ export function MobileSidebar() {
                 <>
                   <div className="my-3 mx-2 border-t border-border" />
                   <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
-                    Role tools
+                    {t("common.roleTools")}
                   </p>
                   {visibleRoleItems.map((item) => {
                     const Icon = item.icon;
@@ -175,8 +134,8 @@ export function MobileSidebar() {
                         {active && (
                           <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
                         )}
-                        <Icon size={18} />
-                        <span>{item.label}</span>
+                        {Icon && <Icon size={18} />}
+                        <span>{t(item.labelKey)}</span>
                       </NavLink>
                     );
                   })}

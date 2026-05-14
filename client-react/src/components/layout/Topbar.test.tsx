@@ -2,8 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { Topbar } from "./Topbar";
+import i18n from "@/i18n";
 import { useAuthStore } from "@/stores/auth-store";
+import { Topbar } from "./Topbar";
 
 const logoutMutateMock = vi.fn();
 
@@ -46,7 +47,9 @@ describe("Topbar", () => {
     const user = userEvent.setup();
     renderTopbar();
 
-    const themeButton = screen.getByRole("button", { name: "Change theme" });
+    const themeButton = screen.getByRole("button", {
+      name: i18n.t("nav.changeTheme"),
+    });
     expect(themeButton).toHaveAttribute("aria-expanded", "false");
 
     await user.click(themeButton);
@@ -60,7 +63,7 @@ describe("Topbar", () => {
     renderTopbar();
 
     const userMenuButton = screen.getByRole("button", {
-      name: "Open user menu",
+      name: i18n.t("nav.openUserMenu"),
     });
 
     await user.click(userMenuButton);
@@ -75,8 +78,12 @@ describe("Topbar", () => {
     const user = userEvent.setup();
     renderTopbar();
 
-    await user.click(screen.getByRole("button", { name: "Open user menu" }));
-    await user.click(screen.getByRole("menuitem", { name: /logout/i }));
+    await user.click(
+      screen.getByRole("button", { name: i18n.t("nav.openUserMenu") }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: i18n.t("auth.logout") }),
+    );
 
     expect(logoutMutateMock).toHaveBeenCalledWith("token");
   });

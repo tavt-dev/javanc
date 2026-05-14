@@ -25,9 +25,9 @@ export async function seedAuth(page: Page, role: TestRole) {
 export async function loginAs(page: Page, role: TestRole) {
   const session = sessionFor(role);
   await page.goto("/login");
-  await page.getByLabel("Email").fill(session.user.email);
-  await page.getByRole("textbox", { name: "Password" }).fill("Password1");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.locator('input[name="email"]').fill(session.user.email);
+  await page.locator('input[name="password"]').fill("Password1");
+  await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(new RegExp(`${dashboardPathFor(role)}$`));
 }
 

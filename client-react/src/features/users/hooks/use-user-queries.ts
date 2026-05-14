@@ -4,6 +4,7 @@ import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { usersApi } from "@/features/users/api/users-api";
 import { useAuthStore } from "@/stores/auth-store";
+import { useTranslation } from "react-i18next";
 import type {
   AdminUserDTO,
   ChangeUserRoleRequest,
@@ -55,6 +56,7 @@ export function useUserSearchQuery(params: UserSearchParams, enabled = true) {
 }
 
 export function useCreateUserAccountMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: CreateUserAccountRequest) =>
       usersApi.createAccount(input),
@@ -64,56 +66,60 @@ export function useCreateUserAccountMutation() {
         return [created, ...current.filter((user) => user.id !== created.id)];
       });
       queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success("Account created");
+      toast.success(t("users.accountCreated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useUpdateUserMutation(userId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: UpdateUserRequest) => usersApi.update(userId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) });
-      toast.success("User updated");
+      toast.success(t("users.userUpdated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useChangeUserRoleMutation(userId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ChangeUserRoleRequest) =>
       usersApi.changeRole(userId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) });
-      toast.success("Role updated");
+      toast.success(t("users.roleUpdated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useChangeUserStatusMutation(userId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ChangeUserStatusRequest) =>
       usersApi.changeStatus(userId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) });
-      toast.success("Status updated");
+      toast.success(t("users.statusUpdated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useDeleteUserMutation(userId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: () => usersApi.delete(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success("User deactivated");
+      toast.success(t("users.userDeleted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
@@ -161,30 +167,33 @@ export function useMyHrPromotionsQuery() {
 }
 
 export function useRequestManagerUpgradeMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: CreateManagerUpgradeRequest) =>
       usersApi.requestManagerUpgrade(input),
     onSuccess: () => {
       invalidateRoleRequests();
-      toast.success("Manager request submitted");
+      toast.success(t("users.managerRequestSent"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useApproveRoleRequestMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (requestId: number) => usersApi.approveRoleRequest(requestId),
     onSuccess: async () => {
       invalidateRoleRequests();
       queryClient.invalidateQueries({ queryKey: userKeys.all });
-      toast.success("Role request approved");
+      toast.success(t("users.roleRequestApproved"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useRejectRoleRequestMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: ({
       requestId,
@@ -195,24 +204,26 @@ export function useRejectRoleRequestMutation() {
     }) => usersApi.rejectRoleRequest(requestId, input),
     onSuccess: () => {
       invalidateRoleRequests();
-      toast.success("Role request rejected");
+      toast.success(t("users.roleRequestRejected"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useRejectHrPromotionMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (requestId: number) => usersApi.rejectHrPromotion(requestId),
     onSuccess: () => {
       invalidateRoleRequests();
-      toast.success("HR invitation rejected");
+      toast.success(t("users.hrInvitationRejected"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useLeaveHrAccountMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: () => usersApi.leaveHr(),
     onSuccess: (response) => {
@@ -220,7 +231,7 @@ export function useLeaveHrAccountMutation() {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.me });
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("HR role removed");
+      toast.success(t("users.leftHrRole"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });

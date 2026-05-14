@@ -2,12 +2,28 @@ import apiClient from "@/lib/api-client";
 import type { ApiResponse } from "@/types/api";
 import type { JobDTO } from "@/types/job";
 
+function normalizeJob(job: JobDTO): JobDTO {
+  return {
+    ...job,
+    idProfiePending: job.idProfiePending ?? [],
+    idProfile: job.idProfile ?? [],
+  };
+}
+
+function normalizeJobResponse(response: ApiResponse<JobDTO>) {
+  return { ...response, data: normalizeJob(response.data) };
+}
+
+function normalizeJobsResponse(response: ApiResponse<JobDTO[]>) {
+  return { ...response, data: (response.data ?? []).map(normalizeJob) };
+}
+
 export const jobsApi = {
   async getAll() {
     const response = await apiClient.get<ApiResponse<JobDTO[]>>(
       "/manager/user/job/getall",
     );
-    return response.data;
+    return normalizeJobsResponse(response.data);
   },
 
   async getNewForProfile(profileId: number) {
@@ -15,7 +31,7 @@ export const jobsApi = {
       "/manager/user/job/getnewjob",
       { params: { id: profileId } },
     );
-    return response.data;
+    return normalizeJobsResponse(response.data);
   },
 
   async findById(jobId: number) {
@@ -31,7 +47,7 @@ export const jobsApi = {
       "/manager/user/job/getjobbycompany",
       { params: { id: companyId } },
     );
-    return response.data;
+    return normalizeJobsResponse(response.data);
   },
 
   async getPendingByProfile(profileId: number) {
@@ -39,7 +55,7 @@ export const jobsApi = {
       "/manager/user/job/getjobpending",
       { params: { id: profileId } },
     );
-    return response.data;
+    return normalizeJobsResponse(response.data);
   },
 
   async getAcceptedByProfile(profileId: number) {
@@ -47,7 +63,7 @@ export const jobsApi = {
       "/manager/user/job/getjobaccepted",
       { params: { id: profileId } },
     );
-    return response.data;
+    return normalizeJobsResponse(response.data);
   },
 
   async apply({
@@ -62,21 +78,21 @@ export const jobsApi = {
       null,
       { params: { jobDTO: jobId, idProfile: profileId } },
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 
   async applyCurrentUser(jobId: number) {
     const response = await apiClient.post<ApiResponse<JobDTO>>(
       `/manager/user/jobs/${jobId}/applications`,
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 
   async leaveCurrentUser(jobId: number) {
     const response = await apiClient.post<ApiResponse<JobDTO>>(
       `/manager/user/jobs/${jobId}/leave`,
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 
   async applicationStatus(jobId: number) {
@@ -91,7 +107,7 @@ export const jobsApi = {
       "/manager/hr/job/create",
       job,
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 
   async update(job: JobDTO) {
@@ -99,7 +115,7 @@ export const jobsApi = {
       "/manager/hr/job/update",
       job,
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 
   async delete(jobId: number) {
@@ -138,6 +154,6 @@ export const jobsApi = {
       null,
       { params: { jobDTO: jobId, idProfile: profileId } },
     );
-    return response.data;
+    return normalizeJobResponse(response.data);
   },
 };

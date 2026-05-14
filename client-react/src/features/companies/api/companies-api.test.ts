@@ -118,4 +118,35 @@ describe("companiesApi", () => {
     );
     expect(mockedApiClient.patch).toHaveBeenCalledWith("/manager/hr/leave");
   });
+
+  it("normalizes relationship arrays and trims internal account payloads", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: { data: { id: 9, name: "Acme" } },
+    });
+    mockedApiClient.put.mockResolvedValueOnce({
+      data: { data: { id: 9, name: "Acme" } },
+    });
+
+    const company = await companiesApi.getById(9);
+    await companiesApi.createHrAccountAndAssign(9, {
+      name: " Lead ",
+      email: " lead@example.com ",
+      password: "Password1",
+      confirmPassword: "Password1",
+      employeeId: " HR-1 ",
+    });
+
+    expect(company.data.idHR).toEqual([]);
+    expect(company.data.idJobs).toEqual([]);
+    expect(mockedApiClient.put).toHaveBeenCalledWith(
+      "/manager/manager/sethrtocompany",
+      {
+        name: "Lead",
+        email: "lead@example.com",
+        password: "Password1",
+        employeeId: "HR-1",
+      },
+      { params: { idCompany: 9 } },
+    );
+  });
 });

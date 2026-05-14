@@ -1,45 +1,33 @@
 import { Briefcase, Building2, Code2, Layers3, Search, Settings, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { getDashboardPath } from "@/routes/dashboard-path";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Role } from "@/types/auth";
+import { primaryNavItems, visibleRoleNavItems } from "./navigation";
 
 type FooterLink = {
-  label: string;
+  labelKey: string;
   path: string;
 };
 
 const marketplaceLinks: FooterLink[] = [
-  { label: "Jobs", path: "/jobs" },
-  { label: "Companies", path: "/companies" },
-  { label: "Profiles", path: "/profiles" },
-  { label: "Projects", path: "/projects" },
+  ...primaryNavItems.filter((item) => item.path !== "/notifications"),
 ];
 
 const roleLinks: Record<Role, FooterLink[]> = {
   user: [
-    { label: "My Profile", path: "/profile" },
-    { label: "My Applications", path: "/my-applications" },
-    { label: "My Projects", path: "/projects" },
+    { labelKey: "nav.items.profile", path: "/profile" },
+    { labelKey: "nav.items.applications", path: "/my-applications" },
+    { labelKey: "nav.items.projects", path: "/projects" },
   ],
-  hr: [
-    { label: "Manage Jobs", path: "/hr/jobs" },
-    { label: "Notifications", path: "/notifications" },
-    { label: "Settings", path: "/settings" },
-  ],
-  manager: [
-    { label: "My Company", path: "/manager/company" },
-    { label: "Manage HR", path: "/manager/hr" },
-    { label: "Settings", path: "/settings" },
-  ],
-  admin: [
-    { label: "User Management", path: "/admin/users" },
-    { label: "Company Mgmt", path: "/admin/companies" },
-    { label: "Settings", path: "/settings" },
-  ],
+  hr: [...visibleRoleNavItems("hr"), { labelKey: "nav.items.notifications", path: "/notifications" }, { labelKey: "nav.items.settings", path: "/settings" }],
+  manager: [...visibleRoleNavItems("manager"), { labelKey: "nav.items.settings", path: "/settings" }],
+  admin: [...visibleRoleNavItems("admin"), { labelKey: "nav.items.settings", path: "/settings" }],
 };
 
 export function Footer() {
+  const { t } = useTranslation();
   const role = useAuthStore((state) => state.user?.role);
   const dashboardPath = getDashboardPath(role);
   const workspaceLinks = role ? roleLinks[role] : roleLinks.user;
@@ -62,30 +50,33 @@ export function Footer() {
             </span>
           </Link>
           <p className="mt-3 max-w-md leading-6">
-            Career workspace for finding jobs, managing profiles, and keeping hiring activity moving.
+            {t("footer.description")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <FooterChip icon={Briefcase} label="Jobs" />
-            <FooterChip icon={Building2} label="Companies" />
-            <FooterChip icon={Search} label="Profiles" />
+            <FooterChip icon={Briefcase} label={t("nav.items.jobs")} />
+            <FooterChip icon={Building2} label={t("nav.items.companies")} />
+            <FooterChip icon={Search} label={t("nav.items.profiles")} />
           </div>
         </div>
 
-        <FooterColumn title="Marketplace" links={marketplaceLinks} />
-        <FooterColumn title="Workspace" links={[{ label: "Dashboard", path: dashboardPath }, ...workspaceLinks]} />
+        <FooterColumn title={t("footer.marketplace")} links={marketplaceLinks} />
+        <FooterColumn
+          title={t("footer.workspace")}
+          links={[{ labelKey: "common.dashboard", path: dashboardPath }, ...workspaceLinks]}
+        />
 
         <div className="min-w-0 lg:text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            Platform
+            {t("common.platform")}
           </p>
           <div className="mt-3 flex flex-col gap-2 lg:items-end">
             <Link to="/settings" className="footer-link focus-ring">
               <Settings size={15} />
-              Settings
+              {t("nav.items.settings")}
             </Link>
             <Link to="/profile" className="footer-link focus-ring">
               <User size={15} />
-              Account
+              {t("common.account")}
             </Link>
             <span className="footer-link cursor-default">
               <Code2 size={15} />
@@ -96,10 +87,10 @@ export function Footer() {
       </div>
 
       <div className="mx-auto mt-7 flex w-full max-w-[1600px] flex-col gap-2 border-t border-border pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
-        <span>© {year} JavaNC. All rights reserved.</span>
+        <span>{t("footer.copyright", { year })}</span>
         <span className="inline-flex items-center gap-2">
           <Layers3 size={14} className="text-primary" />
-          Job marketplace dashboard
+          {t("footer.tagline")}
         </span>
       </div>
     </footer>
@@ -107,6 +98,8 @@ export function Footer() {
 }
 
 function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
+  const { t } = useTranslation();
+
   return (
     <nav aria-label={title}>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
@@ -115,12 +108,12 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
       <div className="mt-3 grid gap-2">
         {links.map((link) => (
           <Link
-            key={`${title}-${link.path}-${link.label}`}
+            key={`${title}-${link.path}-${link.labelKey}`}
             to={link.path}
             className="footer-link focus-ring"
             aria-label={`Footer link to ${link.path}`}
           >
-            {link.label}
+            {t(link.labelKey)}
           </Link>
         ))}
       </div>

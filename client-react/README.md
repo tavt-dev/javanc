@@ -1,73 +1,71 @@
-# React + TypeScript + Vite
+# JavaNC Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite frontend for the JavaNC Quarkus services.
 
-Currently, two official plugins are available:
+## Runtime Contract
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Backend source of truth: `../docs/backend-api-contract.md`.
+- Do not rename or normalize backend paths in components.
+- Keep HTTP calls inside `src/features/*/api`.
+- Keep backend compatibility quirks inside API adapters or mappers.
+- Components and pages should consume normalized data from hooks.
+- Public response wrapper is always `ApiResponse<T>`: `{ success, message, data }`.
 
-## React Compiler
+## Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The dev server runs on `http://localhost:3000` by default.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+API base URL:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+If `VITE_API_BASE_URL` is empty, Vite proxies supported service paths to the gateway at `http://localhost:8080`.
+
+## Scripts
+
+```bash
+npm run lint
+npm run test:run
+npm run build
+npm run test:e2e
+npm run quality
+```
+
+## i18n
+
+- i18n is initialized in `src/i18n/index.ts`.
+- Default and fallback locale is Vietnamese (`vi`).
+- Copy lives in `src/i18n/locales/vi.ts`.
+- New visible UI text should use `useTranslation()` or `i18n.t(...)` in test utilities.
+- Avoid adding new hardcoded English copy to page, layout, dialog, empty, loading, error, toast, or form states.
+
+## Frontend Contract Rules
+
+- Never call `apiClient` directly from a page/component.
+- Never expose raw legacy fields beyond adapters when a safer normalized shape is possible.
+- Keep React Query keys namespaced by feature.
+- Invalidate caches through feature key helpers instead of ad hoc strings.
+- Use shared state components for loading, retry, empty, and destructive confirmation flows.
+- Keep form validation in feature schemas and clean payloads before sending them to API functions.
+
+## Testing Strategy
+
+- Unit/API tests verify endpoint paths, query params, multipart field names, response normalization, stores, route guards, and error handling.
+- Component tests cover shared state components, layout controls, dialogs, notification interactions, and form behavior.
+- E2E tests use Playwright mocks in `e2e/mocks/api.ts` and cover auth/RBAC plus core role workspaces.
+
+Before merging frontend changes, run:
+
+```bash
+npm run lint
+npm run test:run
+npm run build
+npm run test:e2e
 ```

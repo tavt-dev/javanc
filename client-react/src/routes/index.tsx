@@ -1,3 +1,4 @@
+// This module intentionally exports the router plus route helpers; React Refresh only needs component-only exports.
 /* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter } from "react-router-dom";
 import { lazy, Suspense, type ReactNode } from "react";

@@ -14,8 +14,10 @@ import {
 } from "@/features/auth/schemas/auth-schemas";
 import { extractErrorMessage } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const registerMutation = useRegisterMutation();
   const reducedMotion = useReducedMotion();
   const {
@@ -40,8 +42,8 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Verify your email before entering the workspace"
+      title={t("auth.registerTitle")}
+      subtitle={t("auth.registerSubtitle")}
     >
       <form
         onSubmit={handleSubmit((values) =>
@@ -56,7 +58,7 @@ export function RegisterPage() {
       >
         <FieldShell index={0} reducedMotion={reducedMotion}>
           <label htmlFor="name" className="text-sm font-medium text-foreground">
-            Full name
+            {t("auth.fullName")}
           </label>
           <div className="relative">
             <UserRound
@@ -79,7 +81,7 @@ export function RegisterPage() {
 
         <FieldShell index={1} reducedMotion={reducedMotion}>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
+            {t("auth.email")}
           </label>
           <div className="relative">
             <Mail
@@ -102,8 +104,8 @@ export function RegisterPage() {
 
         <FieldShell index={2} reducedMotion={reducedMotion}>
           <PasswordField
-            label="Password"
-            placeholder="Create a strong password"
+            label={t("auth.password")}
+            placeholder={t("auth.strongPasswordPlaceholder")}
             autoComplete="new-password"
             error={errors.password?.message}
             {...register("password")}
@@ -114,8 +116,8 @@ export function RegisterPage() {
 
         <FieldShell index={3} reducedMotion={reducedMotion}>
           <PasswordField
-            label="Confirm password"
-            placeholder="Repeat your password"
+            label={t("auth.confirmPassword")}
+            placeholder={t("auth.confirmPasswordPlaceholder")}
             autoComplete="new-password"
             error={errors.confirmPassword?.message}
             {...register("confirmPassword")}
@@ -130,15 +132,15 @@ export function RegisterPage() {
 
         <FieldShell index={4} reducedMotion={reducedMotion}>
           <AuthSubmitButton loading={registerMutation.isPending}>
-            Create account
+            {t("auth.createAccount")}
           </AuthSubmitButton>
         </FieldShell>
       </form>
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("auth.alreadyHaveAccount")}{" "}
         <Link to="/login" className="font-medium text-primary hover:underline">
-          Sign in
+          {t("auth.signIn")}
         </Link>
       </p>
     </AuthLayout>
@@ -146,11 +148,12 @@ export function RegisterPage() {
 }
 
 function PasswordChecklist({ password }: { password: string }) {
+  const { t } = useTranslation();
   const rules = [
-    ["8 characters", password.length >= 8],
-    ["Uppercase letter", /[A-Z]/.test(password)],
-    ["Lowercase letter", /[a-z]/.test(password)],
-    ["Number", /\d/.test(password)],
+    [t("auth.passwordRules.length"), password.length >= 8],
+    [t("auth.passwordRules.uppercase"), /[A-Z]/.test(password)],
+    [t("auth.passwordRules.lowercase"), /[a-z]/.test(password)],
+    [t("auth.passwordRules.number"), /\d/.test(password)],
   ] as const;
 
   return (

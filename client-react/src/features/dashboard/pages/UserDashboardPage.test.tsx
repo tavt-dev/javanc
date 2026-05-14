@@ -72,29 +72,33 @@ const companies = [
 
 describe("UserDashboardPage", () => {
   beforeEach(() => {
-    vi.mocked(useMyProfileQuery).mockReturnValue({
+    vi.mocked(useMyProfileQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useMyProfileQuery>>({
       profile,
       isLoading: false,
       error: null,
       refetch: vi.fn(),
-    } as never);
-    vi.mocked(useMyProjectsQuery).mockReturnValue({
+    }));
+    vi.mocked(useMyProjectsQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useMyProjectsQuery>>({
       data: [{ id: 1, title: "Booking API", display: true, idProfile: 7 }],
-    } as never);
-    vi.mocked(useJobBoardQuery).mockReturnValue({
+    }));
+    vi.mocked(useJobBoardQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useJobBoardQuery>>({
       data: jobs,
       isLoading: false,
       isFetching: false,
       error: null,
       refetch: vi.fn(),
-    } as never);
-    vi.mocked(useCompaniesQuery).mockReturnValue({
+    }));
+    vi.mocked(useCompaniesQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useCompaniesQuery>>({
       data: companies,
       isLoading: false,
       isFetching: false,
-    } as never);
-    vi.mocked(usePendingJobsQuery).mockReturnValue({ data: [jobs[0]] } as never);
-    vi.mocked(useAcceptedJobsQuery).mockReturnValue({ data: [] } as never);
+    }));
+    vi.mocked(usePendingJobsQuery).mockReturnValue(
+      mockHookReturn<ReturnType<typeof usePendingJobsQuery>>({ data: [jobs[0]] }),
+    );
+    vi.mocked(useAcceptedJobsQuery).mockReturnValue(
+      mockHookReturn<ReturnType<typeof useAcceptedJobsQuery>>({ data: [] }),
+    );
   });
 
   it("renders curated article content", () => {
@@ -135,4 +139,8 @@ function renderDashboard() {
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="location">{`${location.pathname}${location.search}`}</div>;
+}
+
+function mockHookReturn<T>(value: unknown): T {
+  return value as T;
 }

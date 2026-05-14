@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import apiClient from "@/lib/api-client";
+import type { JobDTO } from "@/types/job";
 import { jobsApi } from "./jobs-api";
 
 vi.mock("@/lib/api-client", () => ({
@@ -64,12 +65,12 @@ describe("jobsApi", () => {
   });
 
   it("creates, updates, deletes, accepts, and rejects through HR endpoints", async () => {
-    const job = { id: 3, title: "Java", idCompany: 8 };
+    const job: JobDTO = { id: 3, title: "Java", idCompany: 8 };
     mockedApiClient.post.mockResolvedValue({ data: { data: job } });
     mockedApiClient.put.mockResolvedValue({ data: { data: job } });
 
-    await jobsApi.create(job as never);
-    await jobsApi.update(job as never);
+    await jobsApi.create(job);
+    await jobsApi.update(job);
     await jobsApi.delete(3);
     await jobsApi.accept({ jobId: 3, profileId: 9 });
     await jobsApi.reject({ jobId: 3, profileId: 9 });
@@ -102,5 +103,20 @@ describe("jobsApi", () => {
       null,
       { params: { jobDTO: 3, idProfile: 9 } },
     );
+  });
+
+  it("normalizes legacy applicant arrays from backend responses", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        data: [{ id: 7, title: "Java", idCompany: 8 }],
+      },
+    });
+
+    const response = await jobsApi.getAll();
+
+    expect(response.data[0]).toMatchObject({
+      idProfiePending: [],
+      idProfile: [],
+    });
   });
 });

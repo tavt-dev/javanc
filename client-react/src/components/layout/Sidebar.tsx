@@ -3,81 +3,16 @@ import { cn } from "@/lib/utils";
 import { getDashboardPath } from "@/routes/dashboard-path";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
+import { ChevronLeft, LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
-  LayoutDashboard,
-  User,
-  Search,
-  FolderKanban,
-  Bell,
-  Building2,
-  Briefcase,
-  Settings,
-  ClipboardList,
-  FileEdit,
-  Users,
-  UserPlus,
-  Building,
-  ChevronLeft,
-} from "lucide-react";
-import type { Role } from "@/types/auth";
-
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ElementType;
-  roles?: Role[];
-}
-
-const navItems: NavItem[] = [
-  { label: "My Profile", path: "/profile", icon: User },
-  { label: "Profiles", path: "/profiles", icon: Search },
-  { label: "My Projects", path: "/projects", icon: FolderKanban },
-  { label: "Notifications", path: "/notifications", icon: Bell },
-  { label: "Companies", path: "/companies", icon: Building2 },
-  { label: "Job Board", path: "/jobs", icon: Briefcase },
-  { label: "Settings", path: "/settings", icon: Settings },
-];
-
-const roleNavItems: NavItem[] = [
-  {
-    label: "My Applications",
-    path: "/my-applications",
-    icon: ClipboardList,
-    roles: ["user"],
-  },
-  {
-    label: "Manage Jobs",
-    path: "/hr/jobs",
-    icon: FileEdit,
-    roles: ["hr"],
-  },
-  {
-    label: "My Company",
-    path: "/manager/company",
-    icon: Building,
-    roles: ["manager"],
-  },
-  {
-    label: "Manage HR",
-    path: "/manager/hr",
-    icon: UserPlus,
-    roles: ["manager"],
-  },
-  {
-    label: "User Management",
-    path: "/admin/users",
-    icon: Users,
-    roles: ["admin"],
-  },
-  {
-    label: "Company Mgmt",
-    path: "/admin/companies",
-    icon: Building2,
-    roles: ["admin"],
-  },
-];
+  mainNavItems,
+  type NavItem,
+  visibleRoleNavItems,
+} from "./navigation";
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleCollapsed = useUIStore((s) => s.toggleSidebarCollapsed);
@@ -85,9 +20,7 @@ export function Sidebar() {
   const role = user?.role;
   const dashboardPath = getDashboardPath(role);
 
-  const visibleRoleItems = roleNavItems.filter(
-    (item) => role && item.roles?.includes(role),
-  );
+  const visibleRoleItems = visibleRoleNavItems(role);
 
   return (
     <aside
@@ -115,15 +48,15 @@ export function Sidebar() {
       <nav className="premium-scrollbar flex-1 overflow-y-auto px-2 py-3">
         {!collapsed && (
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
-            Workspace
+            {t("common.workspace")}
           </p>
         )}
         <SidebarLink
-          item={{ label: "Dashboard", path: dashboardPath, icon: LayoutDashboard }}
+          item={{ labelKey: "common.dashboard", path: dashboardPath, icon: LayoutDashboard }}
           collapsed={collapsed}
           active={location.pathname === dashboardPath}
         />
-        {navItems.map((item) => (
+        {mainNavItems.map((item) => (
           <SidebarLink
             key={item.path}
             item={item}
@@ -137,7 +70,7 @@ export function Sidebar() {
             <div className="my-3 mx-2 border-t border-border" />
             {!collapsed && (
               <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/70">
-                Role tools
+                {t("common.roleTools")}
               </p>
             )}
             {visibleRoleItems.map((item) => (
@@ -157,7 +90,7 @@ export function Sidebar() {
         type="button"
         onClick={toggleCollapsed}
         className="focus-ring flex h-12 items-center justify-center border-t border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
       >
         <ChevronLeft
           size={18}
@@ -180,7 +113,9 @@ function SidebarLink({
   collapsed: boolean;
   active: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = item.icon;
+  const label = t(item.labelKey);
   return (
     <NavLink
       to={item.path}
@@ -192,7 +127,7 @@ function SidebarLink({
           : "text-muted-foreground",
         collapsed && "justify-center px-0",
       )}
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? label : undefined}
     >
       {active && (
         <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
@@ -203,9 +138,9 @@ function SidebarLink({
           active ? "bg-primary/10" : "group-hover:bg-background/60",
         )}
       >
-        <Icon size={17} className="shrink-0" />
+        {Icon && <Icon size={17} className="shrink-0" />}
       </span>
-      {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   );
 }

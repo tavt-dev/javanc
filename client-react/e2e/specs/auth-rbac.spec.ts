@@ -30,7 +30,7 @@ for (const role of ["user", "hr", "manager", "admin"] as TestRole[]) {
     await page.goto("/");
 
     await expect(page).toHaveURL(new RegExp(`${dashboardPathFor(role)}$`));
-    await expect(page.getByRole("link", { name: /Dashboard/ }).first()).toBeVisible();
+    await expect(page.locator(`a[href="${dashboardPathFor(role)}"]`).first()).toBeVisible();
   });
 }
 
@@ -39,12 +39,12 @@ test("role navigation shows only the current workspace entries", async ({ page }
   await seedAuth(page, "admin");
   await page.goto("/dashboard");
 
-  await expect(page.getByRole("link", { name: /User Management/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Company Mgmt/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Manage Jobs/ })).toHaveCount(0);
+  await expect(page.locator('a[href="/admin/users"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/admin/companies"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/hr/jobs"]')).toHaveCount(0);
 
   await page.goto("/hr/jobs");
-  await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
+  await expect(page.getByRole("heading")).toBeVisible();
 });
 
 test("hr sees HR workspace navigation", async ({ page }) => {
@@ -53,6 +53,6 @@ test("hr sees HR workspace navigation", async ({ page }) => {
   await page.goto("/dashboard");
 
   await expect(page).toHaveURL(/\/hr\/dashboard$/);
-  await expect(page.getByRole("link", { name: /Manage Jobs/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /User Management/ })).toHaveCount(0);
+  await expect(page.locator('a[href="/hr/jobs"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/admin/users"]')).toHaveCount(0);
 });

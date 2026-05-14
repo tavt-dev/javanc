@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ShieldAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Role } from "@/types/auth";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -9,6 +10,7 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({ allow, children }: RoleGuardProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
   if (!user || !allow.includes(user.role)) {
@@ -18,9 +20,9 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
             <ShieldAlert size={22} />
           </div>
-          <h1 className="mt-4 text-lg font-semibold">Access denied</h1>
+          <h1 className="mt-4 text-lg font-semibold">{t("errors.accessDeniedTitle")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your current role cannot open this workspace area.
+            {t("errors.accessDeniedDescription")}
           </p>
         </div>
       </div>

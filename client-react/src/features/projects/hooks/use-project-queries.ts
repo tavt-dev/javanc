@@ -4,6 +4,7 @@ import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { projectsApi } from "@/features/projects/api/projects-api";
 import { profileKeys } from "@/features/profiles/hooks/use-profile-queries";
+import { useTranslation } from "react-i18next";
 import type { ProjectFormValues } from "@/types/project";
 
 export const projectKeys = {
@@ -40,12 +41,13 @@ function invalidateProjectCaches(profileId: number) {
 }
 
 export function useSaveProjectMutation(profileId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ProjectFormValues) =>
       projectsApi.createMyProject(input),
     onSuccess: () => {
       invalidateProjectCaches(profileId);
-      toast.success("Project created");
+      toast.success(t("projects.created"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -54,12 +56,13 @@ export function useSaveProjectMutation(profileId: number) {
 }
 
 export function useUpdateProjectMutation(profileId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ProjectFormValues & { id: number }) =>
       projectsApi.updateMyProject(input.id, input),
     onSuccess: () => {
       invalidateProjectCaches(profileId);
-      toast.success("Project updated");
+      toast.success(t("projects.updated"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -68,11 +71,12 @@ export function useUpdateProjectMutation(profileId: number) {
 }
 
 export function useDeleteProjectMutation(profileId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (projectId: number) => projectsApi.deleteMyProject(projectId),
     onSuccess: () => {
       invalidateProjectCaches(profileId);
-      toast.success("Project deleted");
+      toast.success(t("projects.deleted"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));

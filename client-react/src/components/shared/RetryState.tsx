@@ -1,10 +1,11 @@
 import { AlertCircle, RefreshCcw } from "lucide-react";
 import { extractErrorMessage } from "@/lib/api-error";
+import { useTranslation } from "react-i18next";
 
 export function RetryState({
   error,
   onRetry,
-  title = "Unable to load data",
+  title,
   description,
 }: {
   error: unknown;
@@ -12,6 +13,7 @@ export function RetryState({
   title?: string;
   description?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="surface p-6">
       <div className="flex items-start gap-3">
@@ -19,7 +21,9 @@ export function RetryState({
           <AlertCircle size={20} />
         </div>
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            {title ?? t("errors.generic")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {description ?? extractErrorMessage(error)}
           </p>
@@ -31,7 +35,7 @@ export function RetryState({
         className="btn-primary focus-ring mt-5"
       >
         <RefreshCcw size={16} />
-        Retry
+        {t("common.retry")}
       </button>
     </div>
   );

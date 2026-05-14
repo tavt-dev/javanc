@@ -16,8 +16,10 @@ import { NotificationBell } from "@/features/notifications/components/Notificati
 import { useMyHrPromotionsQuery } from "@/features/users/hooks/use-user-queries";
 import { motionPresets } from "@/components/motion/motion-presets";
 import { DesktopNavbar } from "./DesktopNavbar";
+import { useTranslation } from "react-i18next";
 
 export function Topbar() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -80,7 +82,7 @@ export function Topbar() {
         type="button"
         onClick={toggleSidebar}
         className="icon-button focus-ring lg:hidden"
-        aria-label="Toggle menu"
+        aria-label={t("nav.toggleMenu")}
       >
         <Menu size={20} />
       </button>
@@ -105,7 +107,7 @@ export function Topbar() {
           type="button"
           onClick={() => setThemeMenuOpen(!themeMenuOpen)}
           className="icon-button focus-ring"
-          aria-label="Change theme"
+          aria-label={t("nav.changeTheme")}
           aria-expanded={themeMenuOpen}
           aria-controls={themeMenuId}
           aria-haspopup="menu"
@@ -126,24 +128,24 @@ export function Topbar() {
             }}
             className="brand-card absolute right-0 z-50 mt-2 w-40 origin-top-right bg-popover p-1 shadow-xl"
           >
-            {(["light", "dark"] as const).map((t) => (
+            {(["light", "dark"] as const).map((themeName) => (
               <button
                 type="button"
-                key={t}
+                key={themeName}
                 onClick={() => {
-                  setTheme(t);
+                  setTheme(themeName);
                   setThemeMenuOpen(false);
                 }}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm capitalize",
                   "transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
-                  theme === t && "text-primary font-medium",
+                  theme === themeName && "text-primary font-medium",
                 )}
                 role="menuitem"
               >
-                {t === "light" && <Sun size={14} />}
-                {t === "dark" && <Moon size={14} />}
-                {t}
+                {themeName === "light" && <Sun size={14} />}
+                {themeName === "dark" && <Moon size={14} />}
+                {t(`common.${themeName}`)}
               </button>
             ))}
           </motion.div>
@@ -158,7 +160,7 @@ export function Topbar() {
           to="/settings"
           className="focus-ring hidden rounded-md bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning ring-1 ring-warning/20 sm:inline-flex"
         >
-          {pendingHrInvitations} HR invite
+          {t("dashboard.hrInvite", { count: pendingHrInvitations })}
         </Link>
       )}
 
@@ -168,7 +170,7 @@ export function Topbar() {
           type="button"
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="focus-ring flex min-w-0 items-center gap-2 rounded-md p-1.5 pr-2 transition-colors hover:bg-accent"
-          aria-label="Open user menu"
+          aria-label={t("nav.openUserMenu")}
           aria-expanded={userMenuOpen}
           aria-controls={userMenuId}
           aria-haspopup="menu"
@@ -180,10 +182,10 @@ export function Topbar() {
           </div>
           <div className="hidden sm:block text-left">
             <p className="text-sm font-medium leading-none truncate max-w-[120px]">
-              {user?.name || "User"}
+              {user?.name || t("common.user")}
             </p>
             <p className="text-xs text-muted-foreground capitalize">
-              {user?.role || "user"}
+              {user?.role ? t(`common.${user.role}`) : t("common.user")}
             </p>
           </div>
           <ChevronDown size={14} className="text-muted-foreground" />
@@ -217,7 +219,7 @@ export function Topbar() {
               role="menuitem"
             >
               <LogOut size={14} />
-              {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              {logoutMutation.isPending ? t("auth.loggingOut") : t("auth.logout")}
             </button>
           </motion.div>
           )}

@@ -15,8 +15,10 @@ import {
 } from "@/features/auth/schemas/auth-schemas";
 import { extractErrorMessage } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const loginMutation = useLoginMutation();
   const reducedMotion = useReducedMotion();
   const {
@@ -35,8 +37,8 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in with your verified JavaNC account"
+      title={t("auth.loginTitle")}
+      subtitle={t("auth.loginSubtitle")}
     >
       <form
         onSubmit={handleSubmit((values) => loginMutation.mutate(values))}
@@ -45,7 +47,7 @@ export function LoginPage() {
       >
         <FieldShell index={0} reducedMotion={reducedMotion}>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
+            {t("auth.email")}
           </label>
           <div className="relative">
             <Mail
@@ -72,8 +74,8 @@ export function LoginPage() {
 
         <FieldShell index={1} reducedMotion={reducedMotion}>
           <PasswordField
-            label="Password"
-            placeholder="Enter your password"
+            label={t("auth.password")}
+            placeholder={t("auth.passwordPlaceholder")}
             autoComplete="current-password"
             error={errors.password?.message}
             {...register("password")}
@@ -88,15 +90,15 @@ export function LoginPage() {
 
         <FieldShell index={2} reducedMotion={reducedMotion}>
           <AuthSubmitButton loading={loginMutation.isPending}>
-            Sign in
+            {t("auth.signIn")}
           </AuthSubmitButton>
         </FieldShell>
       </form>
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Need an account?{" "}
+        {t("auth.needAccount")}{" "}
         <Link to="/register" className="font-medium text-primary hover:underline">
-          Create one
+          {t("auth.createOne")}
         </Link>
       </p>
     </AuthLayout>

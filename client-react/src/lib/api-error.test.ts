@@ -20,14 +20,18 @@ describe("extractErrorMessage", () => {
   });
 
   it("maps common HTTP statuses", () => {
-    expect(extractErrorMessage(axiosError(401))).toBe("Session expired");
+    expect(extractErrorMessage(axiosError(401))).toBe(
+      "Phiên đăng nhập đã hết hạn",
+    );
     expect(extractErrorMessage(axiosError(403))).toBe(
-      "Access denied or account is not active",
+      "Bạn không có quyền thực hiện thao tác này",
     );
     expect(extractErrorMessage(axiosError(409))).toBe(
-      "Request conflicts with the current account state",
+      "Dữ liệu đã thay đổi, vui lòng tải lại",
     );
-    expect(extractErrorMessage(axiosError(429))).toBe("Something went wrong");
-    expect(extractErrorMessage(axiosError(500))).toBe("Server error");
+    expect(extractErrorMessage(axiosError(429))).toBe("Đã có lỗi xảy ra");
+    expect(extractErrorMessage(axiosError(500))).toBe(
+      "Máy chủ đang gặp sự cố",
+    );
   });
 });

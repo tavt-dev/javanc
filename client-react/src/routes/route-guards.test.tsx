@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RoleGuard } from "@/routes/RoleGuard";
 import { DashboardRedirect } from "@/routes/DashboardRedirect";
 import { useAuthStore } from "@/stores/auth-store";
+import i18n from "@/i18n";
 
 describe("route guards", () => {
   beforeEach(() => {
@@ -149,6 +150,6 @@ describe("route guards", () => {
       </RoleGuard>,
     );
 
-    expect(screen.getByText("Access denied")).toBeInTheDocument();
+    expect(screen.getByText(i18n.t("errors.accessDeniedTitle"))).toBeInTheDocument();
   });
 });

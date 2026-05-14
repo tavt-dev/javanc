@@ -18,11 +18,13 @@ import {
 } from "@/features/auth/schemas/auth-schemas";
 import { extractErrorMessage } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const DEFAULT_OTP_TTL_SECONDS = 600;
 
 export function VerifyEmailPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email") ?? "";
   const initialExpiresIn = Number(searchParams.get("expiresInSeconds"));
@@ -71,8 +73,8 @@ export function VerifyEmailPage() {
 
   return (
     <AuthLayout
-      title="Verify your email"
-      subtitle="Enter the 6-digit code sent to your inbox"
+      title={t("auth.verifyTitle")}
+      subtitle={t("auth.verifySubtitle")}
     >
       <form
         onSubmit={handleSubmit((values) => verifyMutation.mutate(values))}
@@ -81,7 +83,7 @@ export function VerifyEmailPage() {
       >
         <FieldShell index={0} reducedMotion={reducedMotion}>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
+            {t("auth.email")}
           </label>
           <div className="relative">
             <MailCheck
@@ -123,7 +125,7 @@ export function VerifyEmailPage() {
 
         {expiresIn > 0 && (
           <p className="text-center text-xs text-muted-foreground">
-            Code expires in {formattedExpiresIn}
+            {t("auth.codeExpiresIn", { time: formattedExpiresIn })}
           </p>
         )}
 
@@ -141,7 +143,7 @@ export function VerifyEmailPage() {
 
         <FieldShell index={2} reducedMotion={reducedMotion}>
           <AuthSubmitButton loading={verifyMutation.isPending}>
-            Verify email
+            {t("auth.verifyEmail")}
           </AuthSubmitButton>
         </FieldShell>
       </form>
@@ -165,13 +167,13 @@ export function VerifyEmailPage() {
         >
           <RotateCcw size={15} />
           {resendCooldown > 0
-            ? `Resend in ${resendCooldown}s`
-            : "Resend code"}
+            ? t("auth.resendIn", { seconds: resendCooldown })
+            : t("auth.resendCode")}
         </button>
         <div className="text-muted-foreground">
-          Wrong email?{" "}
+          {t("auth.wrongEmail")}{" "}
           <Link to="/register" className="font-medium text-primary hover:underline">
-            Start again
+            {t("auth.startAgain")}
           </Link>
         </div>
       </div>

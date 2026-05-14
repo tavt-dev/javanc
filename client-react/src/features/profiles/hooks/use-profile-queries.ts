@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { profilesApi } from "@/features/profiles/api/profiles-api";
+import { useTranslation } from "react-i18next";
 import type {
   ProfileDTO,
   ProfileFormValues,
@@ -85,11 +86,12 @@ function invalidateProfileCaches(profile?: ProfileDTO) {
 }
 
 export function useCreateProfileMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ProfileFormValues) => profilesApi.createMe(input),
     onSuccess: (response) => {
       invalidateProfileCaches(response.data);
-      toast.success("Profile created");
+      toast.success(t("profiles.created"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -98,11 +100,12 @@ export function useCreateProfileMutation() {
 }
 
 export function useUpdateProfileMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: ProfileFormValues) => profilesApi.updateMe(input),
     onSuccess: (response) => {
       invalidateProfileCaches(response.data);
-      toast.success("Profile updated");
+      toast.success(t("profiles.updated"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -111,11 +114,12 @@ export function useUpdateProfileMutation() {
 }
 
 export function useUpdateAvatarMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (file: File) => profilesApi.updateAvatar(file),
     onSuccess: (response) => {
       invalidateProfileCaches(response.data);
-      toast.success("Avatar updated");
+      toast.success(t("profiles.avatarUpdated"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -124,13 +128,14 @@ export function useUpdateAvatarMutation() {
 }
 
 export function useDeleteProfileMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: () => profilesApi.deleteMe(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.me });
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.removeQueries({ queryKey: ["projects", "profile"] });
-      toast.success("Profile deleted");
+      toast.success(t("profiles.deleted"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));

@@ -21,7 +21,7 @@ test("topbar menus close with Escape", async ({ page }) => {
   await seedAuth(page, "user");
 
   await page.goto("/user/dashboard");
-  await page.getByRole("button", { name: "Change theme" }).click();
+  await page.locator('button.icon-button[aria-haspopup="menu"]').click();
   await expect(page.getByRole("menu")).toBeVisible();
 
   await page.keyboard.press("Escape");

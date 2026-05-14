@@ -10,6 +10,7 @@ import { ArrowUpDown, FileText } from "lucide-react";
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { EmptyState } from "./EmptyState";
+import { useTranslation } from "react-i18next";
 
 // TanStack columns are intentionally value-variant; table callers mix accessor and display columns.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,8 +27,10 @@ export function DataTable<T>({
   empty: string;
   stickyHeader?: boolean;
 }) {
+  const { t } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([]);
   const reduceMotion = useReducedMotion();
+  // TanStack Table owns a mutable table instance; the hook is the documented integration point here.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -57,7 +60,12 @@ export function DataTable<T>({
                         type="button"
                         onClick={header.column.getToggleSortingHandler()}
                         disabled={!header.column.getCanSort()}
-                        aria-label={`Sort by ${getHeaderLabel(header.column.columnDef.header)}`}
+                        aria-label={t("common.sortBy", {
+                          field: getHeaderLabel(
+                            header.column.columnDef.header,
+                            t("common.column"),
+                          ),
+                        })}
                         className="inline-flex items-center gap-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default"
                       >
                         {flexRender(
@@ -106,7 +114,7 @@ export function DataTable<T>({
                       compact
                       icon={FileText}
                       title={empty}
-                      description="Adjust filters or create a new record to populate this table."
+                      description={t("common.emptyTableDescription")}
                     />
                   </div>
                 </td>
@@ -125,6 +133,6 @@ function getAriaSort(sort: false | "asc" | "desc") {
   return "none";
 }
 
-function getHeaderLabel(header: unknown) {
-  return typeof header === "string" ? header : "column";
+function getHeaderLabel(header: unknown, fallback: string) {
+  return typeof header === "string" ? header : fallback;
 }

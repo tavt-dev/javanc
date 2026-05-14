@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
 import { jobsApi } from "@/features/jobs/api/jobs-api";
+import { useTranslation } from "react-i18next";
 import type { JobDTO } from "@/types/job";
 
 export const jobKeys = {
@@ -91,13 +92,14 @@ export function useJobApplicationStatusQuery(
 }
 
 export function useApplyJobMutation(profileId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (jobId: number) => jobsApi.apply({ jobId, profileId }),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
-      toast.success("Application submitted");
+      toast.success(t("jobs.applied"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -106,6 +108,7 @@ export function useApplyJobMutation(profileId: number) {
 }
 
 export function useApplyCurrentUserJobMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (jobId: number) => jobsApi.applyCurrentUser(jobId),
     onSuccess: (response) => {
@@ -115,7 +118,7 @@ export function useApplyCurrentUserJobMutation() {
       queryClient.invalidateQueries({
         queryKey: jobKeys.applicationStatus(response.data.id),
       });
-      toast.success("Application submitted");
+      toast.success(t("jobs.applied"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -124,6 +127,7 @@ export function useApplyCurrentUserJobMutation() {
 }
 
 export function useLeaveCurrentUserJobMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (jobId: number) => jobsApi.leaveCurrentUser(jobId),
     onSuccess: (response) => {
@@ -133,7 +137,7 @@ export function useLeaveCurrentUserJobMutation() {
       queryClient.invalidateQueries({
         queryKey: jobKeys.applicationStatus(response.data.id),
       });
-      toast.success("Application withdrawn");
+      toast.success(t("jobs.withdrawn"));
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error));
@@ -142,44 +146,48 @@ export function useLeaveCurrentUserJobMutation() {
 }
 
 export function useCreateJobMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (job: JobDTO) => jobsApi.create(job),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Job created");
+      toast.success(t("jobs.created"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useUpdateJobMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (job: JobDTO) => jobsApi.update(job),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
       queryClient.invalidateQueries({ queryKey: jobKeys.detail(response.data.id) });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Job updated");
+      toast.success(t("jobs.updated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useDeleteJobMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (jobId: number) => jobsApi.delete(jobId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.company(companyId) });
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Job deleted");
+      toast.success(t("jobs.deleted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useAcceptApplicantMutation(jobId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (profileId: number) => jobsApi.accept({ jobId, profileId }),
     onSuccess: (response) => {
@@ -188,13 +196,14 @@ export function useAcceptApplicantMutation(jobId: number) {
         queryKey: jobKeys.company(response.data.idCompany),
       });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("Applicant accepted");
+      toast.success(t("jobs.applicantAccepted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useRejectApplicantMutation(jobId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (profileId: number) => jobsApi.reject({ jobId, profileId }),
     onSuccess: (response) => {
@@ -202,7 +211,7 @@ export function useRejectApplicantMutation(jobId: number) {
       queryClient.invalidateQueries({
         queryKey: jobKeys.company(response.data.idCompany),
       });
-      toast.success("Applicant rejected");
+      toast.success(t("jobs.applicantRejected"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });

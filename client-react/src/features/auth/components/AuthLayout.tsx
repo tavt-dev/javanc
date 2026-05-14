@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Moon, Sun } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useUIStore } from "@/stores/ui-store";
 
 interface AuthLayoutProps {
@@ -10,6 +11,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
+  const { t } = useTranslation();
   const reducedMotion = useReducedMotion();
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
@@ -18,6 +20,8 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
     : { duration: 0.22, ease: [0.2, 0, 0, 1] as const };
   const nextTheme = getNextTheme(theme);
   const displayTheme = theme === "dark" ? "dark" : "light";
+  const nextThemeLabel = t(nextTheme === "dark" ? "common.dark" : "common.light");
+  const displayThemeLabel = t(displayTheme === "dark" ? "common.dark" : "common.light");
   const ThemeIcon = displayTheme === "dark" ? Moon : Sun;
 
   return (
@@ -39,7 +43,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
           </div>
           <div className="mb-3 rounded-full bg-white p-1">
             <div className="h-8 rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
-              Search Java, Python, HR workspace...
+              {t("auth.heroSearch")}
             </div>
           </div>
           <div className="space-y-2">
@@ -55,7 +59,11 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-2 w-2/5 rounded-full bg-white/15" />
                   <span className="rounded-full bg-emerald-300/20 px-2 py-0.5 text-[10px] text-emerald-100">
-                    {index === 0 ? "Job" : index === 1 ? "Profile" : "Apply"}
+                    {index === 0
+                      ? t("nav.items.jobs")
+                      : index === 1
+                        ? t("nav.items.profile")
+                        : t("common.apply")}
                   </span>
                 </div>
               </div>
@@ -85,7 +93,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
               </span>
             </div>
             <span className="font-display text-base font-semibold">
-              JavaNC Workspace
+              {t("auth.workspace")}
             </span>
           </div>
         </div>
@@ -99,19 +107,18 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
           >
             <div className="space-y-3">
               <p className="text-sm font-medium text-emerald-100/80">
-                Emerald career console
+                {t("auth.heroEyebrow")}
               </p>
               <h1 className="display-title max-w-lg text-4xl font-semibold leading-tight">
-                Manage profiles, jobs, teams, and applications from one focused
-                console.
+                {t("auth.heroTitle")}
               </h1>
             </div>
             <div className="grid max-w-lg grid-cols-2 gap-3">
               {[
-                ["24", "active roles"],
-                ["128", "profiles reviewed"],
-                ["4", "workspace roles"],
-                ["99%", "session coverage"],
+                ["24", t("auth.metricActiveRoles")],
+                ["128", t("auth.metricProfilesReviewed")],
+                ["4", t("auth.metricWorkspaceRoles")],
+                ["99%", t("auth.metricSessionCoverage")],
               ].map(([value, label]) => (
                 <div
                   key={label}
@@ -131,11 +138,11 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
         type="button"
         onClick={() => setTheme(nextTheme)}
         className="auth-theme-toggle focus-ring absolute right-4 top-4 z-30 inline-flex h-11 items-center justify-center gap-2 rounded-full border border-primary/20 bg-card/82 px-3 text-sm font-semibold text-foreground shadow-lg shadow-black/10 backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card sm:right-6 sm:top-6"
-        aria-label={`Switch to ${nextTheme} theme`}
-        title={`Switch to ${nextTheme} theme`}
+        aria-label={t("auth.switchTheme", { theme: nextThemeLabel })}
+        title={t("auth.switchTheme", { theme: nextThemeLabel })}
       >
         <ThemeIcon size={18} />
-        <span className="hidden capitalize sm:inline">{displayTheme}</span>
+        <span className="hidden sm:inline">{displayThemeLabel}</span>
       </button>
 
       <section className="relative z-20 flex min-h-screen items-center justify-center px-4 py-8 sm:px-6">
@@ -151,7 +158,7 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
                 J
               </span>
             </div>
-            <span className="font-semibold">JavaNC Workspace</span>
+            <span className="font-semibold">{t("auth.workspace")}</span>
           </div>
 
           <div

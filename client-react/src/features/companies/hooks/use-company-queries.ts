@@ -6,6 +6,7 @@ import { companiesApi } from "@/features/companies/api/companies-api";
 import { usersApi } from "@/features/users/api/users-api";
 import { userKeys } from "@/features/users/hooks/use-user-queries";
 import { useAuthStore } from "@/stores/auth-store";
+import { useTranslation } from "react-i18next";
 import type { CompanyDTO, CompanyFormValues } from "@/types/company";
 import type { InternalAccountFormValues } from "@/types/user";
 
@@ -112,90 +113,98 @@ function invalidateCompany(company?: CompanyDTO) {
 }
 
 export function useCreateCompanyMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: CompanyFormValues) => companiesApi.create(input),
     onSuccess: (response) => {
       invalidateCompany(response.data);
-      toast.success("Company created");
+      toast.success(t("companies.created"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useUpdateCompanyMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (company: CompanyDTO) => companiesApi.update(company),
     onSuccess: (response) => {
       invalidateCompany(response.data);
-      toast.success("Company updated");
+      toast.success(t("companies.updated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useDeleteCompanyMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (companyId: number) => companiesApi.delete(companyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: companyKeys.all });
-      toast.success("Company deleted");
+      toast.success(t("companies.deleted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useCreateHrAccountAndAssignMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: InternalAccountFormValues) =>
       companiesApi.createHrAccountAndAssign(companyId, input),
     onSuccess: (response) => {
       invalidateCompany(response.data);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("HR account created and assigned");
+      toast.success(t("companies.hrAccountAssigned"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useCreateManagerAccountAndAssignMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (input: InternalAccountFormValues) =>
       companiesApi.createManagerAccountAndAssign(companyId, input),
     onSuccess: (response) => {
       invalidateCompany(response.data);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Manager account created and assigned");
+      toast.success(t("companies.managerAccountAssigned"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useRequestHrPromotionMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (targetUserId: number) =>
       companiesApi.requestHrPromotion(targetUserId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users", "role-requests"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("HR invitation sent");
+      toast.success(t("companies.hrInvitationSent"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function usePromoteUserToHrMutation(companyId: number) {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (userId: number) => companiesApi.promoteUserToHr(userId, companyId),
     onSuccess: (response) => {
       invalidateCompany(response.data);
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("HR promotion requested");
+      toast.success(t("companies.hrPromotionRequested"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useAcceptHrPromotionWithCompanyMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: (requestId: number) => companiesApi.acceptHrPromotion(requestId),
     onSuccess: async (response) => {
@@ -209,13 +218,14 @@ export function useAcceptHrPromotionWithCompanyMutation() {
       } catch {
         queryClient.invalidateQueries({ queryKey: userKeys.me });
       }
-      toast.success("HR invitation accepted");
+      toast.success(t("companies.hrInvitationAccepted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }
 
 export function useLeaveHrCompanyMutation() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: () => companiesApi.leaveHr(),
     onSuccess: async (response) => {
@@ -228,7 +238,7 @@ export function useLeaveHrCompanyMutation() {
       } catch {
         queryClient.invalidateQueries({ queryKey: userKeys.me });
       }
-      toast.success("You left the HR role");
+      toast.success(t("companies.leftHrRole"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
   });

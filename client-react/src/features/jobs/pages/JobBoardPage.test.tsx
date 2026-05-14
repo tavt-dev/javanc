@@ -47,21 +47,21 @@ const jobs = [
 
 describe("JobBoardPage", () => {
   beforeEach(() => {
-    vi.mocked(useMyProfileQuery).mockReturnValue({
+    vi.mocked(useMyProfileQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useMyProfileQuery>>({
       profile: { id: 7 },
-    } as never);
-    vi.mocked(useJobBoardQuery).mockReturnValue({
+    }));
+    vi.mocked(useJobBoardQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useJobBoardQuery>>({
       data: jobs,
       isLoading: false,
       error: null,
       refetch: vi.fn(),
-    } as never);
-    vi.mocked(useCompaniesQuery).mockReturnValue({
+    }));
+    vi.mocked(useCompaniesQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useCompaniesQuery>>({
       data: [
         { id: 1, name: "JavaNC Labs" },
         { id: 2, name: "Data House" },
       ],
-    } as never);
+    }));
   });
 
   it("initializes filters from query params", () => {
@@ -87,4 +87,8 @@ function renderJobBoard(initialEntry: string) {
       </Routes>
     </MemoryRouter>,
   );
+}
+
+function mockHookReturn<T>(value: unknown): T {
+  return value as T;
 }

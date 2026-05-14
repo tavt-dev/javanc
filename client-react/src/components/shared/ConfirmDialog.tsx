@@ -1,12 +1,13 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { MotionDialog } from "@/components/motion/MotionDialog";
+import { useTranslation } from "react-i18next";
 
 export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
@@ -22,6 +23,7 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <MotionDialog open={open} onClose={onCancel} className="w-full max-w-md">
       <div
@@ -58,7 +60,7 @@ export function ConfirmDialog({
             disabled={loading}
             className="btn-secondary focus-ring"
           >
-            {cancelLabel}
+            {cancelLabel ?? t("common.cancel")}
           </button>
           <button
             type="button"
@@ -71,7 +73,7 @@ export function ConfirmDialog({
             }
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
-            {confirmLabel}
+            {confirmLabel ?? t("common.confirm")}
           </button>
         </div>
       </div>
