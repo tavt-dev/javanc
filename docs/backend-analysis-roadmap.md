@@ -15,16 +15,16 @@ Backend hiện tại là hệ thống microservices gồm 8 service:
 | `manager-service` | Công ty, HR, job, ứng tuyển | 8091 | MongoDB `microservice-portfolio` |
 | `notification-service` | Notification CRUD/read | 8084 | MySQL `notification1` |
 | `image-service` | Upload ảnh, preview, metadata ảnh | 8083 | MySQL `image` |
-| `email-service` | Gửi email nghiệp vụ và OTP nội bộ | 8087 | Không có |
+| `email-service` | Gửi email nghiệp vụ và OTP nội bộ | 8087 | MySQL `email` cho `processed_message` idempotency |
 
 Đã xác nhận từ source code hiện tại:
 
 - Gateway dùng static route, không dùng Eureka/service discovery.
 - Protected API được gateway kiểm tra bằng Bearer token và gọi `user-service` qua `POST /auth/introspect`.
 - JWT, OTP email verification, admin bootstrap, role request flow đã có trong `user-service`.
-- Kafka chưa được triển khai thật trong Quarkus: chưa có dependency `quarkus-messaging-kafka`, chưa có `@Incoming`, `@Outgoing`, `Emitter`, producer hoặc consumer.
-- Chỉ `email-service` còn cấu hình `kafka.bootstrap.servers` và `email.kafka.group-id`, nhưng chưa có code sử dụng Kafka.
-- Tài liệu migration cũ cũng ghi Kafka chưa thuộc baseline vì chưa có active listener/producer.
+- Kafka foundation đã được thêm ở Phase 4 nhưng vẫn là internal interface: HTTP business flow hiện tại chưa phụ thuộc Kafka.
+- `quarkus-messaging-kafka` chỉ có trong `user-service`, `manager-service`, `project-service`, `email-service`, `notification-service`; gateway/profile/image không có Kafka dependency.
+- Kafka mặc định disabled bằng `MESSAGING_ENABLED=false`; Phase 6 đã wire async side effects thật sau feature flags, nhưng HTTP vẫn là baseline khi flags mặc định tắt.
 
 Định hướng cải tiến:
 
@@ -496,24 +496,32 @@ Rủi ro:
 - Dùng outbox để publish event sau DB commit.
 - Consumer phải idempotent.
 
-### 5.3. Kafka chưa có implementation thật
+### 5.3. Kafka foundation mới ở mức nội bộ
 
-Đã xác nhận từ source code:
+Baseline Phase 1 đã xác nhận:
 
 - Không có `quarkus-messaging-kafka` trong `pom.xml`.
 - Không có annotation `@Incoming`, `@Outgoing`.
 - Không có `Emitter` hoặc `MutinyEmitter`.
 - Chỉ có Kafka properties còn sót trong `email-service`.
 
+Trạng thái sau Phase 4:
+
+- Đã có `quarkus-messaging-kafka` ở 5 service tham gia Kafka foundation.
+- Đã có producer skeleton ở `user-service`, `manager-service`, `project-service`.
+- Đã có consumer skeleton ở `email-service`, `notification-service`.
+- Kafka vẫn disabled mặc định và chưa là đường business runtime bắt buộc.
+- Chưa có outbox/idempotency/retry/DLQ runtime.
+
 Rủi ro:
 
-- Người đọc tưởng hệ thống đã dùng Kafka vì config còn tồn tại.
-- Nếu thêm Kafka trực tiếp mà không có outbox/idempotency, hệ thống dễ mất event hoặc xử lý trùng.
+- Người đọc tưởng Kafka đã thay HTTP side effect trong khi Phase 4 chỉ là foundation.
+- Nếu bật Kafka cho business flow trực tiếp mà không có outbox/idempotency, hệ thống dễ mất event hoặc xử lý trùng.
 
 Đề xuất:
 
-- Document rõ hiện trạng.
-- Chỉ thêm Kafka khi có topic contract, payload schema, retry, DLQ và idempotency.
+- Document rõ `MESSAGING_ENABLED=false` là default.
+- Chỉ bật Kafka cho business flow sau khi có outbox, retry/DLQ và idempotency.
 
 ### 5.4. Database migration chưa đồng đều
 
@@ -598,6 +606,52 @@ Kết quả kỳ vọng:
 - Biết Kafka chưa hoạt động thật.
 - Có roadmap rõ cho các phase tiếp theo.
 
+#### Phase 1 implementation verification - 2026-05-14
+
+Phạm vi đã thực hiện:
+
+- `docs/backend-analysis-roadmap.md` là artifact chính của Phase 1.
+- Không chỉnh root `README.md`.
+- Không chỉnh Java code, `application.properties`, Maven dependency, schema, endpoint hoặc frontend.
+- Health baseline vẫn là `/q/health`; readiness DB/downstream chi tiết giữ ở backlog Phase 3.
+
+Documentation/source validation:
+
+| Hạng mục | Kết quả |
+|---|---|
+| 8 service, port, database, route, dependency | Đã document trong các section hiện trạng và phân tích theo service |
+| Gateway public/protected route và `/email/**` | Đã document: gateway không expose `/email/**` |
+| Current/legacy/internal endpoint | Đã document ở từng service; Phase 2 sẽ tách bảng contract chi tiết hơn |
+| `.env.example` theo service | Đã xác nhận cả 8 service có `.env.example` |
+| `.gitignore` | Đã xác nhận ignore `.env`, `**/.env`, `target/`, `.idea/`, `.vscode/` |
+| Kafka dependency/code | Đã xác nhận không có `quarkus-messaging-kafka`, `smallrye-kafka`, `@Incoming`, `@Outgoing`, `Emitter`, producer hoặc consumer |
+| Kafka config còn tồn tại | Chỉ thấy `kafka.bootstrap.servers` và `email.kafka.group-id` trong `email-service`, chưa có code dùng Kafka |
+
+Baseline test notes:
+
+- Lệnh `mvn test` từ `quarkus/` fail nếu dùng Maven mặc định vì `JAVA_HOME` đang trỏ JDK 17, trong khi project yêu cầu Java 21.
+- Khi override `JAVA_HOME=C:\Program Files\Java\jdk-21`, full reactor vẫn fail tại `user-service`, nên các module còn lại được chạy riêng theo plan.
+- Không sửa behavior trong Phase 1; các lỗi dưới đây chỉ được ghi nhận làm baseline.
+
+| Module | Command | Kết quả |
+|---|---|---|
+| `user-service` | `mvn -pl user-service test` với JDK 21 | Fail: 20 tests run, 5 failures. Các failure nằm trong `UserServiceContractTest`, cùng nguyên nhân login `test.admin@example.com` trả `401` thay vì `200` |
+| `gateway-service` | `mvn -pl gateway-service test` với JDK 21 | Pass: 16 tests |
+| `profile-service` | `mvn -pl profile-service test` với JDK 21 | Pass: 22 tests |
+| `project-service` | `mvn -pl project-service test` với JDK 21 | Pass: 26 tests |
+| `manager-service` | `mvn -pl manager-service test` với JDK 21 | Pass: 15 tests |
+| `notification-service` | `mvn -pl notification-service test` với JDK 21 | Pass: 17 tests |
+| `image-service` | `mvn -pl image-service test` với JDK 21 | Pass: 18 tests |
+| `email-service` | `mvn -pl email-service test` với JDK 21 | Pass: 15 tests |
+
+User-service failing tests recorded:
+
+- `UserServiceContractTest.usersEndpointsEnforceBearerTokenAndAdminAuthorization`
+- `UserServiceContractTest.adminAccountsCannotBeDisabledOrDeleted`
+- `UserServiceContractTest.roleRequestsControlManagerAndHrPromotionWorkflows`
+- `UserServiceContractTest.managerUpgradeRequiresAdminApproval`
+- `UserServiceContractTest.profileUpdatesRejectDuplicateEmailAndEmployeeId`
+
 ### Phase 2: Làm sạch contract và consistency
 
 Mục tiêu: giảm rủi ro khi frontend/service khác gọi API.
@@ -636,6 +690,32 @@ Kết quả kỳ vọng:
 - Backend team biết endpoint nào là compatibility debt.
 - Error contract dễ test và dễ document hơn.
 
+#### Phase 2 implementation target
+
+- Artifact chính: `docs/backend-api-contract.md`.
+- Phạm vi đã chọn: documentation hardening và characterization tests, không normalize runtime error response trong Phase 2.
+- Root `README.md` giữ nguyên.
+- Không xóa, đổi tên, version hóa, hoặc di chuyển endpoint.
+- Error policy mong muốn cho lỗi mới là `success=false`, `message=string`, `data=null`, nhưng behavior hiện tại như `data=""` được giữ và document là compatibility behavior.
+
+#### Phase 2 implementation verification - 2026-05-14
+
+Đã thực hiện:
+
+- Tạo `docs/backend-api-contract.md` từ source Quarkus hiện tại.
+- Ghi rõ gateway boundary, current/legacy/internal endpoint, compatibility behavior và error policy mong muốn.
+- Thêm characterization test cho `/notification/**` public ở gateway.
+- Thêm characterization test cho compatibility endpoint `/manager/manager/setmaanagertocompany`.
+- Xác nhận test hiện có đã cover legacy `/profile/**` removed, project current/legacy endpoints, user legacy auth endpoints removed, `/email/**` và `/internal/emails/**` không expose qua gateway.
+
+Kết quả test với JDK 21:
+
+| Module | Kết quả |
+|---|---|
+| `gateway-service` | Pass: 17 tests |
+| `manager-service` | Pass: 16 tests |
+| `user-service` | Fail known baseline: 20 tests run, 5 failures trong `UserServiceContractTest`, login `test.admin@example.com` trả `401` thay vì `200` |
+
 ### Phase 3: Resilience, observability và vận hành
 
 Mục tiêu: backend có nền tảng production tốt hơn trước khi async hóa.
@@ -671,6 +751,55 @@ Kết quả kỳ vọng:
 - Debug lỗi liên-service dễ hơn.
 - Có cơ sở đo trước/sau khi thêm Kafka.
 - Runtime behavior rõ khi dependency fail.
+
+#### Phase 3 implementation verification - 2026-05-14
+
+Da thuc hien:
+
+- Them `quarkus-micrometer-registry-prometheus` va `quarkus-logging-json` cho 8 Quarkus service.
+- Them request correlation filter cho moi service:
+  - Nhan hoac tao `X-Request-Id`.
+  - Validate request id bang allow-list ky tu va gioi han 128 ky tu.
+  - Tra `X-Request-Id` tren response.
+  - Dua request id vao MDC va log access theo `service`, `requestId`, `method`, `path`, `status`, `latencyMs`.
+- Gateway va REST client header factories propagate `X-Request-Id`; propagation `Authorization` hien co duoc giu.
+- Them Prometheus metrics endpoint `/q/metrics`.
+- Them custom metrics `javanc_http_server_requests`, `javanc_downstream_http_client_requests`, `javanc_email_send_total`, `javanc_notification_operations_total`.
+- Them liveness/readiness check co ban cho 8 service: `/q/health`, `/q/health/live`, `/q/health/ready`.
+- Them REST client timeout config. Quarkus REST client hien tai yeu cau gia tri millisecond dang `long`, nen default duoc cau hinh la `DOWNSTREAM_CONNECT_TIMEOUT=1000` va `DOWNSTREAM_READ_TIMEOUT=3000`.
+- Them mapper `ProcessingException -> 503 Service Unavailable` cho cac service co outbound REST clients.
+- Khong them Kafka dependency/config runtime moi.
+- Khong doi HTTP business endpoint, request body, success response shape, schema, role rule hoac frontend.
+- Root `README.md` khong bi chinh trong Phase 3.
+
+Ghi chu test fixture:
+
+- `user-service` contract tests truoc do bi anh huong boi local `.env` (`USER_ADMIN_EMAIL`) nen login admin test co the fail.
+- Phase 3 them `QuarkusTestProfile` rieng cho `UserServiceContractTest` de khoa fixture test ve `test.admin@example.com`; day la thay doi test-only, khong doi runtime bootstrap behavior.
+
+Ket qua test voi JDK 21:
+
+| Module | Ket qua |
+|---|---|
+| `user-service` | Pass: 21 tests |
+| `gateway-service` | Pass: 20 tests |
+| `profile-service` | Pass: 23 tests |
+| `image-service` | Pass: 19 tests |
+| `manager-service` | Pass: 17 tests |
+| `notification-service` | Pass: 18 tests |
+| `project-service` | Pass: 27 tests |
+| `email-service` | Pass: 16 tests |
+
+Lenh baseline da chay:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+cd quarkus
+mvn test
+```
+
+Tong ket: full reactor pass, 161 tests, 0 failures, 0 errors, 0 skipped.
 
 ### Phase 4: Kafka foundation
 
@@ -718,7 +847,9 @@ Feature flag:
 
 - `MESSAGING_ENABLED=false` mặc định ở rollout đầu.
 - Khi `false`, giữ HTTP side effect hiện tại.
-- Khi `true`, ghi outbox/publish command theo flow mới.
+- Phase 4 hiện tại không wire Kafka publisher vào business transaction chính.
+- Khi `MESSAGING_ENABLED=true`, Kafka chỉ nên dùng cho component/integration verification hoặc staging experiment có kiểm soát.
+- Production async flow chỉ bật sau Phase 5 khi đã có outbox/idempotency và retry/DLQ.
 - Có thể bật theo service/topic nếu cần rollout nhỏ hơn.
 
 Kết quả kỳ vọng:
@@ -726,6 +857,72 @@ Kết quả kỳ vọng:
 - Kafka có contract rõ.
 - Không có "Kafka config nhưng không dùng".
 - Có đường rollback bằng feature flag.
+
+#### Phase 4 implementation verification - 2026-05-14
+
+Trang thai da implement:
+
+- Them `quarkus-messaging-kafka` chi vao 5 service co producer/consumer skeleton:
+  - Producer skeleton: `user-service`, `manager-service`, `project-service`.
+  - Consumer skeleton: `email-service`, `notification-service`.
+  - Khong them Kafka dependency vao `gateway-service`, `profile-service`, `image-service`.
+- Them Kafka config disabled mac dinh:
+  - `MESSAGING_ENABLED=false`.
+  - `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`.
+  - `KAFKA_DEV_SERVICES_ENABLED=false` mac dinh de baseline test khong can broker/Docker.
+  - Channel topic names dung contract `javanc.user.events`, `javanc.manager.events`, `javanc.project.events`, `javanc.email.commands`, `javanc.notification.commands`.
+- Them envelope code rieng theo service, khong tao shared module moi:
+  - `EventEnvelope` cho producer domain events.
+  - `CommandEnvelope` cho email/notification commands.
+  - Validate metadata bat buoc va `payloadVersion >= 1`.
+- Producer skeleton chi publish khi `messaging.enabled=true`; khi disabled thi no-op va record metric `javanc_kafka_publish_total{outcome=disabled}`.
+- Consumer skeleton o `email-service` va `notification-service` chi parse/validate envelope, log metadata va record metric `javanc_kafka_consume_total`; khong gui mail hoac tao notification that trong Phase 4.
+- Them Kafka Companion/Testcontainers test trong `user-service` de bat `email-commands-out` va xac nhan publish duoc 1 message vao topic `javanc.email.commands`.
+- Khong them outbox schema, idempotency store, retry/DLQ runtime hoac async business flow; cac noi dung do giu cho Phase 5/6.
+- Khong doi HTTP endpoint path, request body, response success shape, auth rule, schema hoac frontend.
+- Root `README.md` khong bi chinh trong Phase 4.
+
+Notes/gaps con lai sau Phase 4:
+
+- Kafka broker-backed integration test hien moi cover 1 representative producer path o `user-service` -> `javanc.email.commands`.
+- `manager-service` va `project-service` co producer skeleton/component tests, nhung chua co broker-backed publish test rieng.
+- `email-service` va `notification-service` co consumer validation/component tests, nhung chua co broker-backed incoming channel test qua Kafka Companion.
+- Chua co DLQ topic creation, retry policy, consumer lag dashboard, broker health/readiness check, schema registry, hoac contract test cross-service cho payload domain that.
+- Chua co outbox/idempotency store nen consumer handler khong duoc gui mail/tao notification that trong Phase 4.
+- Neu bat `MESSAGING_ENABLED=true` ngoai test/staging, phai coi day la experimental foundation, khong phai production async delivery path.
+
+Test da chay:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+cd quarkus
+mvn -pl user-service,manager-service,project-service,email-service,notification-service test
+```
+
+Ket qua touched-module baseline: pass, 109 tests, 0 failures, 0 errors, 0 skipped.
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+cd quarkus
+mvn test
+```
+
+Ket qua full reactor: pass, 171 tests, 0 failures, 0 errors, 0 skipped.
+
+Module summary:
+
+| Module | Tests | Result |
+|---|---:|---|
+| `user-service` | 25 | Pass |
+| `gateway-service` | 20 | Pass |
+| `profile-service` | 23 | Pass |
+| `image-service` | 19 | Pass |
+| `manager-service` | 18 | Pass |
+| `notification-service` | 20 | Pass |
+| `project-service` | 28 | Pass |
+| `email-service` | 18 | Pass |
 
 ### Phase 5: Outbox pattern và idempotency
 
@@ -792,6 +989,61 @@ Kết quả kỳ vọng:
 - Không gửi email/notification trùng khi consumer retry.
 - Có dữ liệu vận hành để điều tra message fail.
 
+#### Phase 5 implementation verification - 2026-05-14
+
+Trang thai da implement:
+
+- Them outbox foundation cho producer services:
+  - `user-service`: MySQL `outbox_event` bang Flyway migration `V5__add_outbox_event.sql`.
+  - `project-service`: JPA `outbox_event` dung schema-management hien co.
+  - `manager-service`: Mongo `outbox_event` document/repository; index creation co flag `OUTBOX_MONGO_ENSURE_INDEXES=false` mac dinh de local/test khong bi ep ket noi Mongo.
+- Them outbox publisher worker cho `user-service`, `project-service`, `manager-service`:
+  - Worker chi poll khi `OUTBOX_PUBLISHER_ENABLED=true` va `MESSAGING_ENABLED=true`.
+  - Default van tat: `OUTBOX_PUBLISHER_ENABLED=false`, `MESSAGING_ENABLED=false`.
+  - Success mark `PUBLISHED`; failure tang `attemptCount`, set `nextAttemptAt`; qua `OUTBOX_MAX_ATTEMPTS=5` mark `FAILED`.
+- Them consumer idempotency foundation:
+  - `email-service`: them MySQL/H2/Flyway va table `processed_message`.
+  - `notification-service`: them JPA `processed_message` theo datasource/schema strategy hien co.
+  - Duplicate `idempotencyKey` da `PROCESSED` duoc ack va khong xu ly lai.
+  - Handler Kafka van la safe stub; chua gui mail that hoac tao notification that trong Phase 5.
+- Them metrics:
+  - `javanc_outbox_records_total{service,status,messageType}`.
+  - `javanc_outbox_publish_attempt_total{service,topic,outcome}`.
+  - `javanc_consumer_idempotency_total{service,messageType,outcome}`.
+- Cap nhat `.env.example` cho config moi cua outbox, Kafka topic va email DB.
+- Khong doi HTTP endpoint path, request body, response success shape, auth rule, frontend hoac root `README.md`.
+
+Notes/gaps con lai sau Phase 5:
+
+- Outbox code chua duoc wire vao business transaction hien tai; Phase 6 moi dual-write/rollout tung use case.
+- DLQ topic routing, schema registry, consumer lag dashboard va real retry/DLQ policy van la Phase 6+.
+- Email/notification Kafka consumer chua thuc hien side effect that; chi validate envelope, idempotency guard va metrics.
+- `project-service` va `notification-service` chua chuyen sang Flyway de tranh migration blast radius.
+
+Test da chay:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+cd quarkus
+mvn test
+```
+
+Ket qua full reactor: pass, 185 tests, 0 failures, 0 errors, 0 skipped.
+
+Module summary:
+
+| Module | Tests | Result |
+|---|---:|---|
+| `user-service` | 29 | Pass |
+| `gateway-service` | 20 | Pass |
+| `profile-service` | 23 | Pass |
+| `image-service` | 19 | Pass |
+| `manager-service` | 21 | Pass |
+| `notification-service` | 22 | Pass |
+| `project-service` | 31 | Pass |
+| `email-service` | 20 | Pass |
+
 ### Phase 6: Kafka use cases triển khai trước
 
 Mục tiêu: dùng Kafka ở nơi có giá trị rõ nhất, không chuyển toàn hệ thống vội.
@@ -844,6 +1096,63 @@ Kết quả kỳ vọng:
 - Có retry/DLQ.
 - HTTP fallback vẫn tồn tại trong giai đoạn chuyển đổi.
 
+#### Phase 6 implementation verification - 2026-05-14
+
+Trang thai da implement:
+
+- Them rollout flags, mac dinh an toan:
+  - `ASYNC_OTP_EMAIL_ENABLED=false`.
+  - `ASYNC_ROLE_NOTIFICATION_ENABLED=false`.
+  - `ASYNC_JOB_SIDE_EFFECTS_ENABLED=false`.
+  - `ASYNC_HTTP_FALLBACK_ENABLED=true`.
+  - `KAFKA_CONSUMER_SIDE_EFFECTS_ENABLED=false`.
+  - `KAFKA_DLQ_ENABLED=false`.
+- Wire producer business use cases vao outbox:
+  - `user-service`: OTP email tao command `SendVerificationOtpEmail` khi async flag bat.
+  - `user-service`: role/HR notification tao command `CreateNotification` khi async flag bat va `role.notifications.enabled=true`.
+  - `manager-service`: job accept email/notification adapter tao command `SendUserMessageEmail` va `CreateNotification` khi async job flag bat.
+- Wire consumer side effects that, nhung van bi khoa bang `KAFKA_CONSUMER_SIDE_EFFECTS_ENABLED`:
+  - `email-service`: `SendVerificationOtpEmail` goi mail OTP; `SendUserMessageEmail` gui mail theo user id.
+  - `notification-service`: `CreateNotification` persist notification.
+  - Duplicate `idempotencyKey` van khong xu ly side effect lan hai.
+- Them DLQ metadata publisher toi `javanc.email.commands.dlq` va `javanc.notification.commands.dlq` khi `KAFKA_DLQ_ENABLED=true`.
+  - DLQ chi ghi metadata da sanitize, khong copy raw payload co OTP.
+- Them metric:
+  - `javanc_async_side_effect_total{service,useCase,path,outcome}`.
+  - `javanc_kafka_dlq_total{service,topic,commandType,outcome}`.
+- Cap nhat `.env.example` cho rollout flags va DLQ topic.
+- Khong doi HTTP endpoint path, request body, response success shape, auth rule, frontend hoac root `README.md`.
+
+Notes/gaps con lai sau Phase 6:
+
+- Kafka async business flow van phai bat theo tung flag; local/baseline mac dinh chay HTTP nhu cu.
+- Mongo outbox cua `manager-service` la best-effort theo kien truc hien tai; transaction-grade Mongo outbox co the dua sang phase sau.
+- Broker-backed Kafka tests can Docker/Testcontainers; moi truong hien tai khong co Docker nen full reactor bi chan o Kafka Companion tests neu chay tat ca.
+- Schema registry, consumer lag dashboard va production topic retention policy van la follow-up; Docker Compose local runtime duoc xu ly o Phase 7 ben duoi.
+
+Test da chay:
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+cd quarkus
+mvn -pl user-service,manager-service,email-service,notification-service -DskipTests compile
+mvn -pl user-service -Dtest='!*KafkaDevServicesPublisherTest' test
+mvn -pl manager-service -Dtest='!*KafkaDevServicesOutboxTest' test
+mvn -pl notification-service,email-service test
+```
+
+Ket qua:
+
+| Module | Tests | Result |
+|---|---:|---|
+| `user-service` | 29 | Pass, excluded Docker-backed Kafka Companion test |
+| `manager-service` | 22 | Pass, excluded Docker-backed Kafka Companion test |
+| `notification-service` | 23 | Pass |
+| `email-service` | 22 | Pass |
+
+Full touched-module command `mvn -pl user-service,manager-service,email-service,notification-service test` da bi fail tai `KafkaDevServicesPublisherTest` vi Docker/Testcontainers khong tim thay Docker runtime tren may hien tai. Day la environment blocker, khong phai compile/runtime regression cua Phase 6.
+
 ### Phase 7: Docker Compose và local runtime
 
 Mục tiêu: có môi trường local chạy đủ backend infrastructure.
@@ -877,6 +1186,74 @@ Kết quả kỳ vọng:
 - Developer mới chạy được infra local nhất quán.
 - Kafka flow có thể test end-to-end.
 - Không cần phụ thuộc Kafka nếu chỉ chạy baseline HTTP với `MESSAGING_ENABLED=false`.
+
+#### Phase 7 implementation verification - 2026-05-14
+
+Implemented:
+
+- Added infra-only local runtime in `quarkus/docker-compose.yml`.
+- Added MySQL 8.0 local database bootstrap for `portfolio`, `project1`, `notification1`, `image`, and `email`.
+- Added MongoDB 7.0 local runtime with no auth to match current service connection strings.
+- Added single-node Kafka KRaft runtime exposed on `localhost:9092`.
+- Added Kafka UI on `http://localhost:9080`.
+- Added Mailpit SMTP on `localhost:1025` and UI on `http://localhost:8025`.
+- Added Kafka topic init script for:
+  - `javanc.user.events`
+  - `javanc.manager.events`
+  - `javanc.project.events`
+  - `javanc.email.commands`
+  - `javanc.notification.commands`
+  - `javanc.email.commands.dlq`
+  - `javanc.notification.commands.dlq`
+  - `javanc.domain-events.dlq`
+- Local topic retention defaults:
+  - events/commands: 7 days.
+  - DLQ topics: 14 days.
+- Added local env examples:
+  - `quarkus/local/infra.env.example`
+  - `quarkus/local/services-local.env.example`
+  - `quarkus/local/kafka-e2e.env.example`
+- Added Windows helper scripts:
+  - `quarkus/scripts/local-infra-up.ps1`
+  - `quarkus/scripts/local-infra-down.ps1`
+  - `quarkus/scripts/local-infra-status.ps1`
+- Added local runbook in `quarkus/local/README.md`.
+
+Runtime boundary:
+
+- Quarkus services still run by Maven local in Phase 7.
+- No Quarkus app Dockerfile or service container was added.
+- HTTP public contract, gateway routes, Kafka envelopes, endpoint paths, frontend, and root `README.md` were not changed.
+- Kafka remains optional. Baseline local runtime keeps `MESSAGING_ENABLED=false`, `OUTBOX_PUBLISHER_ENABLED=false`, and async use-case flags disabled.
+
+Validation result:
+
+```powershell
+docker compose -f quarkus/docker-compose.yml --env-file quarkus/local/infra.env.example config
+```
+
+Result: pass.
+
+```powershell
+docker compose -f quarkus/docker-compose.yml --env-file quarkus/local/infra.env.example up -d
+```
+
+Result: blocked in current environment because Docker Desktop daemon is not running or not installed. Error: `open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified`.
+
+Additional checks:
+
+- PowerShell helper scripts parse successfully.
+- Full Maven reactor with Docker-backed Kafka tests excluded passed:
+  - Command: `mvn -Dtest='!*KafkaDevServicesPublisherTest,!*KafkaDevServicesOutboxTest' test`
+  - Result: build success across all 8 Quarkus services.
+- Full Maven reactor without exclusions still fails in `user-service` at `KafkaDevServicesPublisherTest` because Testcontainers cannot find a Docker runtime.
+- `README.md` and `client-react/src/index.css` have no Phase 7 diff.
+
+Notes/gaps con lai sau Phase 7:
+
+- Infra smoke with real containers must be rerun on a machine with Docker Desktop running.
+- Kafka local E2E with Mailpit must be rerun after Docker starts.
+- Production topic retention, schema registry, consumer lag dashboard, and app containerization remain future operational work.
 
 ## 7. Kafka Implementation Plan
 
@@ -1141,7 +1518,7 @@ Scenarios:
 
 - Có file `docs/backend-analysis-roadmap.md`.
 - Tài liệu có đủ 10 section đã yêu cầu.
-- Tài liệu ghi rõ Kafka chưa được implement thật.
+- Tài liệu Phase 1 ghi rõ baseline lúc đó chưa có Kafka implementation thật; Phase 4 cập nhật trạng thái thành Kafka foundation nội bộ, disabled mặc định.
 - Tài liệu không thay đổi README root.
 - Không có thay đổi code runtime.
 
@@ -1213,7 +1590,7 @@ Giả định khi lập roadmap này:
 - README root giữ vai trò giới thiệu tổng quan, không mở rộng thành roadmap dài trong tài liệu này.
 - Kafka triển khai incremental, không rewrite toàn bộ backend sang event-driven ngay.
 - HTTP API hiện tại phải được giữ tương thích trong các phase đầu.
-- Kafka chưa có contract thật trong source hiện tại, nên topic/schema trong tài liệu là đề xuất internal contract.
+- Kafka topic/schema foundation đã có trong source từ Phase 4, nhưng vẫn là internal contract và chưa thay thế HTTP business flow.
 - Khi cần production deployment thật, các phần CI/CD, secrets management, monitoring stack và cloud target phải được quyết định riêng.
 
 ## Kết luận

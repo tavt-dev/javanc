@@ -4,6 +4,8 @@ import com.javanc.email.application.exception.ApplicationException;
 import com.javanc.email.application.exception.ErrorCode;
 import com.javanc.email.application.port.MailSenderPort;
 import com.javanc.email.domain.model.MailMessage;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,11 +19,14 @@ public class QuarkusMailerAdapter implements MailSenderPort {
     private static final Logger LOG = Logger.getLogger(QuarkusMailerAdapter.class);
 
     private final Mailer mailer;
+    private final MeterRegistry meterRegistry;
     private final String configuredFrom;
 
     @Inject
-    public QuarkusMailerAdapter(Mailer mailer, @ConfigProperty(name = "quarkus.mailer.from") String configuredFrom) {
+    public QuarkusMailerAdapter(Mailer mailer, MeterRegistry meterRegistry,
+            @ConfigProperty(name = "quarkus.mailer.from") String configuredFrom) {
         this.mailer = mailer;
+        this.meterRegistry = meterRegistry;
         this.configuredFrom = configuredFrom;
     }
 
@@ -37,9 +42,19 @@ public class QuarkusMailerAdapter implements MailSenderPort {
                 mail.setFrom(from);
             }
             mailer.send(mail);
+            incrementMailMetric("success");
         } catch (RuntimeException exception) {
+            incrementMailMetric("failure");
             throw new ApplicationException(ErrorCode.MAIL_SEND_FAILED, exception);
         }
+    }
+
+    private void incrementMailMetric(String outcome) {
+        Counter.builder("javanc_email_send_total")
+                .tag("service", "email-service")
+                .tag("outcome", outcome)
+                .register(meterRegistry)
+                .increment();
     }
 
     private boolean html(MailMessage mailMessage) {

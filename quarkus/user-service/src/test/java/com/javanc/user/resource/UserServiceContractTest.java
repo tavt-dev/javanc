@@ -1,6 +1,8 @@
 package com.javanc.user.resource;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import io.quarkus.test.junit.QuarkusTestProfile;
 import io.restassured.http.ContentType;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,6 +21,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @QuarkusTest
+@TestProfile(UserServiceContractTest.ContractTestProfile.class)
 class UserServiceContractTest {
 
     @BeforeEach
@@ -539,6 +542,17 @@ class UserServiceContractTest {
         public void sendOtp(String email, String name, String otp, long expiresInMinutes) {
             otps.put(email, otp);
             sendCount++;
+        }
+    }
+
+    public static class ContractTestProfile implements QuarkusTestProfile {
+        @Override
+        public Map<String, String> getConfigOverrides() {
+            return Map.of(
+                    "user.admin.bootstrap.enabled", "true",
+                    "user.admin.email", "test.admin@example.com",
+                    "user.admin.password", "Password1!",
+                    "user.admin.name", "Test Admin");
         }
     }
 }

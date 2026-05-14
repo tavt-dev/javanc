@@ -1,0 +1,57 @@
+package com.javanc.project;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Test;
+
+import com.javanc.project.infrastructure.outbox.OutboxEventEntity;
+import com.javanc.project.infrastructure.outbox.OutboxEventRepository;
+import com.javanc.project.infrastructure.outbox.OutboxMessageKind;
+import com.javanc.project.infrastructure.outbox.OutboxPublisherWorker;
+import com.javanc.project.infrastructure.outbox.OutboxStatus;
+
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+@QuarkusTest
+class OutboxFoundationTest {
+
+    @Inject
+    OutboxEventRepository repository;
+
+    @Inject
+    OutboxPublisherWorker worker;
+
+    @Test
+    @Transactional
+    void disabledPollLeavesPendingRecordUntouched() {
+        repository.deleteAll();
+        OutboxEventEntity record = eventRecord("javanc.project.events");
+        repository.persist(record);
+
+        worker.poll();
+
+        OutboxEventEntity saved = repository.findById(record.id);
+        assertEquals(OutboxStatus.PENDING, saved.status);
+        assertEquals(0, saved.attemptCount);
+    }
+
+    @Test
+    void publishFailureKeepsRecordPendingWithNextAttempt() {
+        OutboxEventEntity record = eventRecord("javanc.unknown.events");
+
+        worker.publish(record);
+
+        assertEquals(OutboxStatus.PENDING, record.status);
+        assertEquals(1, record.attemptCount);
+        assertNotNull(record.nextAttemptAt);
+        assertNotNull(record.lastError);
+    }
+
+    private static OutboxEventEntity eventRecord(String topic) {
+        return OutboxEventEntity.pending(OutboxMessageKind.EVENT, "ProjectFoundationProbe", topic,
+                "Project", "1", "phase5-request", null, "{\"purpose\":\"phase5\"}");
+    }
+}

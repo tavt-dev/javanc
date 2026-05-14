@@ -14,12 +14,13 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 @QuarkusTest
-class EmailResourceTest {
+public class EmailResourceTest {
 
     @BeforeEach
     void reset() {
         TestUserLookupPort.requestedId = null;
         TestMailSenderPort.sentMessage = null;
+        TestMailSenderPort.sendCount = 0;
     }
 
     @Test
@@ -87,7 +88,7 @@ class EmailResourceTest {
     @ApplicationScoped
     public static class TestUserLookupPort implements UserLookupPort {
 
-        private static Integer requestedId;
+        public static Integer requestedId;
 
         @Override
         public String findEmailByUserId(Integer id) {
@@ -101,11 +102,13 @@ class EmailResourceTest {
     @ApplicationScoped
     public static class TestMailSenderPort implements MailSenderPort {
 
-        private static MailMessage sentMessage;
+        public static MailMessage sentMessage;
+        public static int sendCount;
 
         @Override
         public void send(MailMessage mailMessage) {
             sentMessage = mailMessage;
+            sendCount++;
         }
     }
 }

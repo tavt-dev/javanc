@@ -20,6 +20,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -37,12 +39,51 @@ class GatewayResourceTest {
                 .when().get("/image/getAll?size=1")
                 .then()
                 .statusCode(200)
+                .header("X-Request-Id", notNullValue())
                 .body("routed", equalTo(true))
                 .body("route", equalTo("image-service"));
 
         assertEquals("/image/getAll", TestForwardingPort.lastRequest.rawPath());
         assertEquals("size=1", TestForwardingPort.lastRequest.rawQuery());
         assertEquals("http://image-service.test/image/getAll?size=1", TestForwardingPort.lastRequest.targetUrl());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+    }
+
+    @Test
+    void requestIdHeaderIsPreservedAndForwarded() {
+        given()
+                .header("X-Request-Id", "phase3-request-1")
+                .when().get("/image/getAll")
+                .then()
+                .statusCode(200)
+                .header("X-Request-Id", "phase3-request-1");
+
+        assertEquals("phase3-request-1", TestForwardingPort.lastRequest.headers().get("X-Request-Id").get(0));
+    }
+
+    @Test
+    void invalidRequestIdHeaderIsReplaced() {
+        given()
+                .header("X-Request-Id", "invalid request id")
+                .when().get("/image/getAll")
+                .then()
+                .statusCode(200)
+                .header("X-Request-Id", not("invalid request id"));
+
+        org.junit.jupiter.api.Assertions.assertNotEquals("invalid request id",
+                TestForwardingPort.lastRequest.headers().get("X-Request-Id").get(0));
+    }
+
+    @Test
+    void notificationRouteForwardsWithoutGatewayAuth() {
+        given()
+                .when().get("/notification/getAll")
+                .then()
+                .statusCode(200)
+                .body("routed", equalTo(true))
+                .body("route", equalTo("notification-service"));
+
+        assertEquals("/notification/getAll", TestForwardingPort.lastRequest.rawPath());
         org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
     }
 
@@ -140,6 +181,13 @@ class GatewayResourceTest {
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("UP"));
+    }
+
+    @Test
+    void operationalEndpointsRemainAvailable() {
+        given().when().get("/q/health/live").then().statusCode(200).body("status", equalTo("UP"));
+        given().when().get("/q/health/ready").then().statusCode(200).body("status", equalTo("UP"));
+        given().when().get("/q/metrics").then().statusCode(200);
     }
 
     @Test

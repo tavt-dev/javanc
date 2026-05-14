@@ -176,7 +176,8 @@ public class UserUseCase {
         target.assignRole(Role.admin, request.requestedRole);
         userRepository.save(target);
         decide(request, RoleRequestStatus.APPROVED, actor.id().value(), null);
-        roleRequestNotifier.notifyUser(request.targetUserId, "Your manager upgrade request was approved");
+        roleRequestNotifier.notifyRoleRequest(request.id, request.targetUserId,
+                "Your manager upgrade request was approved", "APPROVED");
         return toRoleRequestResult(request);
     }
 
@@ -189,7 +190,8 @@ public class UserUseCase {
             throw new ApplicationException(ErrorCode.CONFLICT, "Only pending requests can be rejected");
         }
         decide(request, RoleRequestStatus.REJECTED, actor.id().value(), normalizeOptional(adminNote));
-        roleRequestNotifier.notifyUser(request.targetUserId, "Your manager upgrade request was rejected");
+        roleRequestNotifier.notifyRoleRequest(request.id, request.targetUserId,
+                "Your manager upgrade request was rejected", "REJECTED");
         return toRoleRequestResult(request);
     }
 
@@ -215,8 +217,9 @@ public class UserUseCase {
         request.companyName = normalizeOptional(companyName);
         roleRequestRepository.persist(request);
         roleRequestRepository.flush();
-        roleRequestNotifier.notifyUser(target.id().value(),
-                actor.name() + " invited you to become HR for " + (request.companyName == null ? "their company" : request.companyName));
+        roleRequestNotifier.notifyRoleRequest(request.id, target.id().value(),
+                actor.name() + " invited you to become HR for " + (request.companyName == null ? "their company" : request.companyName),
+                "PENDING_USER_CONFIRMATION");
         return toRoleRequestResult(request);
     }
 
@@ -238,7 +241,8 @@ public class UserUseCase {
         actor.assignRole(Role.admin, Role.hr);
         userRepository.save(actor);
         decide(request, RoleRequestStatus.APPROVED, actor.id().value(), null);
-        roleRequestNotifier.notifyUser(request.requesterUserId, actor.name() + " accepted your HR invitation");
+        roleRequestNotifier.notifyRoleRequest(request.id, request.requesterUserId,
+                actor.name() + " accepted your HR invitation", "APPROVED");
         return toRoleRequestResult(request);
     }
 
@@ -251,7 +255,8 @@ public class UserUseCase {
             throw new ApplicationException(ErrorCode.CONFLICT, "Only pending HR invitations can be rejected");
         }
         decide(request, RoleRequestStatus.REJECTED, actor.id().value(), null);
-        roleRequestNotifier.notifyUser(request.requesterUserId, actor.name() + " rejected your HR invitation");
+        roleRequestNotifier.notifyRoleRequest(request.id, request.requesterUserId,
+                actor.name() + " rejected your HR invitation", "REJECTED");
         return toRoleRequestResult(request);
     }
 

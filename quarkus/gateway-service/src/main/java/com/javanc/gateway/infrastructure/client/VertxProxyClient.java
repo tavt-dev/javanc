@@ -3,6 +3,9 @@ package com.javanc.gateway.infrastructure.client;
 import com.javanc.gateway.application.model.ForwardRequest;
 import com.javanc.gateway.application.model.ForwardResponse;
 import com.javanc.gateway.application.port.RequestForwardingPort;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class VertxProxyClient implements RequestForwardingPort {
@@ -36,17 +40,21 @@ public class VertxProxyClient implements RequestForwardingPort {
             "content-length");
 
     private final WebClient webClient;
+    private final MeterRegistry meterRegistry;
     private final long timeoutMillis;
 
     public VertxProxyClient(Vertx vertx,
+            MeterRegistry meterRegistry,
             @ConfigProperty(name = "gateway.request-timeout-millis") long timeoutMillis) {
         this.webClient = WebClient.create(vertx);
+        this.meterRegistry = meterRegistry;
         this.timeoutMillis = timeoutMillis;
     }
 
     @Override
     public Uni<ForwardResponse> forward(ForwardRequest request) {
         LOG.debugf("Proxy request method=%s url=%s", request.method(), request.targetUrl());
+        long startNanos = System.nanoTime();
         var outbound = webClient.requestAbs(HttpMethod.valueOf(request.method()), request.targetUrl())
                 .timeout(timeoutMillis);
         request.headers().forEach((name, values) -> {
@@ -63,11 +71,13 @@ public class VertxProxyClient implements RequestForwardingPort {
         return Uni.createFrom().completionStage(responseUni.toCompletionStage())
                 .map(response -> {
                     LOG.debugf("Proxy response url=%s status=%d", request.targetUrl(), response.statusCode());
+                    recordProxyMetric(request, response.statusCode(), startNanos);
                     return new ForwardResponse(response.statusCode(), responseHeaders(response.headers().entries()),
                             response.body() == null ? new byte[0] : response.body().getBytes());
                 })
                 .onFailure().recoverWithItem(throwable -> {
                     LOG.warnf(throwable, "Proxy request failed url=%s", request.targetUrl());
+                    recordProxyMetric(request, 503, startNanos);
                     return new ForwardResponse(503, Map.of("Content-Type", List.of("text/plain")),
                             "Downstream service unavailable".getBytes());
                 });
@@ -94,5 +104,17 @@ public class VertxProxyClient implements RequestForwardingPort {
 
     private boolean forwardableHeader(String name) {
         return name != null && !HOP_BY_HOP_HEADERS.contains(name.toLowerCase());
+    }
+
+    private void recordProxyMetric(ForwardRequest request, int status, long startNanos) {
+        Timer.builder("javanc_downstream_http_client_requests")
+                .tags(Tags.of(
+                        "service", "gateway-service",
+                        "targetService", request.route().id(),
+                        "method", request.method(),
+                        "status", Integer.toString(status),
+                        "statusClass", (status / 100) + "xx"))
+                .register(meterRegistry)
+                .record(Math.max(0L, System.nanoTime() - startNanos), TimeUnit.NANOSECONDS);
     }
 }

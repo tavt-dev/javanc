@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS outbox_event (
+    id VARCHAR(36) NOT NULL,
+    message_kind VARCHAR(32) NOT NULL,
+    message_type VARCHAR(150) NOT NULL,
+    topic VARCHAR(255) NOT NULL,
+    aggregate_type VARCHAR(100),
+    aggregate_id VARCHAR(100),
+    correlation_id VARCHAR(128) NOT NULL,
+    idempotency_key VARCHAR(255),
+    payload_version INT NOT NULL,
+    payload_json JSON NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    attempt_count INT NOT NULL DEFAULT 0,
+    next_attempt_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL,
+    published_at TIMESTAMP NULL,
+    last_error VARCHAR(1000),
+    PRIMARY KEY (id),
+    INDEX idx_outbox_event_ready (status, next_attempt_at, created_at),
+    INDEX idx_outbox_event_type (message_type)
+);

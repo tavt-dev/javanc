@@ -2,6 +2,7 @@ package com.javanc.email.application.service;
 
 import com.javanc.email.application.dto.MailDTO;
 import com.javanc.email.application.dto.MessageDTO;
+import com.javanc.email.application.dto.UserMessageEmailDTO;
 import com.javanc.email.application.dto.VerificationOtpEmailDTO;
 import com.javanc.email.application.exception.ApplicationException;
 import com.javanc.email.application.exception.ErrorCode;
@@ -33,6 +34,16 @@ public class EmailApplicationService {
         String mailTo = userLookupPort.findEmailByUserId(messageDTO.getId());
         MailDTO mailDTO = new MailDTO(mailTo, messageDTO.getMessage(), messageDTO.getMessage());
         mailSenderPort.send(toMailMessage(mailDTO));
+    }
+
+    public void sendUserMessage(UserMessageEmailDTO request) {
+        if (request == null || request.getUserId() == null || blank(request.getMessage())) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+        String mailTo = userLookupPort.findEmailByUserId(request.getUserId());
+        String subject = blank(request.getSubject()) ? request.getMessage() : request.getSubject().trim();
+        String content = request.getMessage().trim();
+        mailSenderPort.send(new MailMessage(null, mailTo, subject, content, TEXT_PLAIN));
     }
 
     public void sendVerificationOtp(VerificationOtpEmailDTO request) {

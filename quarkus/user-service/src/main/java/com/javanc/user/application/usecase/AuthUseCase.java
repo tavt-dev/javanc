@@ -199,7 +199,8 @@ public class AuthUseCase {
         EmailVerificationOtp verificationOtp = EmailVerificationOtp.create(user.id(), user.email(),
                 otpHasher.hash(user.email(), otp), now, now.plusSeconds(otpTtlSeconds), otpMaxAttempts);
         otpRepository.save(verificationOtp);
-        verificationNotifier.sendOtp(user.email().value(), user.name(), otp, Math.max(1, otpTtlSeconds / 60));
+        verificationNotifier.sendOtpForUser(user.id().value(), user.email().value(), user.name(), otp,
+                Math.max(1, otpTtlSeconds / 60));
     }
 
     private void requireActive(User user) {

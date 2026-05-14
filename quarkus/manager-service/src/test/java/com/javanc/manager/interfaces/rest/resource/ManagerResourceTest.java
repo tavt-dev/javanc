@@ -90,6 +90,32 @@ class ManagerResourceTest {
         org.junit.jupiter.api.Assertions.assertEquals(42, TestEmailPort.message.id);
     }
 
+    @Test
+    void setManagerCompatibilityEndpointPreservesLegacyPath() {
+        Company company = new Company();
+        company.id = 7;
+        company.name = "Acme";
+        TestCompanyRepository.company = company;
+
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "name": "Manager User",
+                          "email": "manager@example.test",
+                          "password": "Password1!",
+                          "employeeId": "M-001"
+                        }
+                        """)
+                .when().put("/manager/manager/setmaanagertocompany?idCompany=7")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("message", equalTo("Head updated successfully"))
+                .body("data.id", equalTo(7))
+                .body("data.idManager", equalTo(99));
+    }
+
     @Alternative
     @Priority(1)
     @ApplicationScoped
