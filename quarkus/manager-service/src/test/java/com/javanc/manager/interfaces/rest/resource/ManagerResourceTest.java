@@ -134,6 +134,11 @@ class ManagerResourceTest {
         }
 
         @Override
+        public List<Company> findAllCompanies() {
+            return findAllLimited();
+        }
+
+        @Override
         public List<Company> findByTypeRegex(String type) {
             return findAllLimited();
         }
@@ -180,6 +185,11 @@ class ManagerResourceTest {
         @Override
         public List<Job> findAllLimited() {
             return job == null ? List.of() : List.of(job);
+        }
+
+        @Override
+        public List<Job> findAllJobs() {
+            return findAllLimited();
         }
 
         @Override

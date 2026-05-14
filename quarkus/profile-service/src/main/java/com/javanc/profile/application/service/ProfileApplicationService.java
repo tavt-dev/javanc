@@ -19,6 +19,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -137,6 +138,10 @@ public class ProfileApplicationService {
 
     public ProfileDTO findById(CurrentUser actor, Integer id) {
         requireActor(actor);
+        return findById(id);
+    }
+
+    public ProfileDTO findById(Integer id) {
         requirePositive(id, "Profile id is required");
         Profile profile = profileRepository.findByProfileId(id)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.PROFILE_NOT_FOUND));
@@ -149,18 +154,34 @@ public class ProfileApplicationService {
         if (!actor.isSelf(userId) && !actor.isAdmin()) {
             throw new ApplicationException(ErrorCode.FORBIDDEN);
         }
+        return findByUserId(userId);
+    }
+
+    public ProfileDTO findByUserId(Integer userId) {
+        requirePositive(userId, "User id is required");
         return profileMapper.toDto(singleActiveProfileByUserId(userId));
     }
 
     public List<ProfileDTO> search(CurrentUser actor, String typeProfile, String title, Integer page, Integer size) {
         requireActor(actor);
+        return search(typeProfile, title, page, size);
+    }
+
+    public List<ProfileDTO> search(String typeProfile, String title, Integer page, Integer size) {
+        return search(typeProfile, title, page, size, null);
+    }
+
+    public List<ProfileDTO> search(String typeProfile, String title, Integer page, Integer size, String sort) {
         int resolvedPage = page == null ? 0 : page;
         int resolvedSize = size == null ? DEFAULT_PAGE_SIZE : size;
         if (resolvedPage < 0 || resolvedSize < 1 || resolvedSize > MAX_PAGE_SIZE) {
             throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid pagination");
         }
         TypeProfile type = parseTypeProfile(typeProfile);
-        return profileRepository.search(type, normalizeOptional(title), resolvedPage, resolvedSize).stream()
+        return profileRepository.searchAll(type, normalizeOptional(title)).stream()
+                .sorted(profileComparator(sort))
+                .skip((long) resolvedPage * resolvedSize)
+                .limit(resolvedSize)
                 .map(profileMapper::toDto)
                 .toList();
     }
@@ -295,6 +316,47 @@ public class ProfileApplicationService {
 
     private String normalizeOptional(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private Comparator<Profile> profileComparator(String sort) {
+        if ("hot".equalsIgnoreCase(normalizeOptional(sort))) {
+            return Comparator.comparingInt(this::profileHotScore).reversed()
+                    .thenComparing(this::updatedAtOrCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                    .thenComparing(Profile::getId, Comparator.nullsLast(Comparator.reverseOrder()));
+        }
+        return Comparator.comparing(Profile::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(Profile::getId, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private Instant updatedAtOrCreatedAt(Profile profile) {
+        if (profile == null) {
+            return null;
+        }
+        return profile.getUpdatedAt() == null ? profile.getCreatedAt() : profile.getUpdatedAt();
+    }
+
+    private int profileHotScore(Profile profile) {
+        if (profile == null) {
+            return 0;
+        }
+        int score = 0;
+        score += hasText(profile.getUrl()) ? 4 : 0;
+        score += hasText(profile.getName()) ? 2 : 0;
+        score += hasText(profile.getTitle()) ? 2 : 0;
+        score += hasText(profile.getObjective()) ? 2 : 0;
+        score += hasText(profile.getEducation()) ? 2 : 0;
+        score += hasText(profile.getWorkExperience()) ? 3 : 0;
+        score += hasText(profile.getSkills()) ? Math.min(6, profile.getSkills().split("[,;\\n]").length * 2) : 0;
+        if (profile.getContact() != null) {
+            score += hasText(profile.getContact().getEmail()) ? 2 : 0;
+            score += hasText(profile.getContact().getPhone()) ? 1 : 0;
+            score += hasText(profile.getContact().getAddress()) ? 1 : 0;
+        }
+        return score;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private void requirePositive(Integer value, String message) {

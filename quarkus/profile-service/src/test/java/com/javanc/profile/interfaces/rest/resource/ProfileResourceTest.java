@@ -111,25 +111,17 @@ class ProfileResourceTest {
     }
 
     @Test
-    void selfAndAdminCanReadByUserButOtherUsersCannot() {
+    void profileReadByUserIsPublic() {
         TestProfileRepository.seed(profile(44, 5, TypeProfile.JAVA, ProfileStatus.ACTIVE));
 
         given()
-                .header("Authorization", "Bearer user-token")
                 .when().get("/profiles/by-user/5")
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo(44));
 
         given()
-                .header("Authorization", "Bearer other-user-token")
-                .when().get("/profiles/by-user/5")
-                .then()
-                .statusCode(403);
-
-        given()
-                .header("Authorization", "Bearer admin-token")
-                .when().get("/profiles/by-user/5")
+                .when().get("/profiles/44")
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo(44));
@@ -141,7 +133,6 @@ class ProfileResourceTest {
         TestProfileRepository.seed(profile(45, 6, TypeProfile.PYTHON, ProfileStatus.ACTIVE));
 
         given()
-                .header("Authorization", "Bearer user-token")
                 .queryParam("type", "JAVA")
                 .queryParam("page", 0)
                 .queryParam("size", 20)
@@ -298,12 +289,18 @@ class ProfileResourceTest {
 
         @Override
         public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
+            return searchAll(typeProfile, title).stream()
+                    .skip((long) page * size)
+                    .limit(size)
+                    .toList();
+        }
+
+        @Override
+        public List<Profile> searchAll(TypeProfile typeProfile, String title) {
             return profiles.stream()
                     .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
                     .filter(profile -> typeProfile == null || profile.getTypeProfile() == typeProfile)
                     .filter(profile -> title == null || profile.getTitle().contains(title))
-                    .skip((long) page * size)
-                    .limit(size)
                     .toList();
         }
 

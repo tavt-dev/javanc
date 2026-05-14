@@ -34,6 +34,8 @@ public interface ProfileRepository {
 
     List<Profile> search(TypeProfile typeProfile, String title, int page, int size);
 
+    List<Profile> searchAll(TypeProfile typeProfile, String title);
+
     Profile findByIdUser(Integer idUser);
 
     List<Profile> findByIdIn(List<Integer> ids);

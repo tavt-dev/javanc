@@ -239,6 +239,11 @@ class ManagerApplicationServiceTest {
         }
 
         @Override
+        public List<Company> findAllCompanies() {
+            return findAllLimited();
+        }
+
+        @Override
         public List<Company> findByTypeRegex(String type) {
             return findAllLimited();
         }
@@ -281,6 +286,11 @@ class ManagerApplicationServiceTest {
         @Override
         public List<Job> findAllLimited() {
             return saved == null ? List.of() : List.of(saved);
+        }
+
+        @Override
+        public List<Job> findAllJobs() {
+            return findAllLimited();
         }
 
         @Override

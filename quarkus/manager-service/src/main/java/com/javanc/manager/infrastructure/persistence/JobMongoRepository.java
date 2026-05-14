@@ -43,6 +43,11 @@ public class JobMongoRepository implements JobRepository, PanacheMongoRepository
     }
 
     @Override
+    public List<Job> findAllJobs() {
+        return findAll().list();
+    }
+
+    @Override
     public List<Job> findByCompanyId(Integer idCompany) {
         return find("idCompany", idCompany).list();
     }

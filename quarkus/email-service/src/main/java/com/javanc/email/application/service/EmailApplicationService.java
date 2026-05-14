@@ -35,6 +35,15 @@ public class EmailApplicationService {
         mailSenderPort.send(toMailMessage(mailDTO));
     }
 
+    public void sendDirect(MailDTO mailDTO) {
+        if (mailDTO == null || blank(mailDTO.getMailTo()) || blank(mailDTO.getMailSubject())
+                || blank(mailDTO.getMailContent())) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+        mailSenderPort.send(toMailMessage(new MailDTO(mailDTO.getMailTo().trim(),
+                mailDTO.getMailSubject().trim(), mailDTO.getMailContent())));
+    }
+
     public void sendVerificationOtp(VerificationOtpEmailDTO request) {
         if (request == null || blank(request.getTo()) || blank(request.getOtp()) || request.getExpiresInMinutes() <= 0) {
             throw new ApplicationException(ErrorCode.BAD_REQUEST);

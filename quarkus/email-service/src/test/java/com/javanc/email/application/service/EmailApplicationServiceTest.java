@@ -1,5 +1,6 @@
 package com.javanc.email.application.service;
 
+import com.javanc.email.application.dto.MailDTO;
 import com.javanc.email.application.dto.MessageDTO;
 import com.javanc.email.application.dto.VerificationOtpEmailDTO;
 import com.javanc.email.application.exception.ApplicationException;
@@ -34,6 +35,29 @@ class EmailApplicationServiceTest {
         EmailApplicationService service = new EmailApplicationService(new FakeUserLookupPort(), new FakeMailSenderPort());
 
         ApplicationException exception = assertThrows(ApplicationException.class, () -> service.send(null));
+
+        assertEquals(ErrorCode.BAD_REQUEST, exception.getErrorCode());
+    }
+
+    @Test
+    void sendDirectBuildsPlainTextMailMessage() {
+        FakeMailSenderPort mailSenderPort = new FakeMailSenderPort();
+        EmailApplicationService service = new EmailApplicationService(new FakeUserLookupPort(), mailSenderPort);
+
+        service.sendDirect(new MailDTO(" direct@example.test ", " Subject ", "Body"));
+
+        assertEquals("direct@example.test", mailSenderPort.sentMessage.getMailTo());
+        assertEquals("Subject", mailSenderPort.sentMessage.getMailSubject());
+        assertEquals("Body", mailSenderPort.sentMessage.getMailContent());
+        assertEquals("text/plain", mailSenderPort.sentMessage.getContentType());
+    }
+
+    @Test
+    void sendDirectRejectsInvalidRequest() {
+        EmailApplicationService service = new EmailApplicationService(new FakeUserLookupPort(), new FakeMailSenderPort());
+
+        ApplicationException exception = assertThrows(ApplicationException.class,
+                () -> service.sendDirect(new MailDTO("direct@example.test", "", "Body")));
 
         assertEquals(ErrorCode.BAD_REQUEST, exception.getErrorCode());
     }

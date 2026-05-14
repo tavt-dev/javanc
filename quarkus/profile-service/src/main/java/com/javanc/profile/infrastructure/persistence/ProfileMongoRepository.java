@@ -128,6 +128,14 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
 
     @Override
     public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
+        return searchAll(typeProfile, title).stream()
+                .skip((long) page * size)
+                .limit(size)
+                .toList();
+    }
+
+    @Override
+    public List<Profile> searchAll(TypeProfile typeProfile, String title) {
         List<org.bson.conversions.Bson> filters = new ArrayList<>();
         filters.add(activeFilter());
         if (typeProfile != null) {
@@ -137,8 +145,6 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
             filters.add(keywordFilter(title));
         }
         return mongoCollection().find(Filters.and(filters))
-                .skip(page * size)
-                .limit(size)
                 .into(new ArrayList<>());
     }
 

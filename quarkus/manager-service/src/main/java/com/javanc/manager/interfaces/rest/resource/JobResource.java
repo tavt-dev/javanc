@@ -92,14 +92,16 @@ public class JobResource {
 
     @GET
     @Path("/user/job/getall")
-    public ApiResponse<List<JobDTO>> getAll() {
-        return new ApiResponse<>(true, "Jobs found", jobService.getAllJobs());
+    public ApiResponse<List<JobDTO>> getAll(@QueryParam("query") String query, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs found", jobService.getAllJobs(query, page, size, sort));
     }
 
     @GET
     @Path("/user/job/getjobbycompany")
-    public ApiResponse<List<JobDTO>> getJobByCompany(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "Jobs found", jobService.getJobByCompany(id));
+    public ApiResponse<List<JobDTO>> getJobByCompany(@QueryParam("id") Integer id, @QueryParam("query") String query,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs found", jobService.getJobByCompany(id, query, page, size, sort));
     }
 
     @GET

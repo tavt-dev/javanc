@@ -43,10 +43,19 @@ public class GatewayRouteConfig {
         return List.of(
                 route("auth-service", "/auth", userUrl, protectedRoutePrefixes),
                 route("user-service", "/users", userUrl, protectedRoutePrefixes),
-                route("profile-service", "/profiles", profileUrl, protectedRoutePrefixes),
+                route("profile-me-service", "/profiles/me", profileUrl, RoutePolicy.PROTECTED),
+                route("profile-batch-service", "/profiles/batch", profileUrl, RoutePolicy.PROTECTED),
+                route("profile-by-user-service", "/profiles/by-user", profileUrl, RoutePolicy.PUBLIC),
+                route("profile-service", "/profiles", profileUrl, RoutePolicy.PUBLIC),
                 route("project-service", "/project", projectUrl, protectedRoutePrefixes),
                 optionalRoute("profile-hr-service", "/profile-hr", profileHrUrl, protectedRoutePrefixes),
                 route("notification-service", "/notification", notificationUrl, protectedRoutePrefixes),
+                route("public-company-list-service", "/manager/user/company/getcompany", managerUrl, RoutePolicy.PUBLIC),
+                route("public-company-by-id-service", "/manager/user/company/getbyid", managerUrl, RoutePolicy.PUBLIC),
+                route("public-company-by-type-service", "/manager/user/company/getcompanybytype", managerUrl, RoutePolicy.PUBLIC),
+                route("public-job-list-service", "/manager/user/job/getall", managerUrl, RoutePolicy.PUBLIC),
+                route("public-job-by-id-service", "/manager/user/job/findbyid", managerUrl, RoutePolicy.PUBLIC),
+                route("public-job-by-company-service", "/manager/user/job/getjobbycompany", managerUrl, RoutePolicy.PUBLIC),
                 route("manager-service", "/manager", managerUrl, protectedRoutePrefixes),
                 route("image-service", "/image", imageUrl, protectedRoutePrefixes));
     }
@@ -58,6 +67,10 @@ public class GatewayRouteConfig {
 
     private GatewayRoute route(String id, String prefix, String baseUrl, Set<String> protectedRoutePrefixes) {
         return new GatewayRoute(id, prefix, baseUrl, policy(prefix, protectedRoutePrefixes), true);
+    }
+
+    private GatewayRoute route(String id, String prefix, String baseUrl, RoutePolicy policy) {
+        return new GatewayRoute(id, prefix, baseUrl, policy, true);
     }
 
     private RoutePolicy policy(String prefix, Set<String> protectedRoutePrefixes) {

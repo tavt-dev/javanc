@@ -11,6 +11,7 @@ public interface JobRepository {
     void delete(Job job);
     Optional<Job> findByJobId(Integer id);
     List<Job> findAllLimited();
+    List<Job> findAllJobs();
     List<Job> findByCompanyId(Integer idCompany);
     List<Job> findByPendingProfileId(Integer idProfile);
     List<Job> findByAcceptedProfileId(Integer idProfile);

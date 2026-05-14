@@ -1,0 +1,971 @@
+BAO CAO TONG QUAN DU AN JAVANC
+Ngay lap: 14/05/2026
+
+1. GIOI THIEU CHUNG
+
+JavaNC la mot he thong web ho tro xay dung ho so ca nhan, quan ly du an ca nhan,
+tim kiem viec lam, quan ly cong ty, quan ly tin tuyen dung va xu ly ung tuyen.
+Du an duoc xay dung theo huong tach frontend va backend thanh nhieu dich vu rieng
+de de bao tri, mo rong va trien khai doc lap.
+
+He thong phuc vu nhieu nhom nguoi dung:
+
+- Nguoi dung thong thuong: dang ky, dang nhap, tao ho so, quan ly profile, quan ly
+  project, xem cong ty, xem viec lam va ung tuyen.
+- HR: quan ly tin tuyen dung va xu ly ung vien trong pham vi cong ty duoc phan cong.
+- Manager: quan ly cong ty, moi HR, gan HR vao cong ty va theo doi cac hoat dong
+  tuyen dung.
+- Admin: quan ly nguoi dung, cong ty, yeu cau nang cap vai tro va cac chuc nang
+  quan tri he thong.
+
+Muc tieu cua du an la tao mot nen tang portfolio va tuyen dung co day du cac dong
+nghiep vu chinh: xac thuc nguoi dung, quan ly ho so, upload anh, quan ly cong ty,
+quan ly viec lam, ung tuyen, thong bao va gui email.
+
+
+2. PHAM VI NGHIEP VU
+
+2.1. Nghiep vu xac thuc va tai khoan
+
+Nguoi dung co the dang ky tai khoan, dang nhap, lam moi token, cap nhat thong tin
+tai khoan, doi mat khau, xac minh email va khoi phuc mat khau. He thong su dung JWT
+de xac thuc request va phan quyen theo vai tro.
+
+Thong tin tai khoan chinh gom:
+
+- ID nguoi dung.
+- Ten.
+- Email.
+- Mat khau da ma hoa.
+- Vai tro: user, admin, manager, HR.
+- Trang thai hoat dong.
+- ID nhan vien neu co.
+
+2.2. Nghiep vu ho so ca nhan
+
+Nguoi dung co the tao va cap nhat profile cua minh. Profile dai dien cho ho so nang
+luc, bao gom thong tin hoc van, kinh nghiem, ky nang, muc tieu, lien he, anh dai dien,
+loai profile va tieu de ho so.
+
+Frontend hien thi profile duoi dang danh sach preview va trang chi tiet. Cac preview
+can co hinh anh, tieu de, thong tin tom tat va trang thai du lieu ro rang.
+
+2.3. Nghiep vu du an ca nhan
+
+Nguoi dung co the tao, cap nhat va hien thi cac project gan voi profile. Moi project
+co tieu de, mo ta, ngay tao, anh minh hoa, duong dan va trang thai hien thi.
+
+Project giup lam giau profile va tang gia tri ung tuyen cua nguoi dung.
+
+2.4. Nghiep vu hinh anh
+
+Image service xu ly upload anh dang multipart, luu anh len Cloudinary va luu metadata
+anh vao MySQL. Ket qua quan trong nhat la URL anh va ID anh de cac service khac tham
+chieu.
+
+Cac anh duoc su dung trong:
+
+- Anh dai dien profile.
+- Anh cong ty/logo.
+- Anh minh hoa project.
+
+2.5. Nghiep vu cong ty
+
+Manager va admin co the tao, cap nhat, xoa va xem cong ty. Cong ty co thong tin ten,
+loai hinh, mo ta, dia chi, email, dien thoai, thanh pho, quoc gia, anh/logo, manager,
+HR va danh sach job.
+
+Cong ty la thuc the trung tam cua cac dong nghiep vu tuyen dung.
+
+2.6. Nghiep vu viec lam va ung tuyen
+
+HR/manager co the tao va cap nhat job. Nguoi dung co the xem danh sach job, xem chi
+tiet job va ung tuyen bang profile cua minh.
+
+Job quan ly hai nhom ho so:
+
+- Danh sach profile dang cho xu ly.
+- Danh sach profile da duoc chap nhan.
+
+HR/manager co the chap nhan hoac tu choi ung vien. Khi trang thai ung tuyen thay doi,
+he thong co the tao thong bao va gui email.
+
+2.7. Nghiep vu thong bao
+
+Notification service luu thong bao cho nguoi dung. Thong bao co noi dung, ngay tao,
+nguoi nhan, duong dan lien quan va trang thai da doc/chua doc.
+
+Thong bao hien tai van di theo API HTTP. Kafka co the duoc bo sung sau neu can xu ly
+thong bao bat dong bo, nhung chua nen thay the luong HTTP hien tai neu chua co producer
+va schema ro rang.
+
+2.8. Nghiep vu email
+
+Email service gui email thong qua Quarkus Mailer. He thong ho tro:
+
+- Gui email theo message gan voi user ID.
+- Gui OTP xac minh email.
+- Gui OTP dat lai mat khau.
+- Xu ly email command bat dong bo qua Kafka neu duoc bat cau hinh.
+
+Kafka trong email service duoc thiet ke la kenh bo sung, khong thay the API HTTP hien
+co. Mac dinh Kafka consumer dang tat de he thong van chay binh thuong khi khong co
+broker.
+
+
+3. KIEN TRUC TONG THE
+
+Du an dang co huong kien truc microservices. Frontend goi API thong qua gateway hoac
+goi den cac backend service theo cau hinh. Backend duoc tach thanh nhieu service theo
+mien nghiep vu.
+
+Kien truc logic:
+
+- Frontend: Next.js, React, TypeScript, Tailwind CSS.
+- Gateway service: dieu phoi request, xu ly CORS, kiem tra token.
+- User service: xac thuc, tai khoan, JWT, vai tro.
+- Profile service: quan ly profile, su dung MongoDB.
+- Project service: quan ly project, su dung MySQL.
+- Image service: upload anh, Cloudinary, MySQL.
+- Manager service: cong ty, job, HR, ung tuyen, su dung MongoDB.
+- Notification service: thong bao, su dung MySQL.
+- Email service: gui email, SMTP, Kafka optional.
+- Redis: ho tro rate limiting phan tan va idempotency cho Kafka command.
+- Kafka: ho tro xu ly bat dong bo, hien dang ap dung truoc cho email service.
+
+He thong cu co Spring Boot microservices. He thong muc tieu hien tai la Quarkus
+microservices, Java 21 va Maven, giu nguyen contract API de tranh pha vo frontend.
+
+
+4. CONG NGHE SU DUNG
+
+4.1. Frontend
+
+- Next.js: framework React cho ung dung web.
+- React: xay dung giao dien theo component.
+- TypeScript: tang do an toan kieu du lieu.
+- Tailwind CSS: xay dung giao dien nhanh va nhat quan.
+- React Hook Form: quan ly form.
+- Zod: validate form/input.
+- Lucide React: icon.
+- React Easy Crop: xu ly crop anh.
+
+4.2. Backend
+
+- Java 21.
+- Quarkus 3.33.x.
+- Maven.
+- Jakarta REST / Quarkus REST Jackson cho API JSON.
+- Hibernate ORM Panache cho cac service dung MySQL.
+- MongoDB Panache cho cac service dung MongoDB.
+- Quarkus REST Client cho giao tiep giua cac service.
+- Quarkus Mailer cho gui email.
+- SmallRye Reactive Messaging Kafka cho email command bat dong bo.
+- SmallRye Health va OpenAPI cho health check va tai lieu API.
+
+4.3. Database va ha tang
+
+- MySQL: user, image, project, notification.
+- MongoDB: profile, company, job.
+- Redis: rate limiting va idempotency.
+- Apache Kafka: xu ly message bat dong bo.
+- Cloudinary: luu tru anh.
+- Docker Compose: chay Redis va Kafka local.
+
+
+5. CAC SERVICE BACKEND
+
+5.1. Gateway service
+
+Cong viec chinh:
+
+- Nhan request tu frontend.
+- Cho phep cac route auth public.
+- Kiem tra Authorization Bearer token voi user-service.
+- Dieu huong request den service phu hop.
+- Cau hinh CORS va cac route bao ve.
+
+Port mac dinh: 8080.
+
+5.2. User service
+
+Cong viec chinh:
+
+- Dang ky, dang nhap, refresh token.
+- Kiem tra token.
+- Tim user theo ID.
+- Cap nhat user.
+- Quan ly role va trang thai active.
+- Gui OTP qua email service cho xac minh email va reset password.
+
+Port mac dinh: 8088.
+Database: MySQL database `portfolio`, bang `user`.
+
+5.3. Image service
+
+Cong viec chinh:
+
+- Nhan file multipart.
+- Upload anh len Cloudinary.
+- Luu metadata anh.
+- Tra ve ImageDTO gom ID va URL.
+
+Port mac dinh: 8083.
+Database: MySQL database `image`, bang `image`.
+
+5.4. Profile service
+
+Cong viec chinh:
+
+- Tao/cap nhat profile.
+- Tim profile theo ID, user ID, title, type.
+- Lay danh sach profile.
+- Phuc vu preview profile cho frontend.
+
+Port mac dinh: 8085.
+Database: MongoDB database `microservice-portfolio`, collection `profile`.
+
+5.5. Project service
+
+Cong viec chinh:
+
+- Tao/cap nhat project.
+- Lay project theo profile.
+- Ket hop du lieu profile/image khi can.
+
+Port mac dinh: 8086.
+Database: MySQL database `project1`, bang `project`.
+
+5.6. Manager service
+
+Cong viec chinh:
+
+- Tao/cap nhat/xoa cong ty.
+- Gan manager vao cong ty.
+- Moi HR va quan ly HR.
+- Tao/cap nhat/xoa job.
+- Xu ly ung tuyen, chap nhan, tu choi.
+- Goi notification/email khi co thay doi lien quan den ung vien.
+
+Port mac dinh: 8091.
+Database: MongoDB database `microservice-portfolio`, collections `company`, `job`.
+
+5.7. Notification service
+
+Cong viec chinh:
+
+- Tao thong bao.
+- Cap nhat thong bao.
+- Lay thong bao theo user.
+- Lay danh sach thong bao.
+
+Port mac dinh: 8084.
+Database: MySQL database `notification1`, bang `notifications`.
+
+5.8. Email service
+
+Cong viec chinh:
+
+- Gui email theo user ID.
+- Gui email OTP xac minh tai khoan.
+- Gui email OTP reset password.
+- Tieu thu Kafka topic `javanc.email.command.v1` khi `EMAIL_KAFKA_ENABLED=true`.
+- Xu ly duplicate Kafka command bang Redis idempotency.
+
+Port mac dinh: 8087.
+Persistence: khong co database rieng.
+
+
+6. API TONG QUAN
+
+Tat ca service uu tien response wrapper dang:
+
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {}
+}
+
+6.1. Auth/User API
+
+Base path: /auth
+
+- POST /auth/signup: dang ky.
+- POST /auth/signin: dang nhap.
+- POST /auth/refresh: lam moi token.
+- POST /auth/isValid: kiem tra token.
+- GET /auth/findbyid?id=: lay user theo ID.
+- GET /auth/getCurrentUser: lay user hien tai.
+- GET /auth/getAll: lay danh sach user.
+- POST /auth/update: cap nhat user.
+- DELETE /auth/delete: xoa user.
+
+6.2. Image API
+
+Base path: /image
+
+- POST /image/save: upload anh multipart.
+- GET /image/getAll: endpoint kiem tra/tuong thich cu.
+
+6.3. Profile API
+
+Base path: /profile
+
+- POST /profile/user/save: tao profile.
+- POST /profile/user/update: cap nhat profile.
+- GET /profile/user/getAll: lay tat ca profile.
+- GET /profile/user/findById?id=: tim profile theo ID.
+- GET /profile/user/findByUserId?userId=: tim profile theo user.
+- GET /profile/user/findByTitle?title=: tim profile theo tieu de.
+- GET /profile/user/findProfileByType?typeProfile=: loc theo loai profile.
+- GET /profile/manager/getProfileByIdPendingJob: lay profile ung vien cho job.
+
+6.4. Project API
+
+Base path: /project
+
+- POST /project/user/save: tao project.
+- POST /project/user/update: cap nhat project.
+- GET /project/user/getProject?id=: lay project theo profile.
+- GET /project/user/getProfile: lay profile lien quan.
+
+6.5. Notification API
+
+Base path: /notification
+
+- POST /notification/create: tao thong bao.
+- POST /notification/update: cap nhat thong bao.
+- GET /notification/user/findByUser?userId=: lay thong bao theo user.
+- GET /notification/getAll: endpoint kiem tra/tuong thich cu.
+
+6.6. Email API
+
+Base path: /email
+
+- POST /email/create: gui email theo MessageDTO.
+- POST /internal/emails/verification-otp: gui OTP xac minh email.
+- POST /internal/emails/password-reset-otp: gui OTP reset password.
+
+Kafka optional:
+
+- Topic input: javanc.email.command.v1.
+- Dead-letter topic: javanc.email.command.v1.dlt.
+
+6.7. Manager/Company API
+
+Base path: /manager
+
+- POST /manager/admin/company/create: tao cong ty.
+- POST /manager/manager/company/update: cap nhat cong ty.
+- POST /manager/admin/company/delete: xoa cong ty.
+- GET /manager/user/company/getcompany: lay danh sach cong ty.
+- GET /manager/user/company/getbyid?id=: lay cong ty theo ID.
+- GET /manager/user/company/getcompanybytype?type=: loc cong ty theo loai.
+- PUT /manager/manager/sethrtocompany: gan HR vao cong ty.
+- PUT /manager/manager/setmaanagertocompany: gan manager vao cong ty.
+
+6.8. Manager/Job API
+
+Base path: /manager
+
+- POST /manager/hr/job/create: tao job.
+- POST /manager/hr/job/update: cap nhat job.
+- POST /manager/hr/job/delete: xoa job.
+- GET /manager/user/job/getall: lay tat ca job.
+- GET /manager/user/job/findbyid: lay job theo ID.
+- GET /manager/user/job/getjobbycompany?id=: lay job theo cong ty.
+- PUT /manager/user/job/apply: nguoi dung ung tuyen.
+- PUT /manager/hr/job/accept: HR/manager chap nhan ung vien.
+- PUT /manager/hr/job/reject: HR/manager tu choi ung vien.
+
+
+7. DU LIEU VA LUU TRU
+
+7.1. MySQL
+
+MySQL duoc dung cho cac mien co du lieu quan he ro rang:
+
+- user-service: database `portfolio`, bang `user`.
+- image-service: database `image`, bang `image`.
+- project-service: database `project1`, bang `project`.
+- notification-service: database `notification1`, bang `notifications`.
+
+7.2. MongoDB
+
+MongoDB duoc dung cho du lieu linh hoat va document:
+
+- profile-service: collection `profile`.
+- manager-service: collection `company`, `job`.
+
+7.3. Redis
+
+Redis duoc bo sung vao backend de:
+
+- Lam rate limiting phan tan giua cac instance service.
+- Luu trang thai idempotency cho email Kafka command.
+- Giam nguy co xu ly trung message trong co che at-least-once cua Kafka.
+
+7.4. Kafka
+
+Kafka duoc dung theo huong bat dong bo. Pham vi hien tai:
+
+- Email service co consumer optional.
+- Notification service moi duoc cau hinh san thong tin Kafka, chua bat consumer.
+- Image service khong dua Kafka vao luong upload de giu response dong bo URL/ID.
+
+
+8. BAO MAT VA PHAN QUYEN
+
+He thong su dung JWT lam co che xac thuc. User service la noi sinh token va kiem tra
+token. Gateway nhan request tu frontend, doc header Authorization va goi user service
+de xac minh token voi cac route can bao ve.
+
+Nguyen tac bao mat:
+
+- Khong commit secret that vao source code.
+- JWT secret phai lay tu bien moi truong.
+- Mat khau phai duoc ma hoa.
+- Khong log mat khau, token, SMTP password, database password.
+- Frontend chi an/hien menu theo role, backend van phai la noi enforcement cuoi cung.
+
+Vai tro chinh:
+
+- user: tao profile, project, ung tuyen.
+- HR: quan ly job va ung vien trong cong ty.
+- manager: quan ly cong ty va HR.
+- admin: quan tri nguoi dung/cong ty/yeu cau nang quyen.
+
+8.1. Tong quan mo hinh phan quyen
+
+He thong JavaNC duoc thiet ke theo mo hinh role-based access control. Moi tai khoan
+co mot vai tro chinh, vai tro nay quy dinh nguoi dung duoc nhin thay chuc nang nao
+tren frontend va duoc phep thuc hien hanh dong nao o backend.
+
+Co bon nhom vai tro nghiep vu chinh:
+
+- User: nguoi dung ca nhan, tap trung vao tao ho so, xay dung profile va ung tuyen.
+- Manager: nguoi quan ly cong ty, nhan su, HR va cac tin tuyen dung cua cong ty.
+- HR: nguoi phu trach tuyen dung, chu yeu quan ly job va ung vien.
+- System admin: nguoi quan tri he thong, quan ly tai khoan, role va du lieu quan tri.
+
+Frontend co trach nhiem an/hien menu va nut thao tac theo role de trai nghiem nguoi
+dung ro rang hon. Tuy nhien, backend van phai la noi kiem tra quyen cuoi cung. Khong
+duoc chi dua vao viec an nut tren giao dien de bao ve chuc nang quan trong.
+
+8.2. Vai tro User
+
+User la vai tro mac dinh cua nguoi dung sau khi dang ky tai khoan. Day la nhom nguoi
+dung chinh cua nen tang, co nhu cau tao ho so ca nhan, gioi thieu nang luc va ung
+tuyen vao cac job phu hop.
+
+Quyen tong quan cua user:
+
+- Quan ly thong tin tai khoan ca nhan.
+- Tao va cap nhat ho so/profile.
+- Quan ly project ca nhan gan voi profile.
+- Xem danh sach cong ty.
+- Xem danh sach job.
+- Ung tuyen vao job bang profile cua minh.
+- Tham gia/gan voi cong ty thong qua job da apply hoac da duoc chap nhan.
+- Gui yeu cau nang cap len manager neu muon quan ly cong ty.
+
+Chi tiet nghiep vu user:
+
+1. Quan ly ho so
+
+User co the tao profile de mo ta nang luc cua minh. Profile bao gom tieu de, muc tieu,
+hoc van, kinh nghiem lam viec, ky nang, thong tin lien he, anh dai dien va loai profile.
+Profile la tai san chinh cua user khi ung tuyen.
+
+User co the:
+
+- Tao profile moi.
+- Cap nhat profile hien co.
+- Upload anh dai dien/profile photo.
+- Xem profile cua minh.
+- Xem profile khac neu he thong cho phep hien thi cong khai.
+- Tao project de lam phong phu profile.
+
+2. Apply job
+
+Khi user xem mot job phu hop, user co the apply bang profile cua minh. Viec apply
+thuc chat tao quan he giua profile va job. Job se ghi nhan profile cua user vao danh
+sach dang cho HR/manager xu ly.
+
+Luong apply job:
+
+- User dang nhap.
+- User co profile hop le.
+- User chon job.
+- Frontend goi manager-service de apply.
+- Manager-service them profile vao danh sach pending cua job.
+- HR/manager xem danh sach ung vien va xu ly.
+
+User khong nen thay cac nut thao tac danh cho HR/manager nhu chap nhan ung vien, tu
+choi ung vien, tao job hoac xoa job.
+
+3. Apply cong ty thong qua job da apply
+
+Trong nghiep vu cua he thong, cong ty la don vi so huu job. Khi user apply vao mot
+job, user dong thoi dang tham gia vao quy trinh tuyen dung cua cong ty so huu job do.
+
+Co the hieu "apply cong ty" theo hai muc:
+
+- Muc gian tiep: user apply job, tu do co lien ket voi cong ty cua job.
+- Muc sau khi duoc chap nhan: user co the duoc xem la thanh vien/nhan su lien quan
+  den cong ty neu job application duoc chap nhan theo quy tac nghiep vu.
+
+Dieu nay giup he thong quan ly quan he user - profile - job - company mot cach co
+ngu canh, tranh viec user gan truc tiep vao cong ty ma khong co job hoac quy trinh
+tuyen dung ro rang.
+
+4. Upgrade len manager
+
+User co the gui yeu cau nang cap len manager neu co nhu cau tao va quan ly cong ty.
+Yeu cau nay khong nen tu dong duoc chap nhan. System admin can xem xet va phe duyet
+de tranh viec tai khoan thuong tu y co quyen quan ly doanh nghiep.
+
+Luong upgrade:
+
+- User gui yeu cau upgrade.
+- He thong luu trang thai pending.
+- Admin xem danh sach yeu cau.
+- Admin chap nhan hoac tu choi.
+- Neu chap nhan, role cua user duoc cap nhat thanh manager.
+
+8.3. Vai tro Manager
+
+Manager la vai tro dai dien cho nguoi quan ly cong ty tren he thong. Manager co pham
+vi quyen rong hon user, nhung quyen nay nen bi gioi han trong cong ty ma manager so
+huu hoac duoc phan cong quan ly.
+
+Quyen tong quan cua manager:
+
+- Tao va cap nhat thong tin cong ty.
+- Quan ly cong ty cua minh.
+- Quan ly nhan su lien quan den cong ty.
+- Moi user tro thanh HR.
+- Quan ly danh sach HR.
+- Tao, cap nhat, xoa job cua cong ty.
+- Xem danh sach ung vien apply vao job cua cong ty.
+- Chap nhan hoac tu choi ung vien neu nghiep vu cho phep manager xu ly truc tiep.
+
+Chi tiet nghiep vu manager:
+
+1. Quan ly cong ty
+
+Manager co the tao cong ty sau khi duoc cap quyen. Cong ty bao gom ten, loai hinh,
+mo ta, dia chi, email, so dien thoai, thanh pho, quoc gia, logo/anh, manager, HR va
+danh sach job.
+
+Manager co the:
+
+- Tao cong ty moi.
+- Cap nhat thong tin cong ty.
+- Quan ly hinh anh/logo cong ty.
+- Xem cong ty theo manager ID.
+- Theo doi job va HR thuoc cong ty.
+
+Manager khong nen duoc sua cong ty khong thuoc pham vi minh quan ly, tru khi co quyen
+system admin.
+
+2. Quan ly nhan su
+
+Manager co trach nhiem quan ly nhan su lien quan den cong ty, dac biet la HR. Nghiep
+vu nhan su trong he thong khong nen chi la gan ID truc tiep, ma nen co dong moi va
+chap nhan de dam bao user dong y nhan vai tro.
+
+Luong quan ly nhan su:
+
+- Manager tim user theo ID, username hoac email.
+- Manager gui loi moi HR.
+- User nhan loi moi.
+- User chap nhan hoac tu choi.
+- Chi khi user chap nhan, user moi duoc xem la HR/nhan su cua cong ty.
+
+3. Quan ly HR
+
+HR la nguoi ho tro manager trong viec tuyen dung. Manager co the moi HR, xem danh
+sach HR va huy/ket thuc lien ket HR neu nghiep vu cho phep.
+
+Quy tac quan trong:
+
+- Manager chi duoc moi HR vao cong ty cua minh.
+- HR chi duoc quan ly job trong cong ty duoc gan.
+- Neu HR roi cong ty, quyen HR voi cong ty do phai duoc thu hoi.
+
+4. Quan ly job
+
+Manager co quyen tao va quan ly job cua cong ty. Job la noi ket noi cong ty voi user
+thong qua profile ung tuyen.
+
+Manager co the:
+
+- Tao job moi.
+- Cap nhat job.
+- Xoa job.
+- Xem danh sach job theo cong ty.
+- Xem ung vien pending.
+- Xem ung vien accepted.
+- Xu ly ung vien neu rule cho phep.
+
+8.4. Vai tro HR
+
+HR la vai tro tap trung vao nghiep vu tuyen dung. So voi manager, HR co pham vi quyen
+hep hon: HR khong quan ly toan bo cong ty, ma chu yeu quan ly job va ung vien trong
+cong ty ma HR duoc gan.
+
+Quyen tong quan cua HR:
+
+- Xem workspace HR/manager neu duoc phep.
+- Tao job cho cong ty duoc gan.
+- Cap nhat job.
+- Xoa job neu nghiep vu cho phep.
+- Xem danh sach ung vien apply vao job.
+- Chap nhan hoac tu choi ung vien.
+- Xem profile ung vien de danh gia.
+
+Chi tiet nghiep vu HR:
+
+1. Quan ly job
+
+HR co the tao va cap nhat job phu hop voi nhu cau tuyen dung cua cong ty. Khi tao job,
+HR can khai bao tieu de, mo ta, loai job, quy mo/so luong, cong ty lien quan va cac
+thong tin can thiet khac.
+
+2. Quan ly ung vien
+
+Khi user apply job, profile cua user xuat hien trong danh sach pending. HR co the mo
+profile de xem thong tin ung vien, sau do chap nhan hoac tu choi.
+
+Khi chap nhan:
+
+- Profile co the duoc chuyen sang danh sach accepted.
+- User co the duoc gan lien ket voi cong ty/job.
+- He thong co the tao notification.
+- He thong co the gui email thong bao.
+
+Khi tu choi:
+
+- Profile duoc loai khoi danh sach pending hoac danh dau rejected tuy theo rule.
+- He thong co the tao notification/email neu can.
+
+3. Gioi han quyen HR
+
+HR khong nen co quyen:
+
+- Quan ly toan bo he thong.
+- Cap quyen manager.
+- Duyet yeu cau upgrade role.
+- Sua cong ty ngoai pham vi duoc gan.
+- Quan ly account cua user khac ngoai nghiep vu tuyen dung.
+
+8.5. Vai tro System Admin
+
+System admin la vai tro quan tri cao nhat cua he thong. Day la nhom nguoi dung quan
+ly du lieu va trang thai he thong o muc tong quat, khong chi gioi han trong mot cong
+ty cu the.
+
+Quyen tong quan cua system admin:
+
+- Quan ly account nguoi dung.
+- Xem danh sach user.
+- Cap nhat trang thai user.
+- Xoa/khoa user neu can.
+- Quan ly role request.
+- Duyet hoac tu choi yeu cau upgrade len manager.
+- Quan ly cong ty o muc he thong.
+- Giam sat cac du lieu quan tri.
+
+Chi tiet nghiep vu system admin:
+
+1. Quan ly account
+
+Admin co the xem danh sach tai khoan, kiem tra thong tin nguoi dung, cap nhat trang
+thai active va xu ly cac tai khoan vi pham. Admin khong nen xem hoac log mat khau
+nguoi dung.
+
+2. Quan ly role
+
+Admin la nguoi kiem soat viec nang cap role quan trong, dac biet la upgrade tu user
+len manager. Viec nay giup he thong tranh tinh trang nguoi dung tu tao cong ty ao
+hoac tu cap quyen trai phep.
+
+3. Quan ly he thong
+
+Admin co the co cac man hinh theo doi:
+
+- Danh sach user.
+- Danh sach cong ty.
+- Danh sach yeu cau nang role.
+- Danh sach loi moi/HR invitation.
+- Cac trang thai bat thuong cua du lieu.
+
+8.6. Ma tran quyen tong quat
+
+Bang tom tat quyen:
+
+- User:
+  - Quan ly tai khoan ca nhan.
+  - Quan ly profile/project ca nhan.
+  - Xem company/job.
+  - Apply job.
+  - Gan voi cong ty thong qua job da apply/duoc chap nhan.
+  - Gui yeu cau upgrade len manager.
+
+- Manager:
+  - Quan ly cong ty cua minh.
+  - Quan ly nhan su va HR.
+  - Tao/cap nhat/xoa job cua cong ty.
+  - Xem va xu ly ung vien.
+  - Moi user lam HR.
+
+- HR:
+  - Quan ly job trong cong ty duoc gan.
+  - Xem ung vien.
+  - Chap nhan/tu choi ung vien.
+  - Xem profile ung vien.
+
+- System admin:
+  - Quan ly account.
+  - Quan ly role request.
+  - Duyet upgrade manager.
+  - Quan ly du lieu he thong.
+  - Giam sat va dieu phoi cac chuc nang quan tri.
+
+8.7. Nguyen tac thiet ke phan quyen
+
+De he thong an toan va de bao tri, phan quyen nen theo cac nguyen tac sau:
+
+- Frontend chi an/hien UI theo role, backend phai validate lai quyen.
+- Moi request quan trong phai xac dinh user hien tai tu token, khong tin userId gui
+  tu client neu co the suy ra tu token.
+- Manager/HR chi thao tac tren cong ty/job thuoc pham vi cua minh.
+- Admin co quyen he thong nhung van khong duoc tiep can secret/mat khau tho.
+- Cac thay doi role can co trang thai, lich su hoac log de de kiem tra.
+- Cac hanh dong nhay cam nhu xoa user, cap role, gan HR nen co backend validation ro
+  rang va thong bao ket qua minh bach.
+
+
+9. FRONTEND
+
+Frontend nam trong thu muc `frontend`. Day la ung dung Next.js/React voi TypeScript.
+
+Cac nhom man hinh chinh:
+
+- Trang chu: preview profile, company, job, project.
+- Trang profile: danh sach profile, chi tiet profile, chinh sua profile.
+- Trang project: danh sach va quan ly project.
+- Trang company: danh sach cong ty, chi tiet cong ty.
+- Trang job: danh sach job, chi tiet job, ung tuyen.
+- Trang account: thong tin tai khoan, doi ten, doi mat khau, loi moi HR.
+- Trang manager: quan ly cong ty, HR, job, ung vien.
+- Trang admin: quan ly user, company, role request.
+- Trang login/register: dang nhap va dang ky.
+
+Nguyen tac frontend:
+
+- Giao dien phai hien thi dung theo role.
+- Cac route bao ve phai redirect ve login neu chua dang nhap.
+- Preview item can co nhieu thong tin hon: anh, tieu de, mo ta ngan, thong tin phu,
+  trang thai va nut hanh dong phu hop.
+- Khong hien thi thong tin ky thuat cho nguoi dung cuoi.
+- Form phai doc duoc tren mobile va desktop.
+
+
+10. TRIEN KHAI LOCAL
+
+10.1. Yeu cau moi truong
+
+- Java 21.
+- Maven hoac Maven Wrapper cua tung service.
+- Node.js va npm cho frontend.
+- Docker Desktop/Docker Engine cho Redis va Kafka.
+- MySQL.
+- MongoDB.
+- Tai khoan Cloudinary neu can upload anh that.
+- Cau hinh SMTP neu can gui email that.
+
+10.2. Chay frontend
+
+Thu muc:
+
+frontend
+
+Lenh:
+
+npm install
+npm run dev
+
+Kiem tra:
+
+npm run typecheck
+npm run build
+
+10.3. Chay Redis
+
+Tai root project:
+
+docker compose -f docker-compose.redis.yml up -d
+
+Redis chay cong 6379.
+
+10.4. Chay Kafka
+
+Tai root project:
+
+docker compose -f docker-compose.kafka.yml up -d
+
+Kafka chay cong 9092.
+
+Topic email hien tai:
+
+- javanc.email.command.v1
+- javanc.email.command.v1.dlt
+
+10.5. Chay backend service
+
+Moi Quarkus service co Maven Wrapper rieng. Vi du email service:
+
+cd quarkus/email-service
+.\mvnw.cmd quarkus:dev
+
+Kiem tra compile:
+
+.\mvnw.cmd -DskipTests compile
+
+Kiem tra test:
+
+.\mvnw.cmd test
+
+
+11. CAU HINH MOI TRUONG
+
+Cac bien moi truong quan trong:
+
+- JWT_SECRET: secret ky JWT.
+- MYSQL_USERNAME, MYSQL_PASSWORD: tai khoan MySQL.
+- USER_MYSQL_JDBC_URL: URL database user.
+- IMAGE_MYSQL_JDBC_URL: URL database image.
+- PROJECT_MYSQL_JDBC_URL: URL database project.
+- NOTIFICATION_MYSQL_JDBC_URL: URL database notification.
+- MONGODB_CONNECTION_STRING: URL MongoDB.
+- MONGODB_DATABASE: database MongoDB.
+- CLOUDINARY_URL: cau hinh Cloudinary.
+- MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM: cau hinh SMTP.
+- REDIS_URL: URL Redis.
+- KAFKA_BOOTSTRAP_SERVERS: URL Kafka.
+- EMAIL_KAFKA_ENABLED: bat/tat Kafka consumer cua email service.
+
+Khong dua gia tri secret that vao file source, test hay tai lieu public.
+
+
+12. LUONG NGHIEP VU TIEU BIEU
+
+12.1. Dang ky va xac minh email
+
+1. Nguoi dung dang ky tai frontend.
+2. Frontend goi user-service qua API auth.
+3. User-service tao user, sinh OTP va goi email-service.
+4. Email-service gui email OTP.
+5. Nguoi dung nhap OTP de xac minh.
+
+12.2. Tao profile
+
+1. Nguoi dung dang nhap.
+2. Frontend hien form profile.
+3. Neu co anh, frontend upload anh qua image-service hoac gui multipart theo flow.
+4. Profile-service luu profile vao MongoDB.
+5. Frontend hien profile preview va trang chi tiet.
+
+12.3. Ung tuyen job
+
+1. Nguoi dung xem job.
+2. Nguoi dung chon profile de ung tuyen.
+3. Frontend goi manager-service.
+4. Manager-service them profile vao danh sach pending cua job.
+5. HR/manager xem danh sach ung vien.
+6. HR/manager chap nhan hoac tu choi.
+7. He thong tao thong bao/email neu flow duoc cau hinh.
+
+12.4. Gui email bat dong bo bang Kafka
+
+1. Producer gui message vao topic `javanc.email.command.v1`.
+2. Email-service consumer doc message neu `EMAIL_KAFKA_ENABLED=true`.
+3. Consumer validate commandId va payload.
+4. Redis duoc dung de tranh xu ly trung commandId.
+5. EmailApplicationService xu ly gui email.
+6. Neu loi khong xu ly duoc, message di vao DLT theo cau hinh.
+
+
+13. KIEM THU VA DAM BAO CHAT LUONG
+
+Backend:
+
+- Unit test cho application service.
+- REST resource test cho contract API.
+- Compile tung service bang Maven.
+- Test idempotency va Kafka consumer cho email-service.
+- Kiem tra HTTP behavior cu khong bi thay doi khi bo sung Redis/Kafka.
+
+Frontend:
+
+- Typecheck voi TypeScript.
+- Build Next.js.
+- Kiem tra responsive mobile/desktop.
+- Kiem tra role visibility.
+- Kiem tra preview item va trang chi tiet.
+
+Ha tang:
+
+- Docker Compose config phai parse duoc.
+- Redis container co healthcheck.
+- Kafka container co healthcheck.
+- Topic Kafka can ton tai truoc khi smoke test consumer.
+
+
+14. DIEM MANH CUA KIEN TRUC
+
+- Tach service theo nghiep vu, de mo rong tung mien rieng.
+- Frontend va backend doc lap.
+- Co gateway de gom request va bao ve route.
+- Co Redis cho rate limiting phan tan.
+- Co Kafka cho xu ly bat dong bo, bat dau tu email la flow phu hop.
+- Giu API contract cu de giam rui ro khi migrate tu Spring sang Quarkus.
+- Moi service co cau hinh rieng va co the chay doc lap.
+
+
+15. HAN CHE VA HUONG PHAT TRIEN
+
+Han che hien tai:
+
+- Mot so API cu con ten field/path chua dep, can giu de tuong thich.
+- Notification service chua co Kafka consumer that.
+- Image upload van dong bo, phu hop hien tai nhung can toi uu neu tai cao.
+- Can bo sung deployment compose tong hop cho toan bo stack neu trien khai local full.
+- Can harden bao mat role-based authorization o backend.
+
+Huong phat trien:
+
+- Hoan thien Kafka producer cho email tu manager/user service.
+- Can nhac Kafka cho notification khi co schema va producer ro rang.
+- Bo sung observability: log correlationId, metrics, tracing.
+- Bo sung CI build/test cho frontend va backend.
+- Bo sung OpenAPI export va tai lieu API tu dong.
+- Chuan hoa database migration bang Flyway/Liquibase neu can len production.
+- Cai thien frontend preview item theo real data va role action.
+
+
+16. KET LUAN
+
+JavaNC la mot du an web co kien truc microservices, tap trung vao ho so ca nhan,
+portfolio, cong ty, viec lam va ung tuyen. He thong co frontend hien dai bang Next.js
+va backend Quarkus tach thanh nhieu service theo mien nghiep vu.
+
+Viec bo sung Redis va Kafka duoc thuc hien theo huong than trong: Redis dung cho rate
+limiting/idempotency, Kafka truoc mat chi ap dung cho email service de xu ly bat dong
+bo. Cac luong nghiep vu chinh nhu profile, job, company, image, notification va email
+van duoc giu logic hien tai de dam bao frontend khong bi pha vo.
+
+Du an co nen tang tot de tiep tuc phat trien thanh he thong portfolio/tuyen dung day
+du, co kha nang mo rong va trien khai theo tung service.

@@ -41,6 +41,11 @@ public class CompanyMongoRepository implements CompanyRepository, PanacheMongoRe
     }
 
     @Override
+    public List<Company> findAllCompanies() {
+        return findAll().list();
+    }
+
+    @Override
     public List<Company> findByTypeRegex(String type) {
         return mongoCollection().find(Filters.regex("type", type)).limit(20).into(new ArrayList<>());
     }

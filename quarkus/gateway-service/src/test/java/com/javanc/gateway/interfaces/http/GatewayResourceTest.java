@@ -47,9 +47,44 @@ class GatewayResourceTest {
     }
 
     @Test
-    void protectedRouteRejectsMissingToken() {
+    void publicProfileListForwardsWithoutAuth() {
         given()
                 .when().get("/profiles")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("profile-service"));
+
+        assertEquals("/profiles", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+    }
+
+    @Test
+    void publicProfileDetailAndByUserForwardWithoutAuth() {
+        given()
+                .when().get("/profiles/44")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("profile-service"));
+
+        assertEquals("/profiles/44", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+
+        reset();
+
+        given()
+                .when().get("/profiles/by-user/5")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("profile-by-user-service"));
+
+        assertEquals("/profiles/by-user/5", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+    }
+
+    @Test
+    void protectedProfileMeRejectsMissingToken() {
+        given()
+                .when().get("/profiles/me")
                 .then()
                 .statusCode(401)
                 .body("statusCode", equalTo(1041))
@@ -62,7 +97,7 @@ class GatewayResourceTest {
     void protectedRouteRejectsInvalidToken() {
         given()
                 .header("Authorization", "Bearer invalid")
-                .when().get("/manager/user/job/getall")
+                .when().post("/manager/hr/job/create")
                 .then()
                 .statusCode(401)
                 .body("error", equalTo("Unauthenticated"));
@@ -75,13 +110,37 @@ class GatewayResourceTest {
     void protectedRouteForwardsWhenTokenIsValid() {
         given()
                 .header("Authorization", "Bearer valid")
-                .when().get("/manager/user/job/getall")
+                .when().post("/manager/hr/job/create")
                 .then()
                 .statusCode(200)
                 .body("route", equalTo("manager-service"));
 
         assertEquals("valid", TestTokenValidationPort.lastToken);
+        assertEquals("/manager/hr/job/create", TestForwardingPort.lastRequest.rawPath());
+    }
+
+    @Test
+    void publicJobListForwardsWithoutAuth() {
+        given()
+                .when().get("/manager/user/job/getall")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("public-job-list-service"));
+
         assertEquals("/manager/user/job/getall", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
+    }
+
+    @Test
+    void publicCompanyListForwardsWithoutAuth() {
+        given()
+                .when().get("/manager/user/company/getcompany")
+                .then()
+                .statusCode(200)
+                .body("route", equalTo("public-company-list-service"));
+
+        assertEquals("/manager/user/company/getcompany", TestForwardingPort.lastRequest.rawPath());
+        org.junit.jupiter.api.Assertions.assertNull(TestTokenValidationPort.lastToken);
     }
 
     @Test

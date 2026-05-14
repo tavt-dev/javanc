@@ -17,10 +17,14 @@ import jakarta.inject.Inject;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @ApplicationScoped
 public class CompanyApplicationService {
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
@@ -79,11 +83,38 @@ public class CompanyApplicationService {
     }
 
     public List<CompanyDTO> getCompanyDTOs() {
-        return companyRepository.findAllLimited().stream().map(companyMapper::toDto).toList();
+        return getCompanyDTOs(null, null, null, null);
+    }
+
+    public List<CompanyDTO> getCompanyDTOs(String query, Integer page, Integer size, String sort) {
+        int resolvedPage = resolvedPage(page);
+        int resolvedSize = resolvedSize(size);
+        String normalizedQuery = normalizeOptional(query);
+        return companyRepository.findAllCompanies().stream()
+                .filter(company -> matchesCompany(company, normalizedQuery, null))
+                .sorted(companyComparator(sort))
+                .skip((long) resolvedPage * resolvedSize)
+                .limit(resolvedSize)
+                .map(companyMapper::toDto)
+                .toList();
     }
 
     public List<CompanyDTO> getCompanyByType(String type) {
-        return companyRepository.findByTypeRegex(type).stream().map(companyMapper::toDto).toList();
+        return getCompanyByType(type, null, null, null, null);
+    }
+
+    public List<CompanyDTO> getCompanyByType(String type, String query, Integer page, Integer size, String sort) {
+        int resolvedPage = resolvedPage(page);
+        int resolvedSize = resolvedSize(size);
+        String normalizedType = normalizeOptional(type);
+        String normalizedQuery = normalizeOptional(query);
+        return companyRepository.findAllCompanies().stream()
+                .filter(company -> matchesCompany(company, normalizedQuery, normalizedType))
+                .sorted(companyComparator(sort))
+                .skip((long) resolvedPage * resolvedSize)
+                .limit(resolvedSize)
+                .map(companyMapper::toDto)
+                .toList();
     }
 
     public CompanyDTO setHRToCompany(AuthenticationRequest request, Integer idCompany) {
@@ -218,5 +249,79 @@ public class CompanyApplicationService {
         if (currentUser.id == null || !currentUser.id.equals(company.idManager)) {
             throw new ApplicationException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private int resolvedPage(Integer page) {
+        if (page == null) {
+            return 0;
+        }
+        if (page < 0) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+        return page;
+    }
+
+    private int resolvedSize(Integer size) {
+        int resolved = size == null ? DEFAULT_PAGE_SIZE : size;
+        if (resolved < 1 || resolved > MAX_PAGE_SIZE) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+        return resolved;
+    }
+
+    private Comparator<Company> companyComparator(String sort) {
+        if ("hot".equalsIgnoreCase(normalizeOptional(sort))) {
+            return Comparator.comparingInt(this::companyHotScore).reversed()
+                    .thenComparing(company -> company.id, Comparator.nullsLast(Comparator.reverseOrder()));
+        }
+        return Comparator.comparing((Company company) -> company.id, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private int companyHotScore(Company company) {
+        if (company == null) {
+            return 0;
+        }
+        int score = 0;
+        score += listSize(company.idJobs) * 4;
+        score += listSize(company.idHr) * 2;
+        score += hasText(company.url) ? 4 : 0;
+        score += hasText(company.description) ? Math.min(8, company.description.length() / 80 + 2) : 0;
+        score += hasText(company.email) ? 2 : 0;
+        score += hasText(company.phone) ? 1 : 0;
+        score += hasText(company.city) || hasText(company.country) ? 2 : 0;
+        return score;
+    }
+
+    private boolean matchesCompany(Company company, String query, String type) {
+        if (company == null) {
+            return false;
+        }
+        if (type != null && !contains(company.type, type)) {
+            return false;
+        }
+        return query == null
+                || contains(company.name, query)
+                || contains(company.type, query)
+                || contains(company.description, query)
+                || contains(company.street, query)
+                || contains(company.city, query)
+                || contains(company.country, query)
+                || contains(company.email, query);
+    }
+
+    private int listSize(List<?> items) {
+        return items == null ? 0 : items.size();
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && query != null && value.toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -122,14 +122,19 @@ public class CompanyResource {
 
     @GET
     @Path("/user/company/getcompany")
-    public ApiResponse<List<CompanyDTO>> getAllCompanies() {
-        return new ApiResponse<>(true, "Companies retrieved successfully", companyService.getCompanyDTOs());
+    public ApiResponse<List<CompanyDTO>> getAllCompanies(@QueryParam("query") String query,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Companies retrieved successfully",
+                companyService.getCompanyDTOs(query, page, size, sort));
     }
 
     @GET
     @Path("/user/company/getcompanybytype")
-    public ApiResponse<List<CompanyDTO>> getCompanyByType(@QueryParam("type") String type) {
-        return new ApiResponse<>(true, "Companies retrieved successfully by type", companyService.getCompanyByType(type));
+    public ApiResponse<List<CompanyDTO>> getCompanyByType(@QueryParam("type") String type,
+            @QueryParam("query") String query, @QueryParam("page") Integer page, @QueryParam("size") Integer size,
+            @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Companies retrieved successfully by type",
+                companyService.getCompanyByType(type, query, page, size, sort));
     }
 
     @GET

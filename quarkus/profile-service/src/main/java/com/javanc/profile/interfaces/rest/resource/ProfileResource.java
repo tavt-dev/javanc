@@ -80,20 +80,18 @@ public class ProfileResource {
     }
 
     @GET
-    public ApiResponse<List<ProfileDTO>> search(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-            @QueryParam("type") String type, @QueryParam("title") String title, @QueryParam("page") Integer page,
-            @QueryParam("size") Integer size) {
-        CurrentUser actor = authService.authenticate(authorizationHeader);
+    public ApiResponse<List<ProfileDTO>> search(@QueryParam("type") String type, @QueryParam("title") String title,
+            @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size,
+            @QueryParam("sort") String sort) {
         return new ApiResponse<>(true, "Profiles retrieved successfully",
-                profileService.search(actor, type, title, page, size));
+                profileService.search(type, title, page, size, sort));
     }
 
     @GET
     @Path("/by-user/{userId}")
-    public ApiResponse<ProfileDTO> findByUserId(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-            @PathParam("userId") Integer userId) {
-        CurrentUser actor = authService.authenticate(authorizationHeader);
-        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findByUserId(actor, userId));
+    public ApiResponse<ProfileDTO> findByUserId(@PathParam("userId") Integer userId) {
+        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findByUserId(userId));
     }
 
     @GET
@@ -106,9 +104,7 @@ public class ProfileResource {
 
     @GET
     @Path("/{id}")
-    public ApiResponse<ProfileDTO> findById(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-            @PathParam("id") Integer id) {
-        CurrentUser actor = authService.authenticate(authorizationHeader);
-        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findById(actor, id));
+    public ApiResponse<ProfileDTO> findById(@PathParam("id") Integer id) {
+        return new ApiResponse<>(true, "Profile retrieved successfully", profileService.findById(id));
     }
 }

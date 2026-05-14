@@ -228,12 +228,18 @@ class ProfileApplicationServiceTest {
 
         @Override
         public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
+            return searchAll(typeProfile, title).stream()
+                    .skip((long) page * size)
+                    .limit(size)
+                    .toList();
+        }
+
+        @Override
+        public List<Profile> searchAll(TypeProfile typeProfile, String title) {
             return profiles.stream()
                     .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
                     .filter(profile -> typeProfile == null || profile.getTypeProfile() == typeProfile)
                     .filter(profile -> title == null || profile.getTitle().contains(title))
-                    .skip((long) page * size)
-                    .limit(size)
                     .toList();
         }
 

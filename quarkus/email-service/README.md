@@ -81,4 +81,43 @@ Internal verification OTP request:
 
 `/internal/emails/verification-otp` is intended for `user-service` only and is not exposed through `gateway-service`.
 
+## Optional Kafka Consumer
+
+Kafka is disabled by default so the HTTP email flow keeps working without broker infrastructure.
+
+To enable the async email command consumer locally:
+
+```powershell
+docker compose -f ..\..\docker-compose.kafka.yml up -d
+
+$env:EMAIL_KAFKA_ENABLED='true'
+$env:KAFKA_BOOTSTRAP_SERVERS='localhost:9092'
+$env:EMAIL_COMMAND_TOPIC='javanc.email.command.v1'
+$env:EMAIL_COMMAND_DLT_TOPIC='javanc.email.command.v1.dlt'
+
+.\mvnw.cmd quarkus:dev
+```
+
+Supported command payloads can either target a user id and reuse the existing user lookup flow:
+
+```json
+{
+  "commandId": "cmd-1",
+  "recipientUserId": 12,
+  "subject": "Application accepted",
+  "body": "Application accepted"
+}
+```
+
+Or send directly to an email address:
+
+```json
+{
+  "commandId": "cmd-2",
+  "to": "user@example.com",
+  "subject": "Application accepted",
+  "body": "Application accepted"
+}
+```
+
 Use `MAIL_MOCK=true` for local endpoint testing without sending real email. Do not commit `.env`, real SMTP credentials, or generated `target/` output.

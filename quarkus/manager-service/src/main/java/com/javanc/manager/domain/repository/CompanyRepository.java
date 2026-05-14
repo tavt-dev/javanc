@@ -11,6 +11,7 @@ public interface CompanyRepository {
     void deleteByCompanyId(Integer id);
     Optional<Company> findByCompanyId(Integer id);
     List<Company> findAllLimited();
+    List<Company> findAllCompanies();
     List<Company> findByTypeRegex(String type);
     Optional<Company> findByManagerId(Integer idManager);
     Optional<Company> findByHrId(Integer idHr);
