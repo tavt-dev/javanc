@@ -20,9 +20,14 @@ public class UserPersistenceMapper {
                 entity.getName(),
                 new EmailAddress(entity.getEmail()),
                 EmployeeId.optional(entity.getIdEmployee()),
-                new PasswordHash(entity.getPassword()),
+                entity.getPassword() == null ? null : new PasswordHash(entity.getPassword()),
                 entity.getStatus() == null ? AccountStatus.fromActive(entity.isActive()) : entity.getStatus(),
-                entity.getRole());
+                entity.getRole(),
+                entity.getAvatarUrl(),
+                entity.isEmailVerified(),
+                entity.getLastLoginAt(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt());
     }
 
     public JpaUserEntity toEntity(User user) {
@@ -34,17 +39,26 @@ public class UserPersistenceMapper {
                 user.name(),
                 user.email().value(),
                 user.employeeId() == null ? null : user.employeeId().value(),
-                user.passwordHash().value(),
+                user.passwordHash() == null ? null : user.passwordHash().value(),
                 user.status(),
-                user.role());
+                user.role(),
+                user.avatarUrl(),
+                user.emailVerified(),
+                user.lastLoginAt(),
+                user.createdAt(),
+                user.updatedAt());
     }
 
     public void copyToEntity(User user, JpaUserEntity entity) {
         entity.setName(user.name());
         entity.setEmail(user.email().value());
         entity.setIdEmployee(user.employeeId() == null ? null : user.employeeId().value());
-        entity.setPassword(user.passwordHash().value());
+        entity.setPassword(user.passwordHash() == null ? null : user.passwordHash().value());
         entity.setStatus(user.status());
         entity.setRole(user.role());
+        entity.setAvatarUrl(user.avatarUrl());
+        entity.setEmailVerified(user.emailVerified());
+        entity.setLastLoginAt(user.lastLoginAt());
+        entity.setUpdatedAt(java.time.Instant.now());
     }
 }

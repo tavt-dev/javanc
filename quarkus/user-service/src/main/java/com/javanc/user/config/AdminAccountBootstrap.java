@@ -5,7 +5,9 @@ import com.javanc.user.domain.model.EmailAddress;
 import com.javanc.user.domain.model.PasswordHash;
 import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserAuthIdentity;
 import com.javanc.user.domain.port.PasswordHasher;
+import com.javanc.user.domain.port.UserAuthIdentityRepository;
 import com.javanc.user.domain.port.UserRepository;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,6 +25,7 @@ public class AdminAccountBootstrap {
     private static final Logger LOG = Logger.getLogger(AdminAccountBootstrap.class);
 
     private final UserRepository userRepository;
+    private final UserAuthIdentityRepository identityRepository;
     private final PasswordHasher passwordHasher;
 
     @ConfigProperty(name = "user.admin.bootstrap.enabled", defaultValue = "false")
@@ -38,8 +41,10 @@ public class AdminAccountBootstrap {
     String name;
 
     @Inject
-    public AdminAccountBootstrap(UserRepository userRepository, PasswordHasher passwordHasher) {
+    public AdminAccountBootstrap(UserRepository userRepository, UserAuthIdentityRepository identityRepository,
+            PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
+        this.identityRepository = identityRepository;
         this.passwordHasher = passwordHasher;
     }
 
@@ -56,7 +61,8 @@ public class AdminAccountBootstrap {
         AdminAccountConfig config = loadConfig();
         ensureEmailAvailable(config.email());
         User admin = createAdmin(config);
-        userRepository.save(admin);
+        User saved = userRepository.save(admin);
+        identityRepository.save(UserAuthIdentity.local(saved.id()));
         LOG.infof("Admin account bootstrapped: %s", config.email().value());
     }
 

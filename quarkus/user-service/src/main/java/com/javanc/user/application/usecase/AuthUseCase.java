@@ -1,6 +1,7 @@
 package com.javanc.user.application.usecase;
 
 import com.javanc.user.application.command.LoginCommand;
+import com.javanc.user.application.command.GoogleLoginCommand;
 import com.javanc.user.application.command.RefreshSessionCommand;
 import com.javanc.user.application.command.ResendVerificationOtpCommand;
 import com.javanc.user.application.command.RegisterUserCommand;
@@ -9,18 +10,23 @@ import com.javanc.user.application.result.AuthSessionResult;
 import com.javanc.user.application.result.RegistrationPendingResult;
 import com.javanc.user.application.result.TokenClaims;
 import com.javanc.user.application.result.TokenIntrospectionResult;
+import com.javanc.user.application.result.VerifiedGoogleIdentity;
 import com.javanc.user.domain.model.AccountStatus;
+import com.javanc.user.domain.model.AuthProvider;
 import com.javanc.user.domain.model.EmailAddress;
 import com.javanc.user.domain.model.EmailVerificationOtp;
 import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.TokenType;
 import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserAuthIdentity;
 import com.javanc.user.domain.port.EmailVerificationNotifier;
 import com.javanc.user.domain.port.EmailVerificationOtpRepository;
+import com.javanc.user.domain.port.GoogleIdentityVerifier;
 import com.javanc.user.domain.port.OtpGenerator;
 import com.javanc.user.domain.port.OtpHasher;
 import com.javanc.user.domain.port.PasswordHasher;
 import com.javanc.user.domain.port.TokenService;
+import com.javanc.user.domain.port.UserAuthIdentityRepository;
 import com.javanc.user.domain.port.UserRepository;
 import com.javanc.user.shared.exception.ApplicationException;
 import com.javanc.user.shared.exception.ErrorCode;
@@ -37,8 +43,10 @@ import java.time.Instant;
 public class AuthUseCase {
 
     private final UserRepository userRepository;
+    private final UserAuthIdentityRepository identityRepository;
     private final EmailVerificationOtpRepository otpRepository;
     private final TokenService tokenService;
+    private final GoogleIdentityVerifier googleIdentityVerifier;
     private final PasswordHasher passwordHasher;
     private final OtpGenerator otpGenerator;
     private final OtpHasher otpHasher;
@@ -50,16 +58,19 @@ public class AuthUseCase {
     private final long resendCooldownSeconds;
 
     @Inject
-    public AuthUseCase(UserRepository userRepository, EmailVerificationOtpRepository otpRepository,
-            TokenService tokenService, PasswordHasher passwordHasher, OtpGenerator otpGenerator, OtpHasher otpHasher,
-            EmailVerificationNotifier verificationNotifier, Clock clock,
+    public AuthUseCase(UserRepository userRepository, UserAuthIdentityRepository identityRepository,
+            EmailVerificationOtpRepository otpRepository, TokenService tokenService,
+            GoogleIdentityVerifier googleIdentityVerifier, PasswordHasher passwordHasher, OtpGenerator otpGenerator,
+            OtpHasher otpHasher, EmailVerificationNotifier verificationNotifier, Clock clock,
             @ConfigProperty(name = "otp.verification.length") int otpLength,
             @ConfigProperty(name = "otp.verification.ttl-seconds") long otpTtlSeconds,
             @ConfigProperty(name = "otp.verification.max-attempts") int otpMaxAttempts,
             @ConfigProperty(name = "otp.verification.resend-cooldown-seconds") long resendCooldownSeconds) {
         this.userRepository = userRepository;
+        this.identityRepository = identityRepository;
         this.otpRepository = otpRepository;
         this.tokenService = tokenService;
+        this.googleIdentityVerifier = googleIdentityVerifier;
         this.passwordHasher = passwordHasher;
         this.otpGenerator = otpGenerator;
         this.otpHasher = otpHasher;
@@ -82,6 +93,7 @@ public class AuthUseCase {
         User user = User.registerPending(required(command.name(), "Name is required"), email,
                 passwordHasher.hash(command.password()));
         User saved = userRepository.save(user);
+        identityRepository.save(UserAuthIdentity.local(saved.id()));
         createAndSendOtp(saved);
         return new RegistrationPendingResult(saved.email().value(), saved.status().name(), otpTtlSeconds);
     }
@@ -115,7 +127,8 @@ public class AuthUseCase {
 
         otpRepository.save(verificationOtp.consume(now));
         user.verifyEmail();
-        return session(userRepository.save(user));
+        user.recordLogin(now);
+        return session(userRepository.save(user), AuthProvider.LOCAL);
     }
 
     @Transactional
@@ -141,11 +154,12 @@ public class AuthUseCase {
         createAndSendOtp(user);
     }
 
+    @Transactional
     public AuthSessionResult login(LoginCommand command) {
         EmailAddress email = email(command.email());
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.UNAUTHORIZED, "Invalid email or password"));
-        if (!passwordHasher.matches(command.password(), user.passwordHash())) {
+        if (user.passwordHash() == null || !passwordHasher.matches(command.password(), user.passwordHash())) {
             throw new ApplicationException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
         }
         if (user.status() == AccountStatus.PENDING_VERIFICATION) {
@@ -154,7 +168,31 @@ public class AuthUseCase {
         if (!user.active()) {
             throw new ApplicationException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
         }
-        return session(user);
+        user.recordLogin(clock.instant());
+        return session(userRepository.save(user), AuthProvider.LOCAL);
+    }
+
+    @Transactional
+    public AuthSessionResult loginWithGoogle(GoogleLoginCommand command) {
+        String idToken = command == null ? null : command.idToken();
+        if (idToken == null || idToken.isBlank()) {
+            throw new ApplicationException(ErrorCode.GOOGLE_ID_TOKEN_REQUIRED);
+        }
+
+        VerifiedGoogleIdentity googleIdentity = googleIdentityVerifier.verify(idToken.trim());
+        if (!googleIdentity.emailVerified()) {
+            throw new ApplicationException(ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED);
+        }
+
+        User user = identityRepository.findByProviderAndSubject(AuthProvider.GOOGLE, googleIdentity.subject())
+                .map(identity -> userRepository.findById(identity.userId())
+                        .orElseThrow(() -> new ApplicationException(ErrorCode.UNAUTHORIZED)))
+                .orElseGet(() -> linkOrCreateGoogleUser(googleIdentity));
+
+        requireActive(user);
+        user.fillMissingGoogleProfile(googleIdentity.name(), googleIdentity.pictureUrl());
+        user.recordLogin(clock.instant());
+        return session(userRepository.save(user), AuthProvider.GOOGLE);
     }
 
     public AuthSessionResult refresh(RefreshSessionCommand command) {
@@ -162,7 +200,7 @@ public class AuthUseCase {
         User user = userRepository.findByEmail(new EmailAddress(claims.subject()))
                 .orElseThrow(() -> new ApplicationException(ErrorCode.UNAUTHORIZED));
         requireActive(user);
-        return session(user);
+        return session(user, claims.provider() == null ? AuthProvider.LOCAL : claims.provider());
     }
 
     public TokenIntrospectionResult introspect(String token) {
@@ -183,14 +221,14 @@ public class AuthUseCase {
         tokenService.validate(token, TokenType.access);
     }
 
-    private AuthSessionResult session(User user) {
+    private AuthSessionResult session(User user, AuthProvider provider) {
         requireActive(user);
         return new AuthSessionResult(
-                tokenService.generateAccessToken(user),
-                tokenService.generateRefreshToken(user),
+                tokenService.generateAccessToken(user, provider),
+                tokenService.generateRefreshToken(user, provider),
                 "Bearer",
                 tokenService.accessExpiresInSeconds(),
-                UserResultMapper.toResult(user));
+                UserResultMapper.toResult(user, provider));
     }
 
     private void createAndSendOtp(User user) {
@@ -207,6 +245,35 @@ public class AuthUseCase {
         if (user == null || !user.active()) {
             throw new ApplicationException(ErrorCode.FORBIDDEN, "User is inactive");
         }
+    }
+
+    private User linkOrCreateGoogleUser(VerifiedGoogleIdentity googleIdentity) {
+        EmailAddress googleEmail = email(googleIdentity.email());
+        User existing = userRepository.findByEmail(googleEmail).orElse(null);
+        if (existing == null) {
+            User created = userRepository.save(User.googleAccount(resolveGoogleName(googleIdentity), googleEmail,
+                    googleIdentity.pictureUrl()));
+            identityRepository.save(UserAuthIdentity.google(created.id(), googleIdentity.subject()));
+            return created;
+        }
+        if (!existing.emailVerified()) {
+            throw new ApplicationException(ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED);
+        }
+        requireActive(existing);
+        identityRepository.findByUserIdAndProvider(existing.id(), AuthProvider.GOOGLE)
+                .ifPresent(identity -> {
+                    throw new ApplicationException(ErrorCode.GOOGLE_IDENTITY_CONFLICT);
+                });
+        existing.fillMissingGoogleProfile(googleIdentity.name(), googleIdentity.pictureUrl());
+        identityRepository.save(UserAuthIdentity.google(existing.id(), googleIdentity.subject()));
+        return existing;
+    }
+
+    private String resolveGoogleName(VerifiedGoogleIdentity googleIdentity) {
+        if (googleIdentity.name() != null && !googleIdentity.name().isBlank()) {
+            return googleIdentity.name().trim();
+        }
+        return googleIdentity.email();
     }
 
     private EmailAddress email(String value) {

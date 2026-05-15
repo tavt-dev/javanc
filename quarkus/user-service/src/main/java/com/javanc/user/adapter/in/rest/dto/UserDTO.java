@@ -14,6 +14,8 @@ public class UserDTO {
     private String idEmployee;
     private String role;
     private String status;
+    private String avatarUrl;
+    private String provider;
 
     @JsonProperty("active")
     @JsonAlias("isActive")
@@ -24,6 +26,11 @@ public class UserDTO {
 
     public UserDTO(Integer id, String name, String email, String password, String idEmployee, String role,
             boolean active, String status) {
+        this(id, name, email, password, idEmployee, role, active, status, null, null);
+    }
+
+    public UserDTO(Integer id, String name, String email, String password, String idEmployee, String role,
+            boolean active, String status, String avatarUrl, String provider) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -32,6 +39,8 @@ public class UserDTO {
         this.role = role;
         this.active = active;
         this.status = status;
+        this.avatarUrl = avatarUrl;
+        this.provider = provider;
     }
 
     public Integer getId() {
@@ -97,5 +106,21 @@ public class UserDTO {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 }

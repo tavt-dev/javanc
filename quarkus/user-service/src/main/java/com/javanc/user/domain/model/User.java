@@ -1,5 +1,7 @@
 package com.javanc.user.domain.model;
 
+import java.time.Instant;
+
 public class User {
 
     private UserId id;
@@ -9,6 +11,11 @@ public class User {
     private PasswordHash passwordHash;
     private AccountStatus status;
     private Role role;
+    private String avatarUrl;
+    private boolean emailVerified;
+    private Instant lastLoginAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public User(UserId id, String name, EmailAddress email, EmployeeId employeeId, PasswordHash passwordHash,
             boolean active, Role role) {
@@ -17,6 +24,13 @@ public class User {
 
     public User(UserId id, String name, EmailAddress email, EmployeeId employeeId, PasswordHash passwordHash,
             AccountStatus status, Role role) {
+        this(id, name, email, employeeId, passwordHash, status, role, null,
+                status == AccountStatus.ACTIVE, null, null, null);
+    }
+
+    public User(UserId id, String name, EmailAddress email, EmployeeId employeeId, PasswordHash passwordHash,
+            AccountStatus status, Role role, String avatarUrl, boolean emailVerified, Instant lastLoginAt,
+            Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.name = requireName(name);
         this.email = email;
@@ -24,6 +38,11 @@ public class User {
         this.passwordHash = passwordHash;
         this.status = status == null ? AccountStatus.ACTIVE : status;
         this.role = role == null ? Role.user : role;
+        this.avatarUrl = normalizeOptional(avatarUrl);
+        this.emailVerified = emailVerified;
+        this.lastLoginAt = lastLoginAt;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public UserId id() {
@@ -32,6 +51,11 @@ public class User {
 
     public static User registerPending(String name, EmailAddress email, PasswordHash passwordHash) {
         return new User(null, name, email, null, passwordHash, AccountStatus.PENDING_VERIFICATION, Role.user);
+    }
+
+    public static User googleAccount(String name, EmailAddress email, String avatarUrl) {
+        return new User(null, name, email, null, null, AccountStatus.ACTIVE, Role.user, avatarUrl, true, null, null,
+                null);
     }
 
     public String name() {
@@ -62,6 +86,26 @@ public class User {
         return role;
     }
 
+    public String avatarUrl() {
+        return avatarUrl;
+    }
+
+    public boolean emailVerified() {
+        return emailVerified;
+    }
+
+    public Instant lastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public Instant createdAt() {
+        return createdAt;
+    }
+
+    public Instant updatedAt() {
+        return updatedAt;
+    }
+
     public void updateProfile(String name, EmailAddress email, EmployeeId employeeId) {
         this.name = requireName(name);
         this.email = email;
@@ -89,6 +133,7 @@ public class User {
             throw new IllegalStateException("Only pending users can verify email");
         }
         this.status = AccountStatus.ACTIVE;
+        this.emailVerified = true;
     }
 
     public void assignRole(Role actorRole, Role newRole) {
@@ -103,10 +148,31 @@ public class User {
         this.status = AccountStatus.DELETED;
     }
 
+    public void fillMissingGoogleProfile(String googleName, String googleAvatarUrl) {
+        if ((name == null || name.isBlank()) && googleName != null && !googleName.isBlank()) {
+            this.name = googleName.trim();
+        }
+        if ((avatarUrl == null || avatarUrl.isBlank()) && googleAvatarUrl != null && !googleAvatarUrl.isBlank()) {
+            this.avatarUrl = googleAvatarUrl.trim();
+        }
+    }
+
+    public void recordLogin(Instant instant) {
+        this.lastLoginAt = instant;
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
+    }
+
     private String requireName(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Name is required");
         }
         return value.trim();
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

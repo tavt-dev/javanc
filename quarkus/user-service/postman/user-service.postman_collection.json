@@ -136,6 +136,39 @@
           }
         },
         {
+          "name": "Google Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('accessToken', body.data.accessToken || '');",
+                  "  pm.environment.set('refreshToken', body.data.refreshToken || '');",
+                  "  if (body.data.user) pm.environment.set('userId', body.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"{{googleIdToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/google"
+          }
+        },
+        {
           "name": "Refresh",
           "event": [
             {

@@ -3,6 +3,7 @@ package com.javanc.user.adapter.out.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javanc.user.application.result.TokenClaims;
+import com.javanc.user.domain.model.AuthProvider;
 import com.javanc.user.domain.model.TokenType;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.port.TokenService;
@@ -53,13 +54,13 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
-    public String generateAccessToken(User user) {
-        return generateToken(user, TokenType.access, accessExpirationSeconds);
+    public String generateAccessToken(User user, AuthProvider provider) {
+        return generateToken(user, TokenType.access, provider, accessExpirationSeconds);
     }
 
     @Override
-    public String generateRefreshToken(User user) {
-        return generateToken(user, TokenType.refresh, refreshExpirationSeconds);
+    public String generateRefreshToken(User user, AuthProvider provider) {
+        return generateToken(user, TokenType.refresh, provider, refreshExpirationSeconds);
     }
 
     @Override
@@ -81,6 +82,7 @@ public class JwtTokenService implements TokenService {
                 payload.path("userId").isMissingNode() ? null : payload.path("userId").asInt(),
                 payload.path("role").asText(null),
                 actualType,
+                provider(payload),
                 expiresAt);
     }
 
@@ -89,7 +91,7 @@ public class JwtTokenService implements TokenService {
         return accessExpirationSeconds;
     }
 
-    private String generateToken(User user, TokenType type, long expirationSeconds) {
+    private String generateToken(User user, TokenType type, AuthProvider provider, long expirationSeconds) {
         if (user == null || user.id() == null || user.email() == null) {
             throw new JwtServiceException(ErrorCode.JWT_INVALID);
         }
@@ -107,6 +109,9 @@ public class JwtTokenService implements TokenService {
             payload.put("userId", user.id().value());
             payload.put("role", user.role().name());
             payload.put("typ", type.name());
+            if (provider != null) {
+                payload.put("provider", provider.name());
+            }
 
             String headerPart = encodeJson(header);
             String payloadPart = encodeJson(payload);
@@ -142,6 +147,18 @@ public class JwtTokenService implements TokenService {
     private TokenType tokenType(JsonNode payload) {
         try {
             return TokenType.valueOf(payload.path("typ").asText());
+        } catch (IllegalArgumentException exception) {
+            throw new JwtServiceException(ErrorCode.JWT_INVALID);
+        }
+    }
+
+    private AuthProvider provider(JsonNode payload) {
+        String rawProvider = payload.path("provider").asText(null);
+        if (rawProvider == null || rawProvider.isBlank()) {
+            return null;
+        }
+        try {
+            return AuthProvider.valueOf(rawProvider);
         } catch (IllegalArgumentException exception) {
             throw new JwtServiceException(ErrorCode.JWT_INVALID);
         }

@@ -4,6 +4,7 @@ import com.javanc.user.adapter.in.rest.dto.AuthSession;
 import com.javanc.user.adapter.in.rest.dto.ChangeUserRoleRequest;
 import com.javanc.user.adapter.in.rest.dto.ChangeUserStatusRequest;
 import com.javanc.user.adapter.in.rest.dto.CreateUserAccountRequest;
+import com.javanc.user.adapter.in.rest.dto.GoogleLoginRequest;
 import com.javanc.user.adapter.in.rest.dto.LoginRequest;
 import com.javanc.user.adapter.in.rest.dto.RegistrationPending;
 import com.javanc.user.adapter.in.rest.dto.ResendVerificationOtpRequest;
@@ -16,6 +17,7 @@ import com.javanc.user.adapter.in.rest.dto.VerifyEmailRequest;
 import com.javanc.user.application.command.ChangeUserRoleCommand;
 import com.javanc.user.application.command.ChangeUserStatusCommand;
 import com.javanc.user.application.command.CreateUserAccountCommand;
+import com.javanc.user.application.command.GoogleLoginCommand;
 import com.javanc.user.application.command.LoginCommand;
 import com.javanc.user.application.command.ResendVerificationOtpCommand;
 import com.javanc.user.application.command.RegisterUserCommand;
@@ -44,6 +46,11 @@ public class RestAuthMapper {
     public LoginCommand toCommand(LoginRequest request) {
         requireRequest(request);
         return new LoginCommand(request.email, request.password);
+    }
+
+    public GoogleLoginCommand toCommand(GoogleLoginRequest request) {
+        requireRequest(request);
+        return new GoogleLoginCommand(request.idToken);
     }
 
     public VerifyEmailCommand toCommand(VerifyEmailRequest request) {
@@ -100,7 +107,7 @@ public class RestAuthMapper {
             return null;
         }
         return new UserDTO(result.id(), result.name(), result.email(), null, result.idEmployee(), result.role(),
-                result.active(), result.status());
+                result.active(), result.status(), result.avatarUrl(), result.provider());
     }
 
     public RoleRequestDTO toDto(RoleRequestResult result) {

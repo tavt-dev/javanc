@@ -50,7 +50,7 @@ class KafkaFoundationTest {
         double before = consumeCount("success");
         KafkaCommandConsumer.CommandEnvelope<Map<String, Object>> envelope = new KafkaCommandConsumer.CommandEnvelope<>(
                 "command-1", "SendVerificationOtpEmail", Instant.now(), "user-service", "phase4-request",
-                "otp:test@example.test", 1, Map.of("purpose", "phase4"));
+                "otp:test@example.test", 1, verificationOtpPayload("test@example.test"));
 
         consumer.consume(objectMapper.writeValueAsString(envelope));
 
@@ -71,7 +71,7 @@ class KafkaFoundationTest {
     void duplicateCommandIsAcknowledgedWithoutProcessingAgain() throws Exception {
         KafkaCommandConsumer.CommandEnvelope<Map<String, Object>> envelope = new KafkaCommandConsumer.CommandEnvelope<>(
                 "command-duplicate", "SendVerificationOtpEmail", Instant.now(), "user-service", "phase5-request",
-                "otp:duplicate@example.test", 1, Map.of("purpose", "phase5"));
+                "otp:duplicate@example.test", 1, verificationOtpPayload("duplicate@example.test"));
         String json = objectMapper.writeValueAsString(envelope);
 
         consumer.consume(json);
@@ -86,7 +86,7 @@ class KafkaFoundationTest {
     void handlerFailureMarksMessageFailed() {
         KafkaCommandConsumer.CommandEnvelope<Map<String, Object>> envelope = new KafkaCommandConsumer.CommandEnvelope<>(
                 "command-failure", "SendVerificationOtpEmail", Instant.now(), "user-service", "phase5-request",
-                "otp:failure@example.test", 1, Map.of("purpose", "phase5"));
+                "otp:failure@example.test", 1, verificationOtpPayload("failure@example.test"));
 
         assertThrows(IllegalStateException.class,
                 () -> idempotentCommandProcessor.process(envelope, () -> {
@@ -104,5 +104,9 @@ class KafkaFoundationTest {
                 .tag("outcome", outcome)
                 .counter();
         return counter == null ? 0.0 : counter.count();
+    }
+
+    private Map<String, Object> verificationOtpPayload(String to) {
+        return Map.of("to", to, "name", "Kafka Test", "otp", "123456", "expiresInMinutes", 5);
     }
 }

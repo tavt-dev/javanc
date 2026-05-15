@@ -14,12 +14,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 import org.jboss.logging.MDC;
 
 import java.util.UUID;
 
 @ApplicationScoped
 public class EmailServiceVerificationNotifier implements EmailVerificationNotifier {
+
+    private static final Logger LOG = Logger.getLogger(EmailServiceVerificationNotifier.class);
 
     private final EmailServiceClient emailServiceClient;
     private final OutboxEventRepository outboxRepository;
@@ -62,6 +65,8 @@ public class EmailServiceVerificationNotifier implements EmailVerificationNotifi
             record("otp-email", asyncOtpEmailEnabled ? "dual-http" : "http", "success");
         } catch (RuntimeException exception) {
             record("otp-email", asyncOtpEmailEnabled ? "dual-http" : "http", "failure");
+            LOG.warnf(exception, "Verification email delivery failed via email-service: %s",
+                    failureSummary(exception));
             throw new ApplicationException(ErrorCode.EMAIL_DELIVERY_FAILED, "Unable to send verification email",
                     exception);
         }
@@ -100,6 +105,14 @@ public class EmailServiceVerificationNotifier implements EmailVerificationNotifi
             return value;
         }
         return UUID.randomUUID().toString();
+    }
+
+    private String failureSummary(RuntimeException exception) {
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+        return exception.getClass().getSimpleName() + ": " + message;
     }
 
     private record SendVerificationOtpEmailPayload(String to, String name, String otp, long expiresInMinutes) {

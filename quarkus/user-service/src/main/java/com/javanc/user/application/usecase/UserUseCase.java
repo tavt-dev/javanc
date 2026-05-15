@@ -10,6 +10,7 @@ import com.javanc.user.application.result.UserResult;
 import com.javanc.user.adapter.out.persistence.JpaRoleUpgradeRequestEntity;
 import com.javanc.user.adapter.out.persistence.JpaRoleUpgradeRequestRepository;
 import com.javanc.user.domain.model.AccountStatus;
+import com.javanc.user.domain.model.AuthProvider;
 import com.javanc.user.domain.model.EmailAddress;
 import com.javanc.user.domain.model.EmployeeId;
 import com.javanc.user.domain.model.Role;
@@ -17,11 +18,13 @@ import com.javanc.user.domain.model.RoleRequestStatus;
 import com.javanc.user.domain.model.RoleRequestType;
 import com.javanc.user.domain.model.TokenType;
 import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserAuthIdentity;
 import com.javanc.user.domain.model.UserAuthorizationPolicy;
 import com.javanc.user.domain.model.UserId;
 import com.javanc.user.domain.port.PasswordHasher;
 import com.javanc.user.domain.port.RoleRequestNotifier;
 import com.javanc.user.domain.port.TokenService;
+import com.javanc.user.domain.port.UserAuthIdentityRepository;
 import com.javanc.user.domain.port.UserRepository;
 import com.javanc.user.shared.exception.ApplicationException;
 import com.javanc.user.shared.exception.ErrorCode;
@@ -36,6 +39,7 @@ import java.util.List;
 public class UserUseCase {
 
     private final UserRepository userRepository;
+    private final UserAuthIdentityRepository identityRepository;
     private final TokenService tokenService;
     private final PasswordHasher passwordHasher;
     private final UserAuthorizationPolicy authorizationPolicy;
@@ -43,10 +47,12 @@ public class UserUseCase {
     private final RoleRequestNotifier roleRequestNotifier;
 
     @Inject
-    public UserUseCase(UserRepository userRepository, TokenService tokenService, PasswordHasher passwordHasher,
+    public UserUseCase(UserRepository userRepository, UserAuthIdentityRepository identityRepository,
+            TokenService tokenService, PasswordHasher passwordHasher,
             UserAuthorizationPolicy authorizationPolicy, JpaRoleUpgradeRequestRepository roleRequestRepository,
             RoleRequestNotifier roleRequestNotifier) {
         this.userRepository = userRepository;
+        this.identityRepository = identityRepository;
         this.tokenService = tokenService;
         this.passwordHasher = passwordHasher;
         this.authorizationPolicy = authorizationPolicy;
@@ -299,7 +305,9 @@ public class UserUseCase {
                 passwordHasher.hash(command.password()),
                 AccountStatus.ACTIVE,
                 parseRequiredRole(command.role()));
-        return UserResultMapper.toResult(userRepository.save(user));
+        User saved = userRepository.save(user);
+        identityRepository.save(UserAuthIdentity.local(saved.id()));
+        return UserResultMapper.toResult(saved, AuthProvider.LOCAL);
     }
 
     @Transactional

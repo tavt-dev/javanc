@@ -20,7 +20,12 @@ public enum ErrorCode {
     USER_UNABLE_TO_DELETE(1005, "Unable to delete user", 500),
     JWT_INVALID(1101, "Invalid JWT token", 401),
     JWT_EXPIRED(1102, "JWT token expired", 401),
-    JWT_MALFORMED(1103, "Malformed JWT token", 401);
+    JWT_MALFORMED(1103, "Malformed JWT token", 401),
+    GOOGLE_ID_TOKEN_REQUIRED(1301, "Google ID token is required", 400),
+    GOOGLE_TOKEN_INVALID(1302, "Invalid Google ID token", 401),
+    GOOGLE_EMAIL_NOT_VERIFIED(1303, "Google email is not verified", 403),
+    GOOGLE_AUTH_UNAVAILABLE(1304, "Google authentication service unavailable", 503),
+    GOOGLE_IDENTITY_CONFLICT(1305, "Google account is already linked", 409);
 
     private final int code;
     private final String message;

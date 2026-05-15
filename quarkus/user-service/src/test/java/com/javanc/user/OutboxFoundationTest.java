@@ -12,10 +12,15 @@ import com.javanc.user.adapter.out.outbox.OutboxPublisherWorker;
 import com.javanc.user.adapter.out.outbox.OutboxStatus;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.util.Map;
+
 @QuarkusTest
+@TestProfile(OutboxFoundationTest.OutboxDisabledProfile.class)
 class OutboxFoundationTest {
 
     @Inject
@@ -64,5 +69,17 @@ class OutboxFoundationTest {
     private static OutboxEventEntity commandRecord(String topic) {
         return OutboxEventEntity.pending(OutboxMessageKind.COMMAND, "SendVerificationOtpEmail", topic,
                 "User", "1", "phase5-request", "phase5:user:1", "{\"purpose\":\"phase5\"}");
+    }
+
+    public static class OutboxDisabledProfile implements QuarkusTestProfile {
+        @Override
+        public Map<String, String> getConfigOverrides() {
+            return Map.of(
+                    "messaging.enabled", "false",
+                    "outbox.publisher.enabled", "false",
+                    "mp.messaging.outgoing.user-events-out.enabled", "false",
+                    "mp.messaging.outgoing.email-commands-out.enabled", "false",
+                    "mp.messaging.outgoing.notification-commands-out.enabled", "false");
+        }
     }
 }

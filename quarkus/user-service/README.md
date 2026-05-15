@@ -9,6 +9,7 @@ The service owns:
 - Admin account provisioning: `/users/admin/accounts`
 - JWT access/refresh token issuance and introspection
 - Email OTP verification for public self-registration
+- Google ID-token login with local account linking
 - User persistence in MySQL table `user`
 
 Legacy Spring-style endpoints such as `/auth/signup`, `/auth/signin`, `/auth/isValid`, `/auth/findbyid`, `/auth/checkId`, and query-token access are intentionally removed.
@@ -33,6 +34,7 @@ Legacy Spring-style endpoints such as `/auth/signup`, `/auth/signin`, `/auth/isV
 - MySQL reachable from `USER_MYSQL_JDBC_URL`
 - Database target: `portfolio`
 - Strong `JWT_SECRET` supplied by environment
+- `GOOGLE_CLIENT_ID` supplied when Google login is enabled
 
 Default port: `8088`.
 
@@ -50,12 +52,15 @@ $env:JWT_SECRET='local-dev-secret-with-at-least-32-bytes-1234567890'
 $env:JWT_ISSUER='javanc-user-service'
 $env:JWT_ACCESS_EXPIRATION_SECONDS='3600'
 $env:JWT_REFRESH_EXPIRATION_SECONDS='604800'
+$env:GOOGLE_CLIENT_ID='<google-web-client-id>.apps.googleusercontent.com'
+$env:GOOGLE_ISSUER='https://accounts.google.com'
 $env:OTP_VERIFICATION_LENGTH='6'
 $env:OTP_VERIFICATION_TTL_SECONDS='600'
 $env:OTP_VERIFICATION_MAX_ATTEMPTS='5'
 $env:OTP_VERIFICATION_RESEND_COOLDOWN_SECONDS='60'
 $env:OTP_HASH_SECRET='local-dev-otp-secret-with-at-least-32-bytes'
 $env:EMAIL_SERVICE_URL='http://localhost:8087'
+$env:EMAIL_SERVICE_READ_TIMEOUT='10000'
 $env:USER_ADMIN_BOOTSTRAP_ENABLED='true'
 $env:USER_ADMIN_EMAIL='admin@example.com'
 $env:USER_ADMIN_PASSWORD='Password1!'
@@ -106,6 +111,10 @@ Errors use the correct HTTP status and:
   - Body: `{ "email", "password" }`
   - Returns: `AuthSession`
   - Pending accounts return `403 Email verification required`
+- `POST /auth/google`
+  - Body: `{ "idToken" }`
+  - Verifies the Google ID token, links an existing verified local account by email, or creates a new active user
+  - Returns: `AuthSession`
 - `POST /auth/refresh`
   - Body: `{ "refreshToken" }`
   - Returns: `AuthSession`
@@ -123,7 +132,10 @@ Errors use the correct HTTP status and:
   "refreshToken": "string",
   "tokenType": "Bearer",
   "expiresInSeconds": 3600,
-  "user": {}
+  "user": {
+    "avatarUrl": "string|null",
+    "provider": "LOCAL|GOOGLE"
+  }
 }
 ```
 
@@ -153,6 +165,7 @@ User responses never include password or password hash.
 - Public registration cannot create `admin`, `hr`, or `manager`; only admin account APIs can assign those roles.
 - Duplicate email returns `409 Conflict`.
 - Bad credentials return `401 Unauthorized` without revealing whether the email exists.
+- Google login verifies the Google ID token server-side and still issues internal service JWTs; Google tokens are never reused as API bearer tokens.
 
 ## Run
 
@@ -194,7 +207,7 @@ mvn -DskipTests package
 2. `POST /auth/register`
 3. Read OTP from local mail inbox or mocked mailer log.
 4. `POST /auth/verify-email`
-5. `POST /auth/login`
+5. `POST /auth/login` or `POST /auth/google` with a Google ID token from the frontend.
 6. `POST /auth/introspect`
 7. `POST /auth/refresh`
 8. `GET /users/me` with `Authorization: Bearer <accessToken>`

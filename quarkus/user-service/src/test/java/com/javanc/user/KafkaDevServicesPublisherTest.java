@@ -2,8 +2,10 @@ package com.javanc.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.javanc.user.adapter.out.messaging.KafkaFoundationPublisher;
@@ -24,7 +26,7 @@ import jakarta.inject.Inject;
 
 @QuarkusTest
 @TestProfile(KafkaDevServicesPublisherTest.KafkaEnabledProfile.class)
-@QuarkusTestResource(value = KafkaCompanionResource.class, restrictToAnnotatedClass = true)
+@QuarkusTestResource(value = KafkaDevServicesPublisherTest.ChannelKafkaCompanionResource.class, restrictToAnnotatedClass = true)
 class KafkaDevServicesPublisherTest {
 
     private static final String TOPIC = "javanc.email.commands";
@@ -37,6 +39,15 @@ class KafkaDevServicesPublisherTest {
 
     @InjectKafkaCompanion
     KafkaCompanion companion;
+
+    @BeforeEach
+    void prepareTopic() {
+        if (!companion.topics().list().contains(TOPIC)) {
+            companion.topics().createAndWait(TOPIC, 1);
+        } else {
+            companion.topics().clear(TOPIC);
+        }
+    }
 
     @Test
     void publisherSendsMessageWhenKafkaIsEnabled() {
@@ -79,6 +90,16 @@ class KafkaDevServicesPublisherTest {
                     "user.admin.email", "test.admin@example.com",
                     "user.admin.password", "Password1!",
                     "user.admin.name", "Test Admin");
+        }
+    }
+
+    public static class ChannelKafkaCompanionResource extends KafkaCompanionResource {
+        @Override
+        public Map<String, String> start() {
+            Map<String, String> config = new HashMap<>(super.start());
+            String bootstrapServers = config.get("kafka.bootstrap.servers");
+            config.put("mp.messaging.outgoing.email-commands-out.bootstrap.servers", bootstrapServers);
+            return config;
         }
     }
 }

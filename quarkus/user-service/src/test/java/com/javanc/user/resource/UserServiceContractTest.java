@@ -7,7 +7,9 @@ import io.restassured.http.ContentType;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
+import com.javanc.user.application.result.VerifiedGoogleIdentity;
 import com.javanc.user.domain.port.EmailVerificationNotifier;
+import com.javanc.user.domain.port.GoogleIdentityVerifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,7 @@ class UserServiceContractTest {
     void resetOtpNotifier() {
         TestEmailVerificationNotifier.otps.clear();
         TestEmailVerificationNotifier.sendCount = 0;
+        TestGoogleIdentityVerifier.identities.clear();
     }
 
     @Test
@@ -103,6 +106,7 @@ class UserServiceContractTest {
                 .statusCode(200)
                 .body("data.accessToken", notNullValue())
                 .body("data.user.id", equalTo(userId))
+                .body("data.user.provider", equalTo("LOCAL"))
                 .extract()
                 .path("data.accessToken");
 
@@ -542,6 +546,225 @@ class UserServiceContractTest {
         public void sendOtp(String email, String name, String otp, long expiresInMinutes) {
             otps.put(email, otp);
             sendCount++;
+        }
+    }
+
+    @Test
+    void googleLoginCreatesActiveUserAndReturnsInternalSession() {
+        TestGoogleIdentityVerifier.identities.put("google-token-new",
+                new VerifiedGoogleIdentity("google-subject-new", "google.user@example.com", "Google User",
+                        "https://example.com/avatar.png", true));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-new"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .body("data.accessToken", notNullValue())
+                .body("data.refreshToken", notNullValue())
+                .body("data.user.email", equalTo("google.user@example.com"))
+                .body("data.user.name", equalTo("Google User"))
+                .body("data.user.avatarUrl", equalTo("https://example.com/avatar.png"))
+                .body("data.user.provider", equalTo("GOOGLE"))
+                .body("data.user.status", equalTo("ACTIVE"));
+    }
+
+    @Test
+    void googleLoginRejectsMissingToken() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of())
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(400)
+                .body("message", equalTo("Google ID token is required"))
+                .body("data", nullValue());
+    }
+
+    @Test
+    void googleLoginReusesExistingGoogleIdentity() {
+        TestGoogleIdentityVerifier.identities.put("google-token-existing",
+                new VerifiedGoogleIdentity("google-subject-existing", "google.existing@example.com", "Google Existing",
+                        "https://example.com/existing.png", true));
+
+        Integer firstUserId = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-existing"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("data.user.id");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-existing"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .body("data.user.id", equalTo(firstUserId))
+                .body("data.user.provider", equalTo("GOOGLE"));
+    }
+
+    @Test
+    void googleLoginLinksVerifiedLocalAccountAndKeepsPasswordLogin() {
+        String email = "google.link.local@example.com";
+        registerVerifyAndToken(email);
+        TestGoogleIdentityVerifier.identities.put("google-token-link",
+                new VerifiedGoogleIdentity("google-subject-link", email, "Google Linked",
+                        "https://example.com/linked.png", true));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-link"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .body("data.user.email", equalTo(email))
+                .body("data.user.provider", equalTo("GOOGLE"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "password", "Password1!"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .body("data.user.provider", equalTo("LOCAL"));
+    }
+
+    @Test
+    void googleRefreshKeepsGoogleProvider() {
+        TestGoogleIdentityVerifier.identities.put("google-token-refresh",
+                new VerifiedGoogleIdentity("google-subject-refresh", "google.refresh@example.com", "Google Refresh",
+                        null, true));
+
+        String refreshToken = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-refresh"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("data.refreshToken");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("refreshToken", refreshToken))
+                .when()
+                .post("/auth/refresh")
+                .then()
+                .statusCode(200)
+                .body("data.user.provider", equalTo("GOOGLE"));
+    }
+
+    @Test
+    void googleLoginRejectsUnverifiedLocalAccountWithVerificationError() {
+        String email = "google.pending.local@example.com";
+        given()
+                .contentType(ContentType.JSON)
+                .body(registerBody("Google Pending", email, "Password1!"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(200);
+
+        TestGoogleIdentityVerifier.identities.put("google-token-pending-local",
+                new VerifiedGoogleIdentity("google-subject-pending-local", email, "Google Pending",
+                        null, true));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-pending-local"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(403)
+                .body("message", equalTo("Google email is not verified"));
+    }
+
+    @Test
+    void googleLoginRejectsUnverifiedGoogleEmailAndInvalidToken() {
+        TestGoogleIdentityVerifier.identities.put("google-token-unverified",
+                new VerifiedGoogleIdentity("google-subject-unverified", "google.unverified@example.com",
+                        "Google Unverified", null, false));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-unverified"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(403)
+                .body("message", equalTo("Google email is not verified"));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-invalid"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(401)
+                .body("message", equalTo("Invalid Google ID token"));
+    }
+
+    @Test
+    void googleLoginRejectsInactiveLinkedUser() {
+        String adminToken = loginToken("test.admin@example.com", "Password1!");
+        TestGoogleIdentityVerifier.identities.put("google-token-disabled",
+                new VerifiedGoogleIdentity("google-subject-disabled", "google.disabled@example.com", "Google Disabled",
+                        null, true));
+
+        Integer userId = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-disabled"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("data.user.id");
+
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("active", false))
+                .when()
+                .patch("/users/" + userId + "/status")
+                .then()
+                .statusCode(200);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("idToken", "google-token-disabled"))
+                .when()
+                .post("/auth/google")
+                .then()
+                .statusCode(403)
+                .body("message", equalTo("User is inactive"));
+    }
+
+    @Alternative
+    @Priority(1)
+    @ApplicationScoped
+    public static class TestGoogleIdentityVerifier implements GoogleIdentityVerifier {
+        private static final Map<String, VerifiedGoogleIdentity> identities = new HashMap<>();
+
+        @Override
+        public VerifiedGoogleIdentity verify(String idToken) {
+            VerifiedGoogleIdentity identity = identities.get(idToken);
+            if (identity == null) {
+                throw new com.javanc.user.shared.exception.ApplicationException(
+                        com.javanc.user.shared.exception.ErrorCode.GOOGLE_TOKEN_INVALID);
+            }
+            return identity;
         }
     }
 

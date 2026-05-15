@@ -3,6 +3,7 @@ package com.javanc.user.adapter.in.rest;
 import com.javanc.user.adapter.in.rest.dto.ApiResponse;
 import com.javanc.user.adapter.in.rest.dto.AuthSession;
 import com.javanc.user.adapter.in.rest.dto.LoginRequest;
+import com.javanc.user.adapter.in.rest.dto.GoogleLoginRequest;
 import com.javanc.user.adapter.in.rest.dto.RegistrationPending;
 import com.javanc.user.adapter.in.rest.dto.RefreshTokenRequest;
 import com.javanc.user.adapter.in.rest.dto.ResendVerificationOtpRequest;
@@ -61,6 +62,13 @@ public class AuthResource {
     @Path("/login")
     public ApiResponse<AuthSession> login(LoginRequest request) {
         return new ApiResponse<>(true, "Login successfully", mapper.toDto(authUseCase.login(mapper.toCommand(request))));
+    }
+
+    @POST
+    @Path("/google")
+    public ApiResponse<AuthSession> googleLogin(GoogleLoginRequest request) {
+        return new ApiResponse<>(true, "Login successfully",
+                mapper.toDto(authUseCase.loginWithGoogle(mapper.toCommand(request))));
     }
 
     @POST

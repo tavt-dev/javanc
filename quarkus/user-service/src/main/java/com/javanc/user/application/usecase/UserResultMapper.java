@@ -1,6 +1,7 @@
 package com.javanc.user.application.usecase;
 
 import com.javanc.user.application.result.UserResult;
+import com.javanc.user.domain.model.AuthProvider;
 import com.javanc.user.domain.model.User;
 
 final class UserResultMapper {
@@ -9,6 +10,10 @@ final class UserResultMapper {
     }
 
     static UserResult toResult(User user) {
+        return toResult(user, null);
+    }
+
+    static UserResult toResult(User user, AuthProvider provider) {
         if (user == null) {
             return null;
         }
@@ -19,6 +24,8 @@ final class UserResultMapper {
                 user.employeeId() == null ? null : user.employeeId().value(),
                 user.role() == null ? null : user.role().name(),
                 user.active(),
-                user.status().name());
+                user.status().name(),
+                user.avatarUrl(),
+                provider == null ? null : provider.name());
     }
 }

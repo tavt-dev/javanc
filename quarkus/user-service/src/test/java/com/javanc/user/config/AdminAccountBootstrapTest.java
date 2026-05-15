@@ -6,8 +6,10 @@ import com.javanc.user.domain.model.EmployeeId;
 import com.javanc.user.domain.model.PasswordHash;
 import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
+import com.javanc.user.domain.model.UserAuthIdentity;
 import com.javanc.user.domain.model.UserId;
 import com.javanc.user.domain.port.PasswordHasher;
+import com.javanc.user.domain.port.UserAuthIdentityRepository;
 import com.javanc.user.domain.port.UserRepository;
 import org.junit.jupiter.api.Test;
 
@@ -120,7 +122,8 @@ class AdminAccountBootstrapTest {
 
     private AdminAccountBootstrap bootstrap(FakeUserRepository repository, boolean enabled, String email,
             String password, String name) {
-        AdminAccountBootstrap bootstrap = new AdminAccountBootstrap(repository, new FakePasswordHasher());
+        AdminAccountBootstrap bootstrap = new AdminAccountBootstrap(repository, new FakeUserAuthIdentityRepository(),
+                new FakePasswordHasher());
         bootstrap.enabled = enabled;
         bootstrap.email = Optional.ofNullable(email);
         bootstrap.password = Optional.ofNullable(password);
@@ -142,6 +145,25 @@ class AdminAccountBootstrapTest {
         @Override
         public boolean matches(String rawPassword, PasswordHash passwordHash) {
             return false;
+        }
+    }
+
+    private static final class FakeUserAuthIdentityRepository implements UserAuthIdentityRepository {
+        @Override
+        public Optional<UserAuthIdentity> findByProviderAndSubject(com.javanc.user.domain.model.AuthProvider provider,
+                String providerSubject) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<UserAuthIdentity> findByUserIdAndProvider(UserId userId,
+                com.javanc.user.domain.model.AuthProvider provider) {
+            return Optional.empty();
+        }
+
+        @Override
+        public UserAuthIdentity save(UserAuthIdentity identity) {
+            return identity;
         }
     }
 
@@ -204,8 +226,13 @@ class AdminAccountBootstrapTest {
 
         @Override
         public User save(User user) {
-            users.add(user);
-            return user;
+            User saved = user.id() == null
+                    ? new User(new UserId(users.size() + 1), user.name(), user.email(), user.employeeId(),
+                            user.passwordHash(), user.status(), user.role(), user.avatarUrl(), user.emailVerified(),
+                            user.lastLoginAt(), user.createdAt(), user.updatedAt())
+                    : user;
+            users.add(saved);
+            return saved;
         }
 
         @Override

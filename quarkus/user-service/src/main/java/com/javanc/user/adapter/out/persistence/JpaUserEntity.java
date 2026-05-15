@@ -12,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "user")
 public class JpaUserEntity {
@@ -30,7 +32,7 @@ public class JpaUserEntity {
     @Column(name = "id_employee", unique = true)
     private String idEmployee;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
 
     @Column(name = "is_active", nullable = false)
@@ -44,6 +46,21 @@ public class JpaUserEntity {
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @Version
     @Column(name = "version")
     private Long version;
@@ -53,6 +70,13 @@ public class JpaUserEntity {
 
     public JpaUserEntity(Integer id, String name, String email, String idEmployee, String password,
             AccountStatus status, Role role) {
+        this(id, name, email, idEmployee, password, status, role, null,
+                status == AccountStatus.ACTIVE, null, null, null);
+    }
+
+    public JpaUserEntity(Integer id, String name, String email, String idEmployee, String password,
+            AccountStatus status, Role role, String avatarUrl, boolean emailVerified, Instant lastLoginAt,
+            Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -61,6 +85,11 @@ public class JpaUserEntity {
         this.status = status == null ? AccountStatus.ACTIVE : status;
         this.active = this.status.usable();
         this.role = role;
+        this.avatarUrl = avatarUrl;
+        this.emailVerified = emailVerified;
+        this.lastLoginAt = lastLoginAt;
+        this.createdAt = createdAt == null ? Instant.now() : createdAt;
+        this.updatedAt = updatedAt == null ? this.createdAt : updatedAt;
     }
 
     public Integer getId() {
@@ -134,5 +163,45 @@ public class JpaUserEntity {
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Instant lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
