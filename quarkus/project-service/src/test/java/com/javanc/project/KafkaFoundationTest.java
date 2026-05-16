@@ -11,9 +11,12 @@ import com.javanc.project.infrastructure.messaging.KafkaFoundationPublisher;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 
 @QuarkusTest
+@TestProfile(KafkaFoundationTest.KafkaDisabledProfile.class)
 class KafkaFoundationTest {
 
     @Inject
@@ -40,5 +43,15 @@ class KafkaFoundationTest {
                 .tag("outcome", outcome)
                 .counter();
         return counter == null ? 0.0 : counter.count();
+    }
+
+    public static class KafkaDisabledProfile implements QuarkusTestProfile {
+        @Override
+        public Map<String, String> getConfigOverrides() {
+            return Map.of(
+                    "messaging.enabled", "false",
+                    "mp.messaging.outgoing.project-events-out.enabled", "false",
+                    "mp.messaging.outgoing.notification-commands-out.enabled", "false");
+        }
     }
 }

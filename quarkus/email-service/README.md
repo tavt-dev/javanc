@@ -21,11 +21,13 @@ $env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
 
 $env:EMAIL_SERVICE_PORT='8087'
 $env:USER_SERVICE_URL='http://localhost:8088'
-$env:MAIL_HOST='smtp.gmail.com'
-$env:MAIL_PORT='587'
-$env:MAIL_USERNAME='<local-mail-username>'
-$env:MAIL_PASSWORD='<local-mail-app-password>'
-$env:MAIL_FROM='<local-mail-from-address>'
+$env:MAIL_HOST='localhost'
+$env:MAIL_PORT='1025'
+$env:MAIL_USERNAME=''
+$env:MAIL_PASSWORD=''
+$env:MAIL_FROM='dev@javanc.local'
+$env:MAIL_START_TLS='DISABLED'
+$env:MAIL_LOGIN='DISABLED'
 $env:MAIL_MOCK='false'
 
 .\mvnw.cmd quarkus:dev

@@ -21,7 +21,7 @@ $env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
 $env:IMAGE_SERVICE_PORT='8083'
 $env:MYSQL_USERNAME='root'
 $env:MYSQL_PASSWORD='<local-mysql-password>'
-$env:IMAGE_MYSQL_JDBC_URL='jdbc:mysql://localhost:3306/image?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+$env:IMAGE_MYSQL_JDBC_URL='jdbc:mysql://localhost:3307/image?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
 $env:CLOUDINARY_CLOUD_NAME='<local-cloudinary-cloud-name>'
 $env:CLOUDINARY_API_KEY='<local-cloudinary-api-key>'
 $env:CLOUDINARY_API_SECRET='<local-cloudinary-api-secret>'

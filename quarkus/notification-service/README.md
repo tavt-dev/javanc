@@ -20,7 +20,7 @@ $env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
 $env:NOTIFICATION_SERVICE_PORT='8084'
 $env:MYSQL_USERNAME='root'
 $env:MYSQL_PASSWORD='<local-mysql-password>'
-$env:NOTIFICATION_MYSQL_JDBC_URL='jdbc:mysql://localhost:3306/notification1?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false&allowPublicKeyRetrieval=true'
+$env:NOTIFICATION_MYSQL_JDBC_URL='jdbc:mysql://localhost:3307/notification1?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false&allowPublicKeyRetrieval=true'
 $env:USER_SERVICE_URL='http://localhost:8088'
 
 .\mvnw.cmd quarkus:dev

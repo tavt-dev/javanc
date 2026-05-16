@@ -46,7 +46,7 @@ Default port: `8088`.
 $env:USER_SERVICE_PORT='8088'
 $env:MYSQL_USERNAME='root'
 $env:MYSQL_PASSWORD='<local-mysql-password>'
-$env:USER_MYSQL_JDBC_URL='jdbc:mysql://localhost:3306/portfolio?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+$env:USER_MYSQL_JDBC_URL='jdbc:mysql://localhost:3307/portfolio?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
 $env:USER_DB_SCHEMA_STRATEGY='validate'
 $env:USER_DB_MIGRATE='true'
 $env:USER_DB_BASELINE_ON_MIGRATE='true'
@@ -57,10 +57,10 @@ $env:JWT_REFRESH_EXPIRATION_SECONDS='604800'
 $env:GOOGLE_CLIENT_ID='<google-web-client-id>.apps.googleusercontent.com'
 $env:GOOGLE_ISSUER='https://accounts.google.com'
 $env:REDIS_ENABLED='true'
-$env:REDIS_URL='redis://localhost:6379/0'
+$env:REDIS_URL='redis://:javanc_local@localhost:6379/0'
 $env:REDIS_HOST='localhost'
 $env:REDIS_PORT='6379'
-$env:REDIS_PASSWORD=''
+$env:REDIS_PASSWORD='javanc_local'
 $env:REDIS_DATABASE='0'
 $env:REDIS_SSL='false'
 $env:REDIS_TIMEOUT='5s'
@@ -231,7 +231,7 @@ Protected endpoints do not accept `?token=`.
 Redis is wired as optional infrastructure in this phase. The current auth flows still use their existing persistence and do not depend on Redis yet.
 
 - Set `REDIS_ENABLED=false` to run without Redis.
-- Use `REDIS_URL` as the connection source of truth. Local default: `redis://localhost:6379/0`.
+- Use `REDIS_URL` as the connection source of truth. Local default: `redis://:javanc_local@localhost:6379/0`.
 - Keep passwords in environment or secret management only; do not commit real Redis credentials.
 - When Redis is enabled and unavailable, readiness becomes `DOWN`.
 
@@ -251,7 +251,7 @@ Local smoke:
 cd ..\..
 cd quarkus
 docker compose up -d redis
-docker exec javanc-redis redis-cli ping
+docker exec javanc-redis redis-cli -a javanc_local ping
 ```
 
 In Quarkus dev mode, `GET /dev/redis/ping` reports `UP`, `DISABLED`, or `DOWN`. In all profiles, inspect `/q/health/ready` for readiness.

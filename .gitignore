@@ -87,6 +87,7 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 quarkus/local/infra.env
+quarkus/local/*.env
 *.secret
 *.secrets
 *.kubeconfig

@@ -2,8 +2,10 @@ package com.javanc.manager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.javanc.manager.infrastructure.outbox.OutboxEventDocument;
@@ -23,7 +25,7 @@ import jakarta.inject.Inject;
 
 @QuarkusTest
 @TestProfile(KafkaDevServicesOutboxTest.KafkaEnabledProfile.class)
-@QuarkusTestResource(value = KafkaCompanionResource.class, restrictToAnnotatedClass = true)
+@QuarkusTestResource(value = KafkaDevServicesOutboxTest.ChannelKafkaCompanionResource.class, restrictToAnnotatedClass = true)
 class KafkaDevServicesOutboxTest {
 
     private static final String TOPIC = "javanc.notification.commands";
@@ -33,6 +35,15 @@ class KafkaDevServicesOutboxTest {
 
     @InjectKafkaCompanion
     KafkaCompanion companion;
+
+    @BeforeEach
+    void prepareTopic() {
+        if (!companion.topics().list().contains(TOPIC)) {
+            companion.topics().createAndWait(TOPIC, 1);
+        } else {
+            companion.topics().clear(TOPIC);
+        }
+    }
 
     @Test
     void outboxPublisherSendsNotificationCommandWhenKafkaIsEnabled() {
@@ -56,6 +67,16 @@ class KafkaDevServicesOutboxTest {
                     "messaging.enabled", "true",
                     "quarkus.kafka.devservices.enabled", "true",
                     "mp.messaging.outgoing.notification-commands-out.enabled", "true");
+        }
+    }
+
+    public static class ChannelKafkaCompanionResource extends KafkaCompanionResource {
+        @Override
+        public Map<String, String> start() {
+            Map<String, String> config = new HashMap<>(super.start());
+            String bootstrapServers = config.get("kafka.bootstrap.servers");
+            config.put("mp.messaging.outgoing.notification-commands-out.bootstrap.servers", bootstrapServers);
+            return config;
         }
     }
 }

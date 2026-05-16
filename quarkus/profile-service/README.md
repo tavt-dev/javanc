@@ -39,7 +39,7 @@ Required runtime values:
 
 ```powershell
 $env:PROFILE_SERVICE_PORT='8085'
-$env:MONGODB_CONNECTION_STRING='mongodb://localhost:27017'
+$env:MONGODB_CONNECTION_STRING='mongodb://root:javanc_local@localhost:27017/?authSource=admin'
 $env:MONGODB_DATABASE='microservice-portfolio'
 $env:IMAGE_SERVICE_URL='http://localhost:8083'
 $env:USER_SERVICE_URL='http://localhost:8088'

@@ -13,7 +13,7 @@ Services:
 
 | Component | URL |
 |---|---|
-| MySQL | `localhost:3306` |
+| MySQL | `localhost:3307` |
 | MongoDB | `localhost:27017` |
 | Redis | `localhost:6379` |
 | Kafka | `localhost:9092` |
@@ -23,18 +23,20 @@ Services:
 
 ## Run Quarkus services locally
 
-Use `local/services-local.env.example` as the Maven-local environment baseline. It points services to MySQL, MongoDB, Kafka and Mailpit on localhost while keeping Kafka business flow disabled by default.
+Use `local/services-local.env` as the Maven-local runtime baseline. It matches `local/infra.env`, points services to MySQL, MongoDB, Redis, Kafka and Mailpit on localhost, and keeps Kafka business flow disabled by default. Keep it aligned with the committed template `local/services-local.env.example`.
+
+Use service-level `.env` files when running one service in isolation; their `.env.example` counterparts are the committed templates. For deployment work, use `env/services-prod.env.example` as the backend production contract.
 
 Redis is available for the first cache/session foundation in `user-service`. Check it with:
 
 ```powershell
-docker exec javanc-redis redis-cli ping
+docker exec javanc-redis redis-cli -a javanc_local ping
 ```
 
 Kafka remains optional:
 
 - Baseline HTTP runtime: keep `MESSAGING_ENABLED=false` and `OUTBOX_PUBLISHER_ENABLED=false`.
-- Kafka E2E trial: overlay `local/kafka-e2e.env.example`, then enable only the async use case being tested.
+- Kafka E2E trial: overlay `local/kafka-e2e.env`, then enable only the async use case being tested.
 
 ## Topics
 

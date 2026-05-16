@@ -19,7 +19,7 @@ $env:JAVA_HOME='C:\Program Files\Java\jdk-21'
 $env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
 
 $env:MANAGER_SERVICE_PORT='8091'
-$env:MONGODB_CONNECTION_STRING='mongodb://localhost:27017'
+$env:MONGODB_CONNECTION_STRING='mongodb://root:javanc_local@localhost:27017/?authSource=admin'
 $env:MONGODB_DATABASE='microservice-portfolio'
 $env:USER_SERVICE_URL='http://localhost:8088'
 $env:IMAGE_SERVICE_URL='http://localhost:8083'

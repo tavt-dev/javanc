@@ -1,41 +1,42 @@
-# Javanc Pre-CI/CD Readiness Plan
+# Javanc Pre-CI/CD Readiness Runbook
 
-## 1. Mục tiêu
+## 1. Muc tieu va pham vi
 
-Tài liệu này liệt kê các việc cần chỉnh trước khi bắt đầu triển khai Dockerfile, GitLab CI, Helm chart và Kubernetes deployment cho Javanc.
+Tai lieu nay la runbook cho phase readiness truoc khi bat dau Dockerfile, GitLab CI, Helm chart va Kubernetes deployment.
 
-Phase này không triển khai CI/CD thật. Mục tiêu là làm repo đủ sạch, build được, không rò secret, và có cấu hình production rõ ràng để bước CI/CD sau không bị vỡ vì nền tảng chưa ổn định.
+Phase nay chi lam nen tang:
 
-Các nhóm blocker cần xử lý trước:
+1. Khoa Java 21 va build baseline.
+2. Dong bo local infra, env mau va tai lieu.
+3. Giu repo sach khoi secret that.
+4. Tach cau hinh Quarkus theo profile file ro rang.
+5. Them guardrail production vao runtime config.
+6. Xac nhan migration readiness truoc khi di vao CI/CD that.
 
-1. Java 21 và build baseline.
-2. Git hygiene và secret hygiene.
-3. Stabilize thay đổi Redis/Kafka/local infra hiện tại.
-4. Production config hardening.
-5. Database migration readiness.
+Khong nam trong phase nay:
 
-## 2. Hiện trạng audit
+- Tao Dockerfile production.
+- Tao `.gitlab-ci.yml`.
+- Tao Helm chart.
+- Deploy Kubernetes.
+- Chuyen database production.
+- Them Flyway baseline cho `image-service`, `project-service`, `notification-service`.
+- Doi business flow auth/register/login/google login.
 
-### 2.1 Stack hiện tại
+## 2. Hien trang sau audit
 
-- Backend là Maven multi-module trong `quarkus/`.
-- Quarkus platform version: `3.33.1`.
-- Java compiler release trong parent POM: `21`.
-- Frontend là `client-react`, dùng React/Vite.
-- Local infra hiện có trong `quarkus/docker-compose.yml`:
-  - MySQL
-  - MongoDB
-  - Redis
-  - Kafka
-  - Kafka UI
-  - Mailpit
+### 2.1 Nen tang repo
 
-### 2.2 Service inventory
+- Backend la Maven multi-module trong `quarkus/`.
+- Quarkus platform version la `3.33.1`.
+- Parent POM dung `maven.compiler.release=21`.
+- Frontend la `client-react`, dung React/Vite.
+- Local infra gom MySQL, MongoDB, Redis, Kafka, Kafka UI va Mailpit.
 
-| Service | Port | Runtime dependency chính |
+| Service | Port | Runtime dependency chinh |
 |---|---:|---|
 | `gateway-service` | 8080 | Internal service URLs |
-| `user-service` | 8088 | MySQL, Redis, Kafka, Google OAuth config |
+| `user-service` | 8088 | MySQL, Redis, Kafka, Google OAuth |
 | `profile-service` | 8085 | MongoDB |
 | `project-service` | 8086 | MySQL, Kafka |
 | `manager-service` | 8091 | MongoDB, Kafka |
@@ -43,47 +44,35 @@ Các nhóm blocker cần xử lý trước:
 | `email-service` | 8087 | MySQL, Kafka, SMTP |
 | `image-service` | 8083 | MySQL, Cloudinary/local uploads |
 
-### 2.3 Audit kết quả gần nhất
+### 2.2 Trang thai readiness
 
-Frontend đã pass:
+Da co trong repo:
 
-```bash
-npm run lint
-npm run test:run
-npm run build
-```
+- Maven Enforcer trong `quarkus/pom.xml` de chan Java duoi 21 va Maven duoi 3.9.
+- `.gitignore` chan `.env`, `infra.env`, kubeconfig va secret override.
+- Kafka dung `apache/kafka:3.7.0`.
+- `init-topics.sh` dung dung Apache Kafka CLI path.
+- Local infra bat auth cho MySQL, MongoDB va Redis.
+- `user-service` da co Redis foundation.
+- Tai lieu deployment CI/CD/Kubernetes da co.
 
-Backend chưa pass trên máy hiện tại vì Maven đang chạy bằng JDK 17 trong khi project yêu cầu Java 21:
+Van can chu y truoc khi vao CI/CD:
 
-```text
-error: release version 21 not supported
-```
+- Tren mot so may Windows, `java -version` co the la 21 nhung `mvn -version` van la 17 vi `JAVA_HOME` con tro vao JDK 17.
+- Local runtime tung bi drift: `infra.env.example` dung MySQL `3307` va Redis co password, trong khi env/docs cu van mo ta `3306` va Redis khong auth.
+- `image-service`, `project-service`, `notification-service` van dung `update` cho local/dev; production phai bi khoa ve `validate`.
+- Moi service hien dung layout config rieng theo profile thay vi tron tat ca vao mot file:
+  - `application.properties`
+  - `application-dev.properties`
+  - `application-test.properties`
+  - `application-prod.properties`
+- Hop dong env production tap trung nam tai `quarkus/env/services-prod.env.example`.
 
-Nguyên nhân:
+## 3. Runbook thuc hien
 
-```text
-JAVA_HOME=C:\Program Files\Java\jdk-17
-Maven Java version=17
-Project maven.compiler.release=21
-```
+### 3.1 Khoa Java 21 va build baseline
 
-## 3. Java 21 và build baseline
-
-### 3.1 Vấn đề
-
-Project yêu cầu Java 21 nhưng Maven local đang chạy bằng Java 17. Nếu không khóa điều kiện này, CI/CD có thể fail muộn ở bước compile với lỗi khó đọc hơn.
-
-### 3.2 Thay đổi cần có
-
-Parent POM `quarkus/pom.xml` phải có Maven Enforcer:
-
-- Require Java version `[21,)`.
-- Require Maven version `[3.9,)`.
-- Message lỗi phải nói rõ cần set `JAVA_HOME` sang JDK 21.
-
-### 3.3 Hướng dẫn local Windows
-
-Kiểm tra JDK đang dùng:
+Kiem tra dong thoi `java`, Maven va `JAVA_HOME`:
 
 ```powershell
 java -version
@@ -91,7 +80,13 @@ mvn -version
 echo $env:JAVA_HOME
 ```
 
-Set tạm trong terminal hiện tại:
+Neu gap tinh huong `java -version` la 21 nhung Maven van hien Java 17, nguyen nhan thuong la:
+
+```text
+JAVA_HOME=C:\Program Files\Java\jdk-17
+```
+
+Set tam cho terminal hien tai:
 
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Java\jdk-21"
@@ -99,153 +94,71 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 mvn -version
 ```
 
-Set lâu dài:
+Set lau dai cho user:
 
 ```powershell
 [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Java\jdk-21", "User")
 ```
 
-Mở terminal mới rồi kiểm tra lại:
-
-```powershell
-mvn -version
-```
-
-Maven phải hiển thị Java 21.
-
-### 3.4 Build baseline bắt buộc
-
-Sau khi Java đúng:
+Sau khi Maven dung Java 21:
 
 ```powershell
 mvn -f quarkus/pom.xml test
 ```
 
-Nếu cần chạy từng module:
+Neu can co lap theo module:
 
 ```powershell
 mvn -f quarkus/pom.xml -pl user-service -am test
 mvn -f quarkus/pom.xml -pl gateway-service -am test
 ```
 
-Acceptance:
+Pass criteria:
 
-- Maven fail sớm bằng Enforcer nếu Java dưới 21.
-- Maven test pass khi Java 21.
-- Không phụ thuộc `.env` thật cho test profile.
+- Enforcer fail som neu Java duoi 21.
+- `mvn -version` hien Java 21.
+- Backend tests pass bang Java 21.
 
-## 4. Git hygiene và secret hygiene
+### 3.2 Dong bo local runtime
 
-### 4.1 Nguyên tắc
+File runtime local la `quarkus/local/infra.env`; template commit duoc la `quarkus/local/infra.env.example`.
 
-Không commit:
+Gia tri baseline:
 
-- `.env` thật.
-- `quarkus/local/infra.env`.
-- kubeconfig.
-- file secret override.
-- private key.
-- access token.
-- database password thật.
-- mail app password.
-- Cloudinary secret.
-- JWT/OTP secret.
-
-Chỉ commit:
-
-- `.env.example`.
-- tài liệu biến môi trường.
-- Helm values không chứa secret.
-
-### 4.2 Ignore rules cần có
-
-`.gitignore` phải ignore rõ:
-
-```gitignore
-.env
-**/.env
-quarkus/local/infra.env
-*.secret
-*.secrets
-*.kubeconfig
-kubeconfig
-.kube/
+```env
+MYSQL_PORT=3307
+MONGODB_CONNECTION_STRING=mongodb://root:javanc_local@localhost:27017/?authSource=admin
+REDIS_PORT=6379
+REDIS_PASSWORD=javanc_local
 ```
 
-### 4.3 Lệnh audit trước khi commit
+`quarkus/local/services-local.env` la file runtime local dung that va phai khop voi template `quarkus/local/services-local.env.example`:
 
-Kiểm tra file nhạy cảm đã bị track chưa:
+- JDBC URLs tro toi `localhost:3307`.
+- `MONGODB_CONNECTION_STRING=mongodb://root:javanc_local@localhost:27017/?authSource=admin`.
+- `REDIS_URL=redis://:javanc_local@localhost:6379/0`.
+- `REDIS_PASSWORD=javanc_local`.
+
+`quarkus/env/services-prod.env.example` la hop dong bien moi truong production tap trung; no phai khop voi `application-prod.properties` va khong duoc chua localhost fallback.
+
+Khoi dong local infra:
 
 ```powershell
-git ls-files | rg "\.env$|infra\.env$|secret|kubeconfig|\.pem$"
+cd quarkus
+.\scripts\local-infra-up.ps1
 ```
 
-Kiểm tra pattern secret trong tracked configs:
+Kiem tra endpoint va service health:
 
 ```powershell
-rg -n "PASSWORD=|SECRET=|TOKEN=|API_SECRET=|MONGODB_CONNECTION_STRING=|REDIS_URL=|JWT_SECRET=|OTP_HASH_SECRET=|MAIL_PASSWORD=|CLOUDINARY_API_SECRET=" . -g "*.md" -g "*.yml" -g "*.yaml" -g "*.properties" -g ".env.example"
-```
-
-Lưu ý: `.env.example` được phép có placeholder như `change-me`, không được có secret thật.
-
-Nếu phát hiện secret thật từng bị commit:
-
-1. Rotate secret ở provider.
-2. Xóa khỏi Git history nếu cần bằng quy trình riêng.
-3. Không chỉ xóa file ở commit mới rồi coi là an toàn.
-
-## 5. Stabilize thay đổi Redis/Kafka/local infra hiện tại
-
-### 5.1 Các thay đổi cần hoàn tất trước CI/CD
-
-Trước khi bắt đầu Dockerfile/GitLab CI/Helm, cần ổn định các thay đổi infra đang pending:
-
-- Kafka dùng `apache/kafka:3.7.0`.
-- `init-topics.sh` dùng Kafka CLI path đúng với Apache image.
-- Local infra bật auth cho MySQL/MongoDB/Redis.
-- `user-service` có Redis foundation.
-- Docs deployment plan đã tạo.
-
-### 5.2 Validation local infra
-
-Start infra:
-
-```powershell
-cd C:\Users\Admin\Desktop\javanc\quarkus
-docker compose --env-file local\infra.env up -d
-```
-
-Kiểm tra container:
-
-```powershell
-docker ps
-```
-
-Kiểm tra MySQL:
-
-```powershell
+.\scripts\local-infra-status.ps1
 docker exec javanc-mysql mysqladmin ping -uroot -pjavanc_local --silent
-```
-
-Kiểm tra MongoDB:
-
-```powershell
 docker exec javanc-mongo mongosh --quiet -u root -p javanc_local --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
-```
-
-Kiểm tra Redis:
-
-```powershell
 docker exec javanc-redis redis-cli -a javanc_local ping
-```
-
-Kiểm tra Kafka topics:
-
-```powershell
 docker exec javanc-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
 ```
 
-Expected topics:
+Expected Kafka topics:
 
 ```text
 javanc.user.events
@@ -258,148 +171,90 @@ javanc.notification.commands.dlq
 javanc.domain-events.dlq
 ```
 
-### 5.3 Commit strategy
+Pass criteria:
 
-Không gom CI/CD vào cùng commit với infra readiness.
+- MySQL host port duoc tai lieu hoa la `3307`.
+- Redis docs va env mau deu dung auth.
+- Redis tra `PONG`, MySQL alive, Mongo tra `1`, Kafka list topic thanh cong.
 
-Thứ tự commit khuyến nghị:
+### 3.3 Giu repo sach khoi secret that
+
+Khong commit:
+
+- `.env` that.
+- `quarkus/local/infra.env`.
+- kubeconfig.
+- secret override.
+- private key.
+- access token.
+- password/secret that cua database, mail, Cloudinary, JWT hoac OTP.
+
+Chi commit:
+
+- `.env.example`.
+- tai lieu bien moi truong.
+- config khong chua secret that.
+
+Audit tracked files:
+
+```powershell
+git ls-files | rg "\.env$|infra\.env$|secret|kubeconfig|\.pem$"
+```
+
+Audit pattern trong docs/config:
+
+```powershell
+rg -n "PASSWORD=|SECRET=|TOKEN=|API_SECRET=|MONGODB_CONNECTION_STRING=|REDIS_URL=|JWT_SECRET=|OTP_HASH_SECRET=|MAIL_PASSWORD=|CLOUDINARY_API_SECRET=" . -g "*.md" -g "*.yml" -g "*.yaml" -g "*.properties" -g ".env.example"
+```
+
+Placeholder nhu `change-me` la chap nhan duoc; secret that thi khong.
+
+### 3.4 Layout config theo profile
+
+Moi service Quarkus dung cung mot convention:
 
 ```text
-infra: stabilize local kafka redis mysql mongo config
-docs: add deployment cicd kubernetes plan
-build: enforce java 21 for quarkus services
-docs: add pre cicd readiness plan
+application.properties
+application-dev.properties
+application-test.properties
+application-prod.properties
 ```
 
-Nếu muốn ít commit hơn:
+Quy tac:
 
-```text
-chore: prepare project for cicd deployment work
+- `application.properties` chi giu cau hinh chung, khong chua `localhost`, `127.0.0.1` hay profile prefix.
+- `application-dev.properties` chua local defaults.
+- `application-test.properties` chua test-only config.
+- `application-prod.properties` chua production guardrails.
+
+Kiem tra nhanh sau khi sua config:
+
+```powershell
+rg -n "localhost|127\.0\.0\.1" quarkus -g "application.properties"
+rg -n "^%(dev|test|prod)\." quarkus -g "application.properties"
+rg -n "localhost|127\.0\.0\.1|update" quarkus -g "application-prod.properties"
 ```
 
-Nhưng với dự án microservices, tách commit theo nhóm vẫn dễ review và rollback hơn.
+Expected:
 
-## 6. Production config hardening
+- Base files khong co local assumption.
+- Base files khong con `%dev`, `%test`, `%prod`.
+- Prod files khong co localhost va khong dung `update`.
 
-### 6.1 JDBC URL
+### 3.5 Them production guardrails
 
-Local/dev có thể dùng:
+Production profile phai khong fallback ve localhost neu thieu bien moi truong.
 
-```text
-createDatabaseIfNotExist=true
-useSSL=false
-allowPublicKeyRetrieval=true
-```
+Bat buoc qua `application-prod.properties`:
 
-Prod không nên dùng các flag này.
+- MySQL JDBC URL cho `user-service`, `project-service`, `notification-service`, `email-service`, `image-service`.
+- MongoDB connection string cho `profile-service`, `manager-service`.
+- Internal service URLs cho gateway va cac service goi cheo.
+- `GATEWAY_CORS_ORIGINS` cho gateway.
+- `LOG_JSON_ENABLED=true` mac dinh trong prod.
+- Prometheus metrics tiep tuc bat trong prod.
 
-Prod nên dùng database đã provision sẵn:
-
-```env
-USER_MYSQL_JDBC_URL=jdbc:mysql://mysql-prod-host:3306/user_service?useSSL=true&serverTimezone=UTC
-PROJECT_MYSQL_JDBC_URL=jdbc:mysql://mysql-prod-host:3306/project_service?useSSL=true&serverTimezone=UTC
-NOTIFICATION_MYSQL_JDBC_URL=jdbc:mysql://mysql-prod-host:3306/notification_service?useSSL=true&serverTimezone=UTC
-EMAIL_MYSQL_JDBC_URL=jdbc:mysql://mysql-prod-host:3306/email_service?useSSL=true&serverTimezone=UTC
-IMAGE_MYSQL_JDBC_URL=jdbc:mysql://mysql-prod-host:3306/image_service?useSSL=true&serverTimezone=UTC
-```
-
-Prod DB user:
-
-- Không dùng root.
-- Mỗi service nên có user/database riêng.
-- Quyền tối thiểu theo service.
-
-### 6.2 CORS
-
-Gateway prod chỉ allow frontend domain thật:
-
-```env
-GATEWAY_CORS_ORIGINS=https://your-domain.com
-```
-
-Dev/test:
-
-```env
-GATEWAY_CORS_ORIGINS=https://dev.your-domain.com
-GATEWAY_CORS_ORIGINS=https://test.your-domain.com
-```
-
-Không giữ localhost trong prod.
-
-### 6.3 Public exposure
-
-Kubernetes production chỉ public:
-
-- `client-react` qua frontend Ingress.
-- `gateway-service` qua API Ingress.
-
-Không public trực tiếp:
-
-- `user-service`
-- `profile-service`
-- `project-service`
-- `manager-service`
-- `notification-service`
-- `email-service`
-- `image-service`
-
-Các service nội bộ dùng `ClusterIP`.
-
-### 6.4 User-service auth policy
-
-`user-service` hiện có:
-
-```properties
-quarkus.http.auth.permission.default.policy=permit
-```
-
-Điều này chỉ chấp nhận được nếu:
-
-- `user-service` không public internet.
-- Gateway là auth guard bắt buộc cho protected API.
-- Kubernetes Ingress không route trực tiếp tới `user-service`.
-
-Nếu có khả năng service bị expose nhầm, cần harden trực tiếp `user-service` trước production.
-
-### 6.5 Logging và metrics
-
-Prod:
-
-```env
-LOG_JSON_ENABLED=true
-METRICS_PROMETHEUS_ENABLED=true
-```
-
-Không log:
-
-- JWT.
-- refresh token.
-- OTP.
-- password.
-- mail app password.
-- Cloudinary secret.
-- Redis URL có password.
-
-## 7. Database migration readiness
-
-### 7.1 Hiện trạng
-
-Phù hợp hơn cho prod:
-
-- `user-service`: Flyway + validate.
-- `email-service`: Flyway + validate.
-
-Cần cải thiện:
-
-- `image-service`: đang dùng Hibernate `update`.
-- `project-service`: đang dùng Hibernate `update`.
-- `notification-service`: đang dùng Hibernate `update`.
-
-### 7.2 Readiness tối thiểu
-
-Trước CI/CD có thể chưa migrate toàn bộ, nhưng prod config phải không mặc định update schema tự động.
-
-Tối thiểu:
+Schema strategy production:
 
 ```env
 IMAGE_DB_GENERATION=validate
@@ -407,21 +262,38 @@ PROJECT_DB_GENERATION=validate
 NOTIFICATION_DB_GENERATION=validate
 ```
 
-Chỉ dùng `update` ở local/dev khi chấp nhận mất kiểm soát schema.
+Local/dev co the van dung `update`, nhung production khong duoc tu dong sua schema.
 
-### 7.3 Production chuẩn
+`user-service` hien van co:
 
-Trước khi production thật:
+```properties
+quarkus.http.auth.permission.default.policy=permit
+```
 
-- Thêm Flyway cho `image-service`, `project-service`, `notification-service`.
-- Tạo baseline migration từ schema hiện tại.
-- Không sửa migration cũ.
-- Mọi thay đổi schema đi qua migration versioned.
-- CI chạy migration check hoặc ít nhất build/test với validate.
+Dieu nay chi hop le neu dong thoi dung ca ba dieu kien:
 
-## 8. Checklist trước khi bắt đầu Dockerfile/GitLab CI/Helm
+1. `user-service` khong public internet.
+2. Gateway la auth guard bat buoc cho protected API.
+3. Kubernetes Ingress khong route truc tiep toi `user-service`.
 
-### 8.1 Build/test
+### 3.6 Migration readiness
+
+Da phu hop hon cho production:
+
+- `user-service`: Flyway + `validate`.
+- `email-service`: Flyway + `validate`.
+
+Con can lam o phase sau:
+
+- Them Flyway cho `image-service`, `project-service`, `notification-service`.
+- Tao baseline migration tu schema hien tai.
+- Moi thay doi schema sau do di qua migration versioned.
+
+Trong phase readiness hien tai, muc toi thieu la production khong duoc dung Hibernate `update`.
+
+## 4. Checklist kiem chung truoc khi vao CI/CD
+
+### 4.1 Build/test
 
 ```powershell
 mvn -version
@@ -434,11 +306,11 @@ npm run build
 
 Pass criteria:
 
-- Maven dùng Java 21.
-- Backend tests pass.
+- Maven dung Java 21.
+- Backend test pass.
 - Frontend lint/test/build pass.
 
-### 8.2 Secret audit
+### 4.2 Secret hygiene
 
 ```powershell
 git ls-files | rg "\.env$|infra\.env$|secret|kubeconfig|\.pem$"
@@ -446,61 +318,58 @@ git ls-files | rg "\.env$|infra\.env$|secret|kubeconfig|\.pem$"
 
 Pass criteria:
 
-- Không có `.env` thật.
-- Không có `infra.env`.
-- Không có kubeconfig.
-- Không có secret thật.
+- Khong co `.env` that.
+- Khong co `infra.env` bi track.
+- Khong co kubeconfig hay private key bi track.
 
-### 8.3 Infra smoke
+### 4.3 Infra smoke
 
 ```powershell
 cd quarkus
 docker compose --env-file local\infra.env up -d
-docker ps
 docker exec javanc-redis redis-cli -a javanc_local ping
 docker exec javanc-mysql mysqladmin ping -uroot -pjavanc_local --silent
 docker exec javanc-mongo mongosh --quiet -u root -p javanc_local --authenticationDatabase admin --eval "db.adminCommand('ping').ok"
 docker exec javanc-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
 ```
 
-Pass criteria:
-
-- Redis trả `PONG`.
-- MySQL alive.
-- Mongo ping `1`.
-- Kafka list topics thành công.
-
-### 8.4 Config audit
+### 4.4 Config audit
 
 Pass criteria:
 
-- Prod docs không dùng local JDBC flags.
-- Prod CORS không chứa localhost.
-- Prod service URLs dùng Kubernetes internal DNS.
-- Chỉ gateway/frontend public.
-- Schema strategy prod không dùng Hibernate `update`.
+- `application.properties` khong chua local default hay profile prefix.
+- `application-prod.properties` khong fallback ve localhost.
+- JDBC config production khong fallback ve localhost.
+- Mongo config production khong fallback ve localhost.
+- CORS production khong fallback ve localhost.
+- Service URLs production deu lay tu env.
+- `image-service`, `project-service`, `notification-service` dung `validate` trong prod.
+- Chi `client-react` va `gateway-service` duoc public.
 
-## 9. Definition of Done
+## 5. Definition of Done
 
-Phase readiness hoàn thành khi:
+Phase readiness hoan thanh khi:
 
-- Maven Enforcer fail sớm nếu Java dưới 21.
-- Local Maven dùng JDK 21 và backend tests pass.
+- Maven Enforcer chan Java duoi 21.
+- Maven local dung JDK 21 va backend tests pass.
 - Frontend lint/test/build pass.
-- `.gitignore` bảo vệ local env, kubeconfig và secret override.
-- `git ls-files` không có `.env` thật hoặc kubeconfig.
-- Redis/Kafka/local infra changes được validate.
-- Production config rules đã được ghi rõ.
-- Migration readiness cho các service còn `update` đã được xác định.
-- Worktree được gom commit rõ ràng trước khi bắt đầu CI/CD implementation.
+- Local env/docs/scripts thong nhat giua `infra.env` runtime va `infra.env.example` template.
+- `.gitignore` bao ve env local, kubeconfig va secret override.
+- `git ls-files` khong co `.env` that hoac kubeconfig.
+- Redis/Kafka/MySQL/Mongo local smoke pass.
+- `application-prod.properties` da co guardrails trong runtime config va tai lieu.
+- Production schema strategy khong dung Hibernate `update`.
+- Worktree duoc gom commit ro rang truoc khi bat dau CI/CD implementation.
 
-## 10. Việc không làm trong phase này
+## 6. Chien luoc commit de xuat
 
-- Không tạo Dockerfile production.
-- Không tạo `.gitlab-ci.yml`.
-- Không tạo Helm chart.
-- Không deploy Kubernetes.
-- Không chuyển database production.
-- Không đổi business flow auth/register/login/google login.
-- Không chạy migration phá vỡ schema.
+Neu muon review va rollback de:
 
+```text
+build: fix local java 21 baseline and readiness verification
+infra: align local runtime docs and env defaults
+config: harden production service configuration
+docs: turn pre cicd readiness plan into execution runbook
+```
+
+Neu can gom it commit hon, chi gom sau khi tat ca acceptance pass.

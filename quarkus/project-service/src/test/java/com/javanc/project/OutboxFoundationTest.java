@@ -12,10 +12,13 @@ import com.javanc.project.infrastructure.outbox.OutboxPublisherWorker;
 import com.javanc.project.infrastructure.outbox.OutboxStatus;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 @QuarkusTest
+@TestProfile(OutboxFoundationTest.DisabledOutboxProfile.class)
 class OutboxFoundationTest {
 
     @Inject
@@ -53,5 +56,16 @@ class OutboxFoundationTest {
     private static OutboxEventEntity eventRecord(String topic) {
         return OutboxEventEntity.pending(OutboxMessageKind.EVENT, "ProjectFoundationProbe", topic,
                 "Project", "1", "phase5-request", null, "{\"purpose\":\"phase5\"}");
+    }
+
+    public static class DisabledOutboxProfile implements QuarkusTestProfile {
+        @Override
+        public java.util.Map<String, String> getConfigOverrides() {
+            return java.util.Map.of(
+                    "messaging.enabled", "false",
+                    "outbox.publisher.enabled", "false",
+                    "mp.messaging.outgoing.project-events-out.enabled", "false",
+                    "mp.messaging.outgoing.notification-commands-out.enabled", "false");
+        }
     }
 }
