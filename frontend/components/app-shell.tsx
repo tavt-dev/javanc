@@ -315,7 +315,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="animate-page w-full flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       <footer className="border-t border-white/10 bg-[#0f112e]/80 text-white">
-        <div className="grid w-full gap-6 px-4 py-6 text-sm sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] lg:px-8">
+        <div className="grid w-full gap-6 px-4 py-6 text-sm sm:px-6 md:grid-cols-2 lg:grid-cols-[1.35fr_0.72fr_0.72fr_0.82fr_1fr] lg:px-8">
           <div>
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent text-xs font-bold text-ink">JN</span>
@@ -337,6 +337,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {showAdmin ? <Link href="/admin/users">{t("nav.admin")}</Link> : null}
               {showManager ? <Link href="/manager/jobs">{t("nav.manager")}</Link> : null}
               <Link href="/companies">{t("nav.companies")}</Link>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-white">{t("footer.company")}</p>
+            <div className="mt-3 grid gap-2 text-white/60">
+              <Link href="/">{t("footer.introduction")}</Link>
+              <Link href="/about">{t("footer.about")}</Link>
+              <Link href="/terms">{t("footer.terms")}</Link>
+              <Link href="/privacy">{t("footer.privacy")}</Link>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-white">{t("footer.contact")}</p>
+            <div className="mt-3 grid gap-2 leading-6 text-white/60">
+              <p>
+                <span className="text-white/75">{t("footer.hotline")}:</span>{" "}
+                <a href="tel:+842873088899">(028) 7308 8899</a>{" "}
+                <span>{t("footer.businessHours")}</span>
+              </p>
+              <p>
+                <span className="text-white/75">{t("footer.email")}:</span>{" "}
+                <a href="mailto:support@javanc.vn">support@javanc.vn</a>
+              </p>
+              <p>
+                <span className="text-white/75">{t("footer.zaloSupport")}:</span>{" "}
+                <span>{t("footer.connectNow")}</span>
+              </p>
             </div>
           </div>
         </div>
