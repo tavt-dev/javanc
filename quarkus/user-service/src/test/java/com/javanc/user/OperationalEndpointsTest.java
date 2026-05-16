@@ -15,5 +15,6 @@ class OperationalEndpointsTest {
         given().when().get("/q/health/live").then().statusCode(200).body("status", equalTo("UP"));
         given().when().get("/q/health/ready").then().statusCode(200).body("status", equalTo("UP"));
         given().when().get("/q/metrics").then().statusCode(200);
+        given().when().get("/dev/redis/ping").then().statusCode(404);
     }
 }

@@ -10,6 +10,7 @@ The service owns:
 - JWT access/refresh token issuance and introspection
 - Email OTP verification for public self-registration
 - Google ID-token login with local account linking
+- Redis foundation for future auth caching, token blacklist and rate limiting
 - User persistence in MySQL table `user`
 
 Legacy Spring-style endpoints such as `/auth/signup`, `/auth/signin`, `/auth/isValid`, `/auth/findbyid`, `/auth/checkId`, and query-token access are intentionally removed.
@@ -35,6 +36,7 @@ Legacy Spring-style endpoints such as `/auth/signup`, `/auth/signin`, `/auth/isV
 - Database target: `portfolio`
 - Strong `JWT_SECRET` supplied by environment
 - `GOOGLE_CLIENT_ID` supplied when Google login is enabled
+- Redis reachable from `REDIS_URL` when `REDIS_ENABLED=true`
 
 Default port: `8088`.
 
@@ -54,6 +56,14 @@ $env:JWT_ACCESS_EXPIRATION_SECONDS='3600'
 $env:JWT_REFRESH_EXPIRATION_SECONDS='604800'
 $env:GOOGLE_CLIENT_ID='<google-web-client-id>.apps.googleusercontent.com'
 $env:GOOGLE_ISSUER='https://accounts.google.com'
+$env:REDIS_ENABLED='true'
+$env:REDIS_URL='redis://localhost:6379/0'
+$env:REDIS_HOST='localhost'
+$env:REDIS_PORT='6379'
+$env:REDIS_PASSWORD=''
+$env:REDIS_DATABASE='0'
+$env:REDIS_SSL='false'
+$env:REDIS_TIMEOUT='5s'
 $env:OTP_VERIFICATION_LENGTH='6'
 $env:OTP_VERIFICATION_TTL_SECONDS='600'
 $env:OTP_VERIFICATION_MAX_ATTEMPTS='5'
@@ -215,6 +225,36 @@ mvn -DskipTests package
 10. Admin-only checks: `POST /users/admin/accounts`, `PATCH /users/{id}/role`, `PATCH /users/{id}/status`, `DELETE /users/{id}`.
 
 Protected endpoints do not accept `?token=`.
+
+## Redis Foundation
+
+Redis is wired as optional infrastructure in this phase. The current auth flows still use their existing persistence and do not depend on Redis yet.
+
+- Set `REDIS_ENABLED=false` to run without Redis.
+- Use `REDIS_URL` as the connection source of truth. Local default: `redis://localhost:6379/0`.
+- Keep passwords in environment or secret management only; do not commit real Redis credentials.
+- When Redis is enabled and unavailable, readiness becomes `DOWN`.
+
+Key convention for future features:
+
+```text
+javanc:{domain}:{feature}:{identifier}
+javanc:auth:otp:{email}
+javanc:auth:rate:login:{ip}
+javanc:auth:refresh:{userId}:{tokenId}
+javanc:auth:blacklist:{tokenId}
+```
+
+Local smoke:
+
+```powershell
+cd ..\..
+cd quarkus
+docker compose up -d redis
+docker exec javanc-redis redis-cli ping
+```
+
+In Quarkus dev mode, `GET /dev/redis/ping` reports `UP`, `DISABLED`, or `DOWN`. In all profiles, inspect `/q/health/ready` for readiness.
 
 ## Postman
 

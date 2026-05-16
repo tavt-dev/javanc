@@ -5,7 +5,7 @@ create_topic() {
   local topic="$1"
   local retention="$2"
 
-  kafka-topics.sh \
+  /opt/kafka/bin/kafka-topics.sh \
     --bootstrap-server kafka:29092 \
     --create \
     --if-not-exists \
@@ -28,4 +28,4 @@ create_topic javanc.email.commands.dlq "$fourteen_days_ms"
 create_topic javanc.notification.commands.dlq "$fourteen_days_ms"
 create_topic javanc.domain-events.dlq "$fourteen_days_ms"
 
-kafka-topics.sh --bootstrap-server kafka:29092 --list
+/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --list
