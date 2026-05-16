@@ -5,6 +5,7 @@ import {
   notifications as baseNotifications,
   profile as baseProfile,
   projects as baseProjects,
+  googleSessionFor,
   sessionFor,
   users,
   type TestRole,
@@ -43,6 +44,7 @@ export function createMockState() {
     users: Object.values(users).map((user) => ({ ...user, idEmployee: `EMP-${user.id}` })),
     roleRequests: [] as RoleRequestMock[],
     refreshCount: 0,
+    activeAuthProvider: "LOCAL" as "LOCAL" | "GOOGLE",
   };
 }
 
@@ -91,13 +93,25 @@ async function handleApiRoute(
       (Object.entries(users).find(([, user]) => user.email === body.email)?.[0] as
         | TestRole
         | undefined) ?? role;
+    state.activeAuthProvider = "LOCAL";
     return ok(route, sessionFor(matchedRole), "Login successful");
+  }
+
+  if (method === "POST" && path === "/auth/google") {
+    state.activeAuthProvider = "GOOGLE";
+    return ok(route, googleSessionFor(role), "Login successful");
   }
 
   if (method === "POST" && path === "/auth/refresh") {
     state.refreshCount += 1;
     if (options.refreshFails) return fail(route, 401, "Refresh token expired");
-    return ok(route, sessionFor(role), "Token refreshed");
+    return ok(
+      route,
+      state.activeAuthProvider === "GOOGLE"
+        ? googleSessionFor(role)
+        : sessionFor(role),
+      "Token refreshed",
+    );
   }
 
   if (method === "POST" && path === "/auth/logout") return ok(route, true);

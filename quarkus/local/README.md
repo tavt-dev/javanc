@@ -15,6 +15,7 @@ Services:
 |---|---|
 | MySQL | `localhost:3306` |
 | MongoDB | `localhost:27017` |
+| Redis | `localhost:6379` |
 | Kafka | `localhost:9092` |
 | Kafka UI | `http://localhost:9080` |
 | Mailpit UI | `http://localhost:8025` |
@@ -23,6 +24,12 @@ Services:
 ## Run Quarkus services locally
 
 Use `local/services-local.env.example` as the Maven-local environment baseline. It points services to MySQL, MongoDB, Kafka and Mailpit on localhost while keeping Kafka business flow disabled by default.
+
+Redis is available for the first cache/session foundation in `user-service`. Check it with:
+
+```powershell
+docker exec javanc-redis redis-cli ping
+```
 
 Kafka remains optional:
 

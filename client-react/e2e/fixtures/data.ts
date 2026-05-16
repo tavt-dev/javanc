@@ -8,6 +8,8 @@ export const users = {
     role: "user",
     active: true,
     status: "ACTIVE",
+    avatarUrl: null,
+    provider: "LOCAL",
   },
   hr: {
     id: 2,
@@ -16,6 +18,8 @@ export const users = {
     role: "hr",
     active: true,
     status: "ACTIVE",
+    avatarUrl: null,
+    provider: "LOCAL",
   },
   manager: {
     id: 3,
@@ -24,6 +28,8 @@ export const users = {
     role: "manager",
     active: true,
     status: "ACTIVE",
+    avatarUrl: null,
+    provider: "LOCAL",
   },
   admin: {
     id: 4,
@@ -32,6 +38,8 @@ export const users = {
     role: "admin",
     active: true,
     status: "ACTIVE",
+    avatarUrl: null,
+    provider: "LOCAL",
   },
 } as const;
 
@@ -42,6 +50,17 @@ export function sessionFor(role: TestRole) {
     tokenType: "Bearer",
     expiresInSeconds: 3600,
     user: users[role],
+  };
+}
+
+export function googleSessionFor(role: TestRole) {
+  return {
+    ...sessionFor(role),
+    user: {
+      ...users[role],
+      avatarUrl: "https://images.example.com/google-avatar.png",
+      provider: "GOOGLE" as const,
+    },
   };
 }
 

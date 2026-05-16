@@ -3,6 +3,7 @@ import { installApiMocks } from "../mocks/api";
 import {
   dashboardPathFor,
   expectProtectedRedirect,
+  installGoogleIdentityMock,
   loginAs,
   seedAuth,
 } from "../utils/auth";
@@ -20,6 +21,56 @@ test("login stores a session and opens dashboard", async ({ page }) => {
   await expect(page.getByText(/Welcome back/)).toBeVisible();
   await page.reload();
   await expect(page).toHaveURL(/\/user\/dashboard$/);
+});
+
+test("google login stores a google session and opens dashboard", async ({ page }) => {
+  await installGoogleIdentityMock(page);
+  await installApiMocks(page, { role: "user" });
+  await page.goto("/login");
+
+  await page.getByText("Continue with Google").click();
+
+  await expect(page).toHaveURL(/\/user\/dashboard$/);
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("auth_user") ?? "{}")),
+    )
+    .toMatchObject({ provider: "GOOGLE" });
+});
+
+test("google session stays google after refresh", async ({ page }) => {
+  await installGoogleIdentityMock(page);
+  const state = await installApiMocks(page, { role: "user" });
+  await page.goto("/login");
+  await page.getByText("Continue with Google").click();
+  await expect(page).toHaveURL(/\/user\/dashboard$/);
+
+  let profileRequests = 0;
+  await page.route("**/profiles/me", async (route) => {
+    profileRequests += 1;
+    if (profileRequests === 1) {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: false,
+          message: "Expired",
+          data: null,
+        }),
+      });
+      return;
+    }
+
+    await route.fallback();
+  });
+  await page.goto("/profile");
+
+  await expect.poll(() => state.refreshCount).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("auth_user") ?? "{}")),
+    )
+    .toMatchObject({ provider: "GOOGLE" });
 });
 
 for (const role of ["user", "hr", "manager", "admin"] as TestRole[]) {

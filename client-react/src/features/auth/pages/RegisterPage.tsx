@@ -6,8 +6,12 @@ import { useForm, useWatch } from "react-hook-form";
 import { Check, Mail, UserRound } from "lucide-react";
 import { AuthLayout } from "@/features/auth/components/AuthLayout";
 import { AuthSubmitButton } from "@/features/auth/components/AuthSubmitButton";
+import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 import { PasswordField } from "@/features/auth/components/PasswordField";
-import { useRegisterMutation } from "@/features/auth/hooks/use-auth-mutations";
+import {
+  useGoogleLoginMutation,
+  useRegisterMutation,
+} from "@/features/auth/hooks/use-auth-mutations";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -19,6 +23,7 @@ import { useTranslation } from "react-i18next";
 export function RegisterPage() {
   const { t } = useTranslation();
   const registerMutation = useRegisterMutation();
+  const googleLoginMutation = useGoogleLoginMutation();
   const reducedMotion = useReducedMotion();
   const {
     register,
@@ -38,6 +43,9 @@ export function RegisterPage() {
   const password = useWatch({ control, name: "password" }) ?? "";
   const submitError = registerMutation.isError
     ? extractErrorMessage(registerMutation.error)
+    : null;
+  const googleError = googleLoginMutation.isError
+    ? extractErrorMessage(googleLoginMutation.error)
     : null;
 
   return (
@@ -137,6 +145,25 @@ export function RegisterPage() {
         </FieldShell>
       </form>
 
+      <AuthDivider />
+
+      <GoogleSignInButton
+        disabled={googleLoginMutation.isPending}
+        onCredential={(idToken) => googleLoginMutation.mutate({ idToken })}
+      />
+
+      {googleLoginMutation.isPending && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          {t("auth.googleSigningIn")}
+        </p>
+      )}
+
+      {googleError && (
+        <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {googleError}
+        </div>
+      )}
+
       <p className="mt-5 text-center text-sm text-muted-foreground">
         {t("auth.alreadyHaveAccount")}{" "}
         <Link to="/login" className="font-medium text-primary hover:underline">
@@ -144,6 +171,18 @@ export function RegisterPage() {
         </Link>
       </p>
     </AuthLayout>
+  );
+}
+
+function AuthDivider() {
+  const { t } = useTranslation();
+
+  return (
+    <div className="my-5 flex items-center gap-3 text-xs uppercase text-muted-foreground">
+      <span className="h-px flex-1 bg-border" />
+      <span>{t("auth.orContinueWith")}</span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
   );
 }
 

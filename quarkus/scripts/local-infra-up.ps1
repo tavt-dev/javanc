@@ -14,5 +14,6 @@ if ([string]::IsNullOrWhiteSpace($EnvFile)) {
 docker compose -f $ComposeFile --env-file $EnvFile up -d
 
 Write-Host "Local infrastructure is starting."
+Write-Host "Redis:     localhost:6379"
 Write-Host "Kafka UI:  http://localhost:9080"
 Write-Host "Mailpit:   http://localhost:8025"

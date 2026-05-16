@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { installApiMocks } from "../mocks/api";
-import { seedAuth } from "../utils/auth";
+import { installGoogleIdentityMock, seedAuth } from "../utils/auth";
 import { expectNoHorizontalOverflow, setViewport } from "../utils/viewport";
 
 for (const width of [320, 390, 768, 1024, 1440]) {
@@ -15,6 +15,17 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await expectNoHorizontalOverflow(page);
   });
 }
+
+test("login has no horizontal overflow at 320px with google button", async ({ page }) => {
+  await installGoogleIdentityMock(page);
+  await installApiMocks(page);
+  await setViewport(page, 320);
+
+  await page.goto("/login");
+
+  await expect(page.getByText("Continue with Google")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
 
 test("topbar menus close with Escape", async ({ page }) => {
   await installApiMocks(page, { role: "user" });

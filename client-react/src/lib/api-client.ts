@@ -18,6 +18,7 @@ let refreshPromise: Promise<AuthSession> | null = null;
 
 const authRefreshExclusions = [
   "/auth/login",
+  "/auth/google",
   "/auth/register",
   "/auth/verify-email",
   "/auth/resend-verification-otp",

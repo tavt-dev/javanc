@@ -2,6 +2,7 @@ import apiClient from "@/lib/api-client";
 import type { ApiResponse } from "@/types/api";
 import type {
   AuthSession,
+  GoogleLoginRequest,
   LoginRequest,
   RefreshTokenRequest,
   RegisterRequest,
@@ -40,6 +41,14 @@ export const authApi = {
   async login(input: LoginRequest) {
     const { data } = await apiClient.post<ApiResponse<AuthSession>>(
       "/auth/login",
+      input,
+    );
+    return data;
+  },
+
+  async googleLogin(input: GoogleLoginRequest) {
+    const { data } = await apiClient.post<ApiResponse<AuthSession>>(
+      "/auth/google",
       input,
     );
     return data;

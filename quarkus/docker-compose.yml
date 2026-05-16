@@ -33,6 +33,20 @@ services:
       timeout: 5s
       retries: 20
 
+  redis:
+    image: redis:7
+    container_name: javanc-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - javanc_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
   kafka:
     image: bitnami/kafka:3.7
     container_name: javanc-kafka
@@ -96,4 +110,5 @@ services:
 volumes:
   javanc_mysql_data:
   javanc_mongo_data:
+  javanc_redis_data:
   javanc_kafka_data:

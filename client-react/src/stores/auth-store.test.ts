@@ -13,6 +13,8 @@ const session: AuthSession = {
     email: "user@example.com",
     role: "user",
     active: true,
+    avatarUrl: "https://images.example.com/avatar.png",
+    provider: "GOOGLE",
   },
 };
 
@@ -44,6 +46,7 @@ describe("auth store", () => {
 
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
     expect(useAuthStore.getState().user?.email).toBe("user@example.com");
+    expect(useAuthStore.getState().user?.provider).toBe("GOOGLE");
     expect(useAuthStore.getState().accessToken).toBe("access-token");
   });
 

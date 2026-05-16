@@ -1,4 +1,5 @@
 export type Role = "admin" | "user" | "hr" | "manager";
+export type AuthProvider = "LOCAL" | "GOOGLE";
 
 export interface UserDTO {
   id: number;
@@ -8,6 +9,8 @@ export interface UserDTO {
   role: Role;
   status?: string;
   active: boolean;
+  avatarUrl?: string | null;
+  provider?: AuthProvider;
 }
 
 export interface AuthSession {
@@ -27,6 +30,10 @@ export interface RegistrationPending {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface GoogleLoginRequest {
+  idToken: string;
 }
 
 export interface RegisterRequest {

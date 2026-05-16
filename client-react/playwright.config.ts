@@ -23,6 +23,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       VITE_API_BASE_URL: "http://127.0.0.1:8080",
+      VITE_GOOGLE_CLIENT_ID: "playwright-google-client-id.apps.googleusercontent.com",
     },
   },
   projects: [

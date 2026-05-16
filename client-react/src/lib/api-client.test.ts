@@ -96,4 +96,14 @@ describe("api-client interceptors", () => {
 
     expect(refreshSpy).not.toHaveBeenCalled();
   });
+
+  it("does not refresh google login failures", async () => {
+    const refreshSpy = vi.spyOn(axios, "post");
+    apiClient.defaults.adapter = async (config) =>
+      Promise.reject({ config, response: { status: 401 } });
+
+    await expect(apiClient.post("/auth/google", {})).rejects.toBeTruthy();
+
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
 });

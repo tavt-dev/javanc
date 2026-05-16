@@ -24,9 +24,11 @@ API base URL:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:8080
+VITE_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ```
 
 If `VITE_API_BASE_URL` is empty, Vite proxies supported service paths to the gateway at `http://localhost:8080`.
+`VITE_GOOGLE_CLIENT_ID` enables the official Google Identity Services button on auth pages; the frontend forwards the returned ID token to `POST /auth/google` and continues using the backend-issued session tokens afterward.
 
 ## Scripts
 

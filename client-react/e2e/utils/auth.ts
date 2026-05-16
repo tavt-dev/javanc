@@ -31,6 +31,33 @@ export async function loginAs(page: Page, role: TestRole) {
   await expect(page).toHaveURL(new RegExp(`${dashboardPathFor(role)}$`));
 }
 
+export async function installGoogleIdentityMock(page: Page) {
+  await page.addInitScript(() => {
+    let credentialCallback:
+      | ((response: { credential?: string }) => void)
+      | undefined;
+
+    window.google = {
+      accounts: {
+        id: {
+          initialize: ({ callback }) => {
+            credentialCallback = callback;
+          },
+          renderButton: (parent) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = "Continue with Google";
+            button.addEventListener("click", () => {
+              credentialCallback?.({ credential: "google-id-token" });
+            });
+            parent.appendChild(button);
+          },
+        },
+      },
+    };
+  });
+}
+
 export async function expectProtectedRedirect(page: Page, path: string) {
   await page.goto(path);
   await expect(page).toHaveURL(/\/login$/);

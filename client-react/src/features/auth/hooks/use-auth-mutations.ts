@@ -9,6 +9,7 @@ import { authApi } from "@/features/auth/api/auth-api";
 import { getDashboardPath } from "@/routes/dashboard-path";
 import { useTranslation } from "react-i18next";
 import type {
+  GoogleLoginRequest,
   LoginRequest,
   RegisterRequest,
   ResendVerificationOtpRequest,
@@ -49,6 +50,21 @@ export function useLoginMutation() {
         toast.message(t("auth.verificationRequired"));
         navigate(authPath(variables.email), { replace: true });
       }
+    },
+  });
+}
+
+export function useGoogleLoginMutation() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const setSession = useAuthStore((s) => s.setSession);
+
+  return useMutation({
+    mutationFn: (input: GoogleLoginRequest) => authApi.googleLogin(input),
+    onSuccess: (response) => {
+      setSession(response.data);
+      toast.success(t("auth.signedIn"));
+      navigate(getDashboardPath(response.data.user.role), { replace: true });
     },
   });
 }
