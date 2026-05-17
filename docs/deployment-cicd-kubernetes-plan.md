@@ -28,7 +28,9 @@ Quyết định mặc định:
 
 ## 2. Hiện trạng repo
 
-Repo hiện có:
+Trạng thái được cập nhật theo repo ngày `2026-05-17`.
+
+### 2.1 Nền tảng đã có
 
 - Frontend: `client-react`, React/Vite.
 - Backend: Maven multi-module Quarkus `3.33.1` trong `quarkus/`.
@@ -41,10 +43,41 @@ Repo hiện có:
   - `notification-service`: notification, MySQL, Kafka consumer/DLQ, port `8084`.
   - `email-service`: mail/OTP command consumer, MySQL, port `8087`.
   - `image-service`: image upload/Cloudinary/local metadata, MySQL, port `8083`.
-- `quarkus/docker-compose.yml` hiện chỉ phục vụ local infra: MySQL, MongoDB, Redis, Kafka, Kafka UI, Mailpit.
-- Chưa có Dockerfile app production.
+- `quarkus/docker-compose.yml` đã có cho local infra: MySQL, MongoDB, Redis, Kafka, Kafka UI, Mailpit.
+- Java 21 đã được khóa ở parent POM bằng `maven.compiler.release=21` và Maven Enforcer.
+- Mỗi backend service đã tách config theo profile:
+  - `application.properties`
+  - `application-dev.properties`
+  - `application-test.properties`
+  - `application-prod.properties`
+- Repo đã có hợp đồng env production tập trung ở `quarkus/env/services-prod.env.example`.
+- Repo đã có tài liệu env/local runtime:
+  - `quarkus/env/README.md`
+  - `quarkus/local/README.md`
+  - `docs/pre-cicd-readiness-plan.md`
+  - `docs/quarkus-config-profile-layout.md`
+- Tất cả 8 backend service đã có health endpoint `/q/health`, `/q/health/live`, `/q/health/ready`, Prometheus metrics config và `RequestCorrelationFilter`.
+- `.gitignore` đã chặn `.env`, `infra.env`, kubeconfig và secret override; file template đã có cho toàn bộ service và frontend.
+
+### 2.2 Những phần đã có một phần
+
+| Hạng mục | Trạng thái hiện tại | Phần còn thiếu |
+|---|---|---|
+| Docker backend | Đã có `quarkus/Dockerfile.jvm` dùng chung cho toàn bộ backend; mỗi service có `.dockerignore` để chỉ đưa `target/quarkus-app` vào context | Cần build image thực tế trong CI và thống nhất lệnh build theo từng service |
+| Env production | Đã có `quarkus/env/services-prod.env.example` và frontend `client-react/.env.production.example` | Chưa nối các biến này vào GitLab CI/Kubernetes Secret/ConfigMap thật |
+| Migration | `user-service` và `email-service` đã có Flyway migration | `image-service`, `project-service`, `notification-service` chưa có Flyway baseline/versioned migration |
+| Observability | Health, metrics, request correlation đã có ở code/config | Chưa có Prometheus Operator, Grafana dashboard, Alertmanager và alert production |
+
+### 2.3 Những phần còn thiếu cho delivery thật
+
+- Đã có `quarkus/Dockerfile.jvm` để build image JVM chung cho backend.
+- Đã có `client-react/Dockerfile` để build static frontend image bằng Nginx.
 - Chưa có `.gitlab-ci.yml`.
-- Chưa có Helm chart/Kubernetes manifests.
+- Chưa có thư mục `deploy/helm/javanc` hoặc Kubernetes manifests.
+- Chưa có pipeline build/push image, scan, deploy và smoke test.
+- Chưa có phần repo thể hiện namespaces, ingress controller, cert-manager, ClusterIssuer, DNS hoặc registry pull secret.
+- Chưa có cấu hình deploy thực tế cho `dev`, `test`, `prod`.
+- Chưa có bằng chứng trong repo về managed MySQL/MongoDB/Redis/Kafka production, backup, ACL hay provisioning bằng IaC.
 
 ## 3. Mô hình môi trường
 
@@ -120,7 +153,11 @@ Convenience tags:
 
 ### 5.1 Backend Quarkus
 
-Tạo Dockerfile cho từng service hoặc một Dockerfile backend dùng `ARG SERVICE_NAME`.
+Trạng thái hiện tại:
+
+- Đã có `quarkus/Dockerfile.jvm` dùng chung cho toàn bộ backend.
+- Dockerfile nhận `SERVICE_PORT`, chỉ copy `target/quarkus-app` sau khi Maven package xong.
+- Mỗi service có `.dockerignore` riêng để context chỉ chứa artifact fast-jar cần thiết.
 
 Khuyến nghị v1:
 
@@ -132,7 +169,7 @@ Build flow:
 
 ```powershell
 mvn -f quarkus/pom.xml -pl user-service -am package -DskipTests
-docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_NAME=user-service -t user-service:local quarkus
+docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8088 -t user-service:local quarkus/user-service
 ```
 
 Runtime requirements:
@@ -162,7 +199,12 @@ Không copy vào image:
 
 ### 5.2 Frontend React/Vite
 
-Tạo Dockerfile frontend `client-react/Dockerfile`:
+Trạng thái hiện tại:
+
+- Đã có `.env.example` và `.env.production.example`.
+- Đã có `client-react/Dockerfile`, `client-react/.dockerignore` và `client-react/nginx/default.conf`.
+
+Dockerfile frontend `client-react/Dockerfile`:
 
 - Stage 1: Node build.
 - Stage 2: Nginx serve static files.
@@ -447,6 +489,8 @@ livenessProbe:
 Repo chỉ giữ:
 
 - `.env.example`
+- `client-react/.env.production.example`
+- `quarkus/env/services-prod.env.example`
 - Helm values không chứa secret.
 - Tài liệu biến môi trường.
 
@@ -659,6 +703,11 @@ GATEWAY_CORS_ORIGINS=https://test.your-domain.com
 
 ### 11.1 Health
 
+Hiện trạng repo:
+
+- Tất cả 8 backend service đã có health endpoint và test coverage cho `/q/health`, `/q/health/live`, `/q/health/ready`.
+- Phần còn thiếu là wiring các endpoint này vào Kubernetes probe và smoke job thật sau deploy.
+
 Public checks:
 
 ```text
@@ -672,6 +721,12 @@ Internal checks:
 - Kubernetes readiness/liveness dùng endpoint này.
 
 ### 11.2 Logs
+
+Hiện trạng repo:
+
+- Các service đã có `RequestCorrelationFilter`.
+- Production profile đã có `LOG_JSON_ENABLED=true` mặc định qua `application-prod.properties`.
+- Phần còn thiếu là log aggregation tập trung và rule cảnh báo production.
 
 Prod:
 
@@ -687,7 +742,10 @@ Yêu cầu:
 
 ### 11.3 Metrics
 
-Hiện service đã có Micrometer Prometheus.
+Hiện trạng repo:
+
+- Tất cả backend service đã có Micrometer Prometheus config.
+- Phần còn thiếu là stack thu thập/hiển thị/cảnh báo như Prometheus Operator, Grafana và Alertmanager.
 
 Prod:
 
@@ -862,13 +920,28 @@ Prod:
 
 ## 15. Thứ tự triển khai thực tế
 
+### 15.1 Bảng trạng thái hiện tại
+
+| Phase | Trạng thái ngày `2026-05-17` | Ghi chú |
+|---|---|---|
+| Phase 1: Chuẩn hóa repo deploy | `Đang làm / gần hoàn tất` | Đã có `.gitignore`, env templates, tài liệu env, config profile, production guardrails, Dockerfile backend/frontend và `.dockerignore`; còn cần xác nhận build image local/CI ổn định |
+| Phase 2: GitLab CI validate/test/build | `Chưa bắt đầu` | Chưa có `.gitlab-ci.yml` |
+| Phase 3: Build và push images | `Chưa bắt đầu` | Chưa có pipeline publish image |
+| Phase 4: Helm chart | `Chưa bắt đầu` | Chưa có `deploy/helm/javanc` |
+| Phase 5: Kubernetes foundation | `Chưa thể xác nhận từ repo` | Đây là hạ tầng ngoài repo: namespace, ingress, cert-manager, DNS, pull secret |
+| Phase 6: Deploy dev | `Chưa bắt đầu` | Phụ thuộc Phase 2-5 |
+| Phase 7: Deploy test | `Chưa bắt đầu` | Phụ thuộc dev pipeline ổn định |
+| Phase 8: Deploy prod | `Chưa bắt đầu` | Phụ thuộc manual approval, rollback, smoke, observability |
+
 ### Phase 1: Chuẩn hóa repo deploy
 
-- Thêm Dockerfile backend.
-- Thêm Dockerfile frontend.
-- Thêm `.dockerignore`.
-- Đảm bảo `.gitignore` exclude `.env`.
-- Viết tài liệu env theo `dev/test/prod`.
+- `Đã có`: `.gitignore` exclude `.env`, kubeconfig và secret override.
+- `Đã có`: tài liệu env/local runtime và hợp đồng production env.
+- `Đã có`: profile config riêng cho `dev/test/prod`.
+- `Đã có`: Dockerfile backend production dùng chung.
+- `Đã có`: Dockerfile frontend production.
+- `Đã có`: `.dockerignore` cho backend/frontend image build.
+- `Còn thiếu`: xác nhận build image trong CI và wiring sang pipeline publish.
 
 ### Phase 2: GitLab CI validate/test/build
 
@@ -939,6 +1012,11 @@ Tài liệu và triển khai được coi là đạt khi:
 - Có smoke test sau deploy.
 - Prod deploy bắt buộc manual approval.
 
+Theo trạng thái hiện tại ngày `2026-05-17`, các acceptance criteria đã đạt một phần ở mức readiness:
+
+- `Đã đạt`: repo không track secret thật, backend đã có health endpoint, metrics config, production env contract và profile config.
+- `Chưa đạt`: Docker image toàn hệ thống, GitLab pipeline, Helm chart, Kubernetes deployment, HTTPS ingress, rollback bằng Helm và smoke test sau deploy.
+
 ## 17. Những việc không làm trong phase đầu
 
 - Không deploy production bằng `docker-compose.yml`.
@@ -947,4 +1025,3 @@ Tài liệu và triển khai được coi là đạt khi:
 - Không đưa secret vào image.
 - Không expose service nội bộ trực tiếp ra internet.
 - Không đổi business flow auth/register/login/google login trong phase deploy.
-

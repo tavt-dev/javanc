@@ -1,0 +1,20 @@
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.24
+
+ARG SERVICE_PORT=8080
+
+ENV LANGUAGE='en_US:en' \
+    JAVA_OPTS_APPEND='-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager' \
+    JAVA_APP_JAR='/deployments/quarkus-run.jar'
+
+# Keep Quarkus fast-jar layers separate so dependency-heavy layers stay reusable
+# when only application code changes.
+COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 target/quarkus-app/*.jar /deployments/
+COPY --chown=185 target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE ${SERVICE_PORT}
+
+USER 185
+
+ENTRYPOINT ["/opt/jboss/container/java/run/run-java.sh"]
