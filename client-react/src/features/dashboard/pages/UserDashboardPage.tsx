@@ -89,16 +89,16 @@ export function UserDashboardPage() {
   const profileQuery = useMyProfileQuery();
   const profile = profileQuery.profile;
   const projectsQuery = useMyProjectsQuery(profile?.id);
-  const jobsQuery = useJobBoardQuery(profile?.id);
-  const companiesQuery = useCompaniesQuery();
-  const pendingJobsQuery = usePendingJobsQuery(profile?.id);
-  const acceptedJobsQuery = useAcceptedJobsQuery(profile?.id);
+  const jobsQuery = useJobBoardQuery(profile?.id, { openOnly: true, size: 6 });
+  const companiesQuery = useCompaniesQuery({ size: 8 });
+  const pendingJobsQuery = usePendingJobsQuery(profile?.id, { size: 1 });
+  const acceptedJobsQuery = useAcceptedJobsQuery(profile?.id, { size: 1 });
 
   const projects = projectsQuery.data?.items ?? [];
   const jobs = jobsQuery.data?.items ?? [];
   const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data]);
-  const pendingJobs = pendingJobsQuery.data?.items ?? [];
-  const acceptedJobs = acceptedJobsQuery.data?.items ?? [];
+  const pendingJobsCount = pendingJobsQuery.data?.totalElements ?? 0;
+  const acceptedJobsCount = acceptedJobsQuery.data?.totalElements ?? 0;
   const [searchState, setSearchState] = useState<DashboardSearchState>({
     query: "",
     type: "",
@@ -131,7 +131,7 @@ export function UserDashboardPage() {
 
   const completion = getProfileCompletion(profile);
   const publicProjects = projects.filter((project) => project.display).length;
-  const openJobs = jobs.filter(isJobOpen).length;
+  const openJobs = jobsQuery.data?.totalElements ?? jobs.filter(isJobOpen).length;
   const recommendedJobs = jobs.slice(0, 6);
   const featuredCompanies = getFeaturedCompanies(companies);
 
@@ -188,7 +188,7 @@ export function UserDashboardPage() {
             <div className="mt-3 grid gap-3">
               <MiniSignal icon={Search} label="Recommended roles" value={recommendedJobs.length} />
               <MiniSignal icon={Building2} label="Hiring companies" value={companies.length} />
-              <MiniSignal icon={ClipboardList} label="Pending applications" value={pendingJobs.length} />
+              <MiniSignal icon={ClipboardList} label="Pending applications" value={pendingJobsCount} />
               <MiniSignal icon={FolderKanban} label="Public projects" value={publicProjects} />
             </div>
           </div>
@@ -271,8 +271,8 @@ export function UserDashboardPage() {
         <DashboardStat
           icon={ClipboardList}
           label="Applications"
-          value={pendingJobs.length + acceptedJobs.length}
-          detail={`${pendingJobs.length} pending, ${acceptedJobs.length} accepted`}
+          value={pendingJobsCount + acceptedJobsCount}
+          detail={`${pendingJobsCount} pending, ${acceptedJobsCount} accepted`}
         />
       </section>
 

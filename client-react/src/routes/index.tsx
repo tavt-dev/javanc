@@ -10,6 +10,7 @@ import { RootRedirect } from "./RootRedirect";
 import { RoleGuard } from "./RoleGuard";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { DashboardRedirect } from "./DashboardRedirect";
+import { LegalRouteShell } from "@/features/legal/components/LegalRouteShell";
 
 const LoginPage = lazy(() =>
   import("@/features/auth/pages/LoginPage").then((module) => ({
@@ -131,6 +132,21 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
+const AboutPage = lazy(() =>
+  import("@/features/legal/pages/AboutPage").then((module) => ({
+    default: module.AboutPage,
+  })),
+);
+const PrivacyPage = lazy(() =>
+  import("@/features/legal/pages/PrivacyPage").then((module) => ({
+    default: module.PrivacyPage,
+  })),
+);
+const TermsPage = lazy(() =>
+  import("@/features/legal/pages/TermsPage").then((module) => ({
+    default: module.TermsPage,
+  })),
+);
 
 function lazyPage(page: ReactNode) {
   return (
@@ -177,6 +193,15 @@ export const router = createBrowserRouter([
         {lazyPage(<VerifyEmailPage />)}
       </GuestRoute>
     ),
+  },
+  {
+    errorElement: <RouteErrorBoundary />,
+    element: <LegalRouteShell />,
+    children: [
+      { path: "/about", element: lazyPage(<AboutPage />) },
+      { path: "/privacy", element: lazyPage(<PrivacyPage />) },
+      { path: "/terms", element: lazyPage(<TermsPage />) },
+    ],
   },
 
   // Protected routes with AppShell layout

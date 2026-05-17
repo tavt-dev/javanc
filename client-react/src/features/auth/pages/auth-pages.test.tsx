@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { LoginPage } from "./LoginPage";
 import { RegisterPage } from "./RegisterPage";
+import i18n from "@/i18n";
 
 vi.mock("@/features/auth/components/GoogleSignInButton", () => ({
   GoogleSignInButton: () => <div data-testid="google-sign-in-button" />,
@@ -35,6 +36,12 @@ describe("auth pages", () => {
     );
 
     expect(screen.getByTestId("google-sign-in-button")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: i18n.t("footer.privacy") }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("link", { name: i18n.t("footer.terms") }),
+    ).toHaveAttribute("href", "/terms");
   });
 
   it("shows google login on the register page", () => {
@@ -45,5 +52,11 @@ describe("auth pages", () => {
     );
 
     expect(screen.getByTestId("google-sign-in-button")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: i18n.t("footer.privacy") }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("link", { name: i18n.t("footer.terms") }),
+    ).toHaveAttribute("href", "/terms");
   });
 });

@@ -1,5 +1,5 @@
 import { Building2, SlidersHorizontal } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
@@ -14,7 +14,10 @@ import { useCompaniesQuery } from "@/features/companies/hooks/use-company-querie
 
 export function CompaniesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const query = searchParams.get("query") ?? "";
+  const [query, setQuery] = useState(() => searchParams.get("query") ?? "");
+  const [debouncedQuery, setDebouncedQuery] = useState(
+    () => searchParams.get("query") ?? "",
+  );
   const type = searchParams.get("type") ?? "";
   const location = searchParams.get("location") ?? "";
   const page = Number(searchParams.get("page") ?? 0);
@@ -22,7 +25,7 @@ export function CompaniesPage() {
   const sort = searchParams.get("sort") ?? "id,desc";
 
   const companiesQuery = useCompaniesQuery({
-    query: query || undefined,
+    query: debouncedQuery || undefined,
     type: type || undefined,
     location: location || undefined,
     page,
@@ -46,6 +49,17 @@ export function CompaniesPage() {
     setSearchParams(updated, { replace: true });
   };
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const trimmedQuery = query.trim();
+      setDebouncedQuery(trimmedQuery);
+      updateListParams({ query: trimmedQuery || undefined, page: "0" });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+    // updateListParams depends on the current URL and should not restart the debounce after each URL write.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
   return (
     <PageTransition>
       <PageHeader
@@ -56,7 +70,7 @@ export function CompaniesPage() {
         search={
           <SearchHeroPanel
             value={query}
-            onChange={(value) => updateListParams({ query: value || undefined, page: "0" })}
+            onChange={setQuery}
             placeholder="Search companies, industries, or hiring teams"
             filters={
               <>
@@ -90,14 +104,16 @@ export function CompaniesPage() {
                 />
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setQuery("");
+                    setDebouncedQuery("");
                     updateListParams({
                       query: undefined,
                       type: undefined,
                       location: undefined,
                       page: "0",
-                    })
-                  }
+                    });
+                  }}
                   className="btn-secondary focus-ring h-10 bg-card"
                 >
                   <SlidersHorizontal size={16} />

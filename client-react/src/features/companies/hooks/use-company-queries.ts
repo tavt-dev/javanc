@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
@@ -27,6 +27,7 @@ export function useCompaniesQuery(params: PageParams & { query?: string; type?: 
   return useQuery({
     queryKey: companyKeys.all(params),
     queryFn: async () => (await companiesApi.getAll(params)).data,
+    placeholderData: keepPreviousData,
   });
 }
 

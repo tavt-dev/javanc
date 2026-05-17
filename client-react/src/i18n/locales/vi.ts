@@ -103,6 +103,8 @@ export const vi = {
     googleSigningIn: "Đang đăng nhập với Google...",
     googleUnavailable: "Không thể tải đăng nhập Google",
     orContinueWith: "hoặc",
+    legalPrefix: "Bằng việc tiếp tục, bạn đồng ý với",
+    legalConjunction: "và",
     verificationRequired: "Vui lòng xác minh email để tiếp tục",
     verificationSent: "Mã xác minh đã được gửi",
     emailVerified: "Email đã được xác minh",
@@ -115,9 +117,140 @@ export const vi = {
     description: "Không gian nghề nghiệp để tìm việc, quản lý hồ sơ và theo dõi hoạt động tuyển dụng.",
     marketplace: "Thị trường",
     workspace: "Không gian",
+    information: "Thông tin",
+    about: "Giới thiệu",
+    privacy: "Quyền riêng tư",
+    terms: "Điều khoản",
     settings: "Cài đặt",
     copyright: "© {{year}} JavaNC. Đã đăng ký bản quyền.",
     tagline: "Bảng điều khiển thị trường việc làm",
+  },
+  legal: {
+    eyebrow: "Thông tin nền tảng",
+    navigation: "Điều hướng thông tin",
+    backToSignIn: "Quay lại đăng nhập",
+    lastUpdated: "Cập nhật lần cuối: {{date}}",
+    about: {
+      title: "Giới thiệu về JavaNC",
+      intro:
+        "JavaNC là nền tảng kết nối ứng viên, nhà tuyển dụng và đội ngũ vận hành tuyển dụng trong cùng một không gian làm việc.",
+      sections: [
+        {
+          title: "JavaNC dành cho ai",
+          body: [
+            "Ứng viên có thể quản lý hồ sơ, dự án và đơn ứng tuyển của mình.",
+            "Nhà tuyển dụng, HR và quản lý có thể theo dõi công ty, việc làm và quy trình tuyển dụng trong một luồng thống nhất.",
+          ],
+        },
+        {
+          title: "Những gì nền tảng hỗ trợ",
+          body: [
+            "JavaNC tập trung vào các nhu cầu cốt lõi như tìm việc, quản lý hồ sơ, duyệt ứng viên, quản lý công ty và theo dõi thông báo.",
+            "Các màn hình được thiết kế để dễ quét thông tin, thao tác nhanh và hỗ trợ nhiều vai trò khác nhau trong cùng hệ thống.",
+          ],
+        },
+        {
+          title: "Giá trị chúng tôi theo đuổi",
+          body: [
+            "Mục tiêu của JavaNC là làm cho quy trình tuyển dụng rõ ràng hơn, dữ liệu nhất quán hơn và công việc thường ngày bớt rời rạc hơn.",
+          ],
+        },
+      ],
+    },
+    privacy: {
+      title: "Chính sách quyền riêng tư",
+      intro:
+        "Chính sách này mô tả cách JavaNC thu thập, sử dụng và bảo vệ dữ liệu khi bạn sử dụng nền tảng.",
+      lastUpdated: "17/05/2026",
+      sections: [
+        {
+          title: "Dữ liệu chúng tôi thu thập",
+          body: [
+            "Chúng tôi có thể xử lý thông tin tài khoản, hồ sơ nghề nghiệp, dữ liệu ứng tuyển, thông tin công ty và dữ liệu kỹ thuật cần thiết để vận hành hệ thống.",
+          ],
+        },
+        {
+          title: "Mục đích sử dụng",
+          body: [
+            "Dữ liệu được dùng để xác thực tài khoản, cung cấp tính năng, hỗ trợ tuyển dụng, gửi thông báo liên quan và bảo vệ hệ thống khỏi hành vi lạm dụng.",
+          ],
+        },
+        {
+          title: "Lưu trữ và bảo vệ dữ liệu",
+          body: [
+            "JavaNC áp dụng các biện pháp kỹ thuật phù hợp để giới hạn truy cập, bảo vệ phiên đăng nhập và giảm rủi ro truy cập trái phép.",
+          ],
+        },
+        {
+          title: "Chia sẻ dữ liệu",
+          body: [
+            "Chúng tôi chỉ chia sẻ dữ liệu khi cần để cung cấp chức năng của nền tảng, tuân thủ pháp luật hoặc khi có sự đồng ý hợp lệ từ người dùng.",
+          ],
+        },
+        {
+          title: "Quyền của người dùng",
+          body: [
+            "Bạn có thể cập nhật thông tin tài khoản và hồ sơ của mình, đồng thời có thể liên hệ quản trị viên khi cần hỗ trợ liên quan đến dữ liệu cá nhân.",
+          ],
+        },
+        {
+          title: "Liên hệ",
+          body: [
+            "Nếu có câu hỏi về quyền riêng tư, hãy liên hệ đội ngũ vận hành JavaNC qua kênh hỗ trợ chính thức của nền tảng.",
+          ],
+        },
+      ],
+    },
+    terms: {
+      title: "Điều khoản sử dụng",
+      intro:
+        "Điều khoản này quy định các nguyên tắc cơ bản khi bạn truy cập và sử dụng JavaNC.",
+      lastUpdated: "17/05/2026",
+      sections: [
+        {
+          title: "Chấp nhận điều khoản",
+          body: [
+            "Khi sử dụng JavaNC, bạn đồng ý tuân thủ các điều khoản hiện hành và các chính sách liên quan được công bố trên nền tảng.",
+          ],
+        },
+        {
+          title: "Tài khoản người dùng",
+          body: [
+            "Bạn chịu trách nhiệm giữ an toàn thông tin đăng nhập và bảo đảm dữ liệu cung cấp cho nền tảng là chính xác, cập nhật.",
+          ],
+        },
+        {
+          title: "Hành vi bị cấm",
+          body: [
+            "Không được lạm dụng hệ thống, cố gắng truy cập trái phép, phát tán nội dung độc hại hoặc gây ảnh hưởng đến trải nghiệm của người dùng khác.",
+          ],
+        },
+        {
+          title: "Nội dung người dùng",
+          body: [
+            "Bạn chịu trách nhiệm với hồ sơ, dự án, mô tả công việc và các nội dung khác do mình tạo trên nền tảng.",
+          ],
+        },
+        {
+          title: "Giới hạn trách nhiệm",
+          body: [
+            "JavaNC cố gắng duy trì dịch vụ ổn định, nhưng không bảo đảm hệ thống luôn không gián đoạn hoặc mọi thông tin do người dùng cung cấp đều chính xác.",
+          ],
+        },
+        {
+          title: "Thay đổi và chấm dứt quyền truy cập",
+          body: [
+            "Chúng tôi có thể cập nhật điều khoản khi cần và có thể hạn chế quyền truy cập nếu phát hiện hành vi vi phạm hoặc rủi ro cho hệ thống.",
+          ],
+        },
+        {
+          title: "Liên hệ",
+          body: [
+            "Nếu cần làm rõ điều khoản, hãy liên hệ đội ngũ vận hành JavaNC qua kênh hỗ trợ chính thức của nền tảng.",
+          ],
+        },
+      ],
+    },
   },
   users: {
     accountCreated: "Đã tạo tài khoản",

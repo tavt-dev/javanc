@@ -26,6 +26,12 @@ const roleLinks: Record<Role, FooterLink[]> = {
   admin: [...visibleRoleNavItems("admin"), { labelKey: "nav.items.settings", path: "/settings" }],
 };
 
+const legalLinks: FooterLink[] = [
+  { labelKey: "footer.about", path: "/about" },
+  { labelKey: "footer.privacy", path: "/privacy" },
+  { labelKey: "footer.terms", path: "/terms" },
+];
+
 export function Footer() {
   const { t } = useTranslation();
   const role = useAuthStore((state) => state.user?.role);
@@ -35,7 +41,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-primary/10 bg-card/86 px-4 py-8 text-sm text-muted-foreground shadow-[0_-16px_40px_hsl(var(--hero-dark)/0.04)] backdrop-blur sm:px-5 md:px-6 lg:px-8">
-      <div className="mx-auto grid w-full max-w-[1600px] gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]">
         <div className="min-w-0">
           <Link
             to={dashboardPath}
@@ -64,6 +70,7 @@ export function Footer() {
           title={t("footer.workspace")}
           links={[{ labelKey: "common.dashboard", path: dashboardPath }, ...workspaceLinks]}
         />
+        <FooterColumn title={t("footer.information")} links={legalLinks} />
 
         <div className="min-w-0 lg:text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
@@ -111,7 +118,6 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
             key={`${title}-${link.path}-${link.labelKey}`}
             to={link.path}
             className="footer-link focus-ring"
-            aria-label={`Footer link to ${link.path}`}
           >
             {t(link.labelKey)}
           </Link>

@@ -1,5 +1,5 @@
 import { Briefcase, SlidersHorizontal } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { StaggerItem, StaggerList } from "@/components/motion/StaggerList";
@@ -19,7 +19,10 @@ export function JobBoardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const profileQuery = useMyProfileQuery();
   const profile = profileQuery.profile;
-  const query = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedQuery, setDebouncedQuery] = useState(
+    () => searchParams.get("q") ?? "",
+  );
   const type = readJobType(searchParams.get("type"));
   const companyId = searchParams.get("companyId") ?? "";
   const openOnly = searchParams.get("openOnly") === "true";
@@ -28,7 +31,7 @@ export function JobBoardPage() {
   const sort = searchParams.get("sort") ?? "id,desc";
 
   const jobsQuery = useJobBoardQuery(profile?.id, {
-    query: query || undefined,
+    query: debouncedQuery || undefined,
     type: type || undefined,
     companyId: companyId || undefined,
     openOnly,
@@ -54,6 +57,17 @@ export function JobBoardPage() {
     setSearchParams(updated, { replace: true });
   };
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const trimmedQuery = query.trim();
+      setDebouncedQuery(trimmedQuery);
+      updateListParams({ q: trimmedQuery || undefined, page: "0" });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+    // updateListParams depends on the current URL and should not restart the debounce after each URL write.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
   return (
     <PageTransition>
       <PageHeader
@@ -64,7 +78,7 @@ export function JobBoardPage() {
         search={
           <SearchHeroPanel
             value={query}
-            onChange={(value) => updateListParams({ q: value || undefined, page: "0" })}
+            onChange={setQuery}
             placeholder="Search jobs, descriptions, or hiring signals"
             filters={
               <>
@@ -117,15 +131,17 @@ export function JobBoardPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setQuery("");
+                    setDebouncedQuery("");
                     updateListParams({
                       q: undefined,
                       type: undefined,
                       companyId: undefined,
                       openOnly: undefined,
                       page: "0",
-                    })
-                  }
+                    });
+                  }}
                   className="btn-secondary focus-ring h-10 bg-card"
                 >
                   <SlidersHorizontal size={16} />

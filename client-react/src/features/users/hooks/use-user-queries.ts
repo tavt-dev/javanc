@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
@@ -40,6 +40,7 @@ export function useUsersQuery(params: UserSearchParams = {}) {
   return useQuery({
     queryKey: ["users", "list", params],
     queryFn: async () => (await usersApi.list(params)).data,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -166,10 +167,11 @@ export function useAdminRoleRequestsQuery(params?: {
   });
 }
 
-export function useMyHrPromotionsQuery() {
+export function useMyHrPromotionsQuery(enabled = true) {
   return useQuery({
     queryKey: userKeys.myHrPromotions,
     queryFn: async () => (await usersApi.myHrPromotions()).data,
+    enabled,
   });
 }
 

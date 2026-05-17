@@ -170,6 +170,7 @@ export function RegisterPage() {
           {t("auth.signIn")}
         </Link>
       </p>
+      <AuthLegalLinks />
     </AuthLayout>
   );
 }
@@ -228,6 +229,24 @@ function inputClass(hasError: boolean, extra?: string) {
     "placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-ring",
     hasError && "border-destructive focus:ring-destructive",
     extra,
+  );
+}
+
+function AuthLegalLinks() {
+  const { t } = useTranslation();
+
+  return (
+    <p className="mt-4 text-center text-xs leading-6 text-muted-foreground">
+      {t("auth.legalPrefix")}{" "}
+      <Link to="/privacy" className="font-medium text-primary hover:underline">
+        {t("footer.privacy")}
+      </Link>{" "}
+      {t("auth.legalConjunction")}{" "}
+      <Link to="/terms" className="font-medium text-primary hover:underline">
+        {t("footer.terms")}
+      </Link>
+      .
+    </p>
   );
 }
 

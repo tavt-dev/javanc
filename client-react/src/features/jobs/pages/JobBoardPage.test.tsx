@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useCompaniesQuery } from "@/features/companies/hooks/use-company-queries";
 import { JobBoardPage } from "@/features/jobs/pages/JobBoardPage";
 import { useJobBoardQuery } from "@/features/jobs/hooks/use-job-queries";
@@ -64,6 +64,10 @@ describe("JobBoardPage", () => {
     }));
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("initializes filters from query params", () => {
     renderJobBoard("/jobs?q=python&type=python&companyId=2&openOnly=true");
 
@@ -79,6 +83,30 @@ describe("JobBoardPage", () => {
       companyId: "2",
       openOnly: true,
     }));
+  });
+
+  it("debounces search requests while typing", () => {
+    vi.useFakeTimers();
+    renderJobBoard("/jobs");
+
+    fireEvent.change(
+      screen.getByLabelText("Search jobs, descriptions, or hiring signals"),
+      { target: { value: "java" } },
+    );
+
+    expect(useJobBoardQuery).not.toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({ query: "java" }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(useJobBoardQuery).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({ query: "java" }),
+    );
   });
 });
 

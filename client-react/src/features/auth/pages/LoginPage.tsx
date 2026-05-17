@@ -128,6 +128,7 @@ export function LoginPage() {
           {t("auth.createOne")}
         </Link>
       </p>
+      <AuthLegalLinks />
     </AuthLayout>
   );
 }
@@ -150,6 +151,24 @@ function isVerificationRedirect(error: unknown) {
   return (
     error.response?.status === 403 &&
     message.toLowerCase().includes("verification")
+  );
+}
+
+function AuthLegalLinks() {
+  const { t } = useTranslation();
+
+  return (
+    <p className="mt-4 text-center text-xs leading-6 text-muted-foreground">
+      {t("auth.legalPrefix")}{" "}
+      <Link to="/privacy" className="font-medium text-primary hover:underline">
+        {t("footer.privacy")}
+      </Link>{" "}
+      {t("auth.legalConjunction")}{" "}
+      <Link to="/terms" className="font-medium text-primary hover:underline">
+        {t("footer.terms")}
+      </Link>
+      .
+    </p>
   );
 }
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
@@ -49,6 +49,7 @@ export function useProfilesSearchQuery(params: ProfileSearchParams) {
   return useQuery({
     queryKey: profileKeys.search(params),
     queryFn: async () => (await profilesApi.search(params)).data,
+    placeholderData: keepPreviousData,
   });
 }
 

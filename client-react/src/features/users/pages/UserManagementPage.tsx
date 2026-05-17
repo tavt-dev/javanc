@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { Check, ClipboardList, Edit, Plus, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -41,7 +41,10 @@ const columnHelper = createColumnHelper<AdminUserDTO>();
 export function UserManagementPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((s) => s.user);
-  const search = searchParams.get("query") ?? "";
+  const [search, setSearch] = useState(() => searchParams.get("query") ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => searchParams.get("query") ?? "",
+  );
   const role = (searchParams.get("role") as "all" | Role | null) ?? "all";
   const active =
     (searchParams.get("active") as "all" | "active" | "inactive" | null) ??
@@ -60,7 +63,7 @@ export function UserManagementPage() {
   const [adminNote, setAdminNote] = useState("");
 
   const usersQuery = useUsersQuery({
-    query: search || undefined,
+    query: debouncedSearch || undefined,
     role: role === "all" ? undefined : role,
     active: active === "all" ? undefined : active === "active",
     page,
@@ -87,6 +90,17 @@ export function UserManagementPage() {
     });
     setSearchParams(updated, { replace: true });
   };
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const trimmedSearch = search.trim();
+      setDebouncedSearch(trimmedSearch);
+      updateListParams({ query: trimmedSearch || undefined, page: "0" });
+    }, 300);
+    return () => window.clearTimeout(timeout);
+    // updateListParams depends on the current URL and should not restart the debounce after each URL write.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const columns = useMemo(
     () => [
@@ -205,8 +219,10 @@ export function UserManagementPage() {
           <DataToolbar
             search={search}
             searchPlaceholder="Search users"
-            onSearchChange={(value) => updateListParams({ query: value || undefined, page: "0" })}
+            onSearchChange={setSearch}
             onClear={() => {
+              setSearch("");
+              setDebouncedSearch("");
               updateListParams({ query: undefined, role: undefined, active: undefined, page: "0" });
             }}
             variant="job-search"

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/lib/api-error";
 import { queryClient } from "@/lib/query-client";
@@ -34,6 +34,7 @@ export function useJobBoardQuery(
         : await jobsApi.getAll(params);
       return response.data;
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -59,25 +60,25 @@ export function useJobsByCompanyQuery(companyId?: number | null, params: PagePar
   });
 }
 
-export function usePendingJobsQuery(profileId?: number | null) {
+export function usePendingJobsQuery(profileId?: number | null, params: PageParams = {}) {
   return useQuery({
     queryKey: profileId ? jobKeys.pending(profileId) : ["jobs", "pending", "missing"],
     queryFn: async () => {
       if (!profileId) return null;
-      return (await jobsApi.getPendingByProfile(profileId)).data;
+      return (await jobsApi.getPendingByProfile(profileId, params)).data;
     },
     enabled: Boolean(profileId),
   });
 }
 
-export function useAcceptedJobsQuery(profileId?: number | null) {
+export function useAcceptedJobsQuery(profileId?: number | null, params: PageParams = {}) {
   return useQuery({
     queryKey: profileId
       ? jobKeys.accepted(profileId)
       : ["jobs", "accepted", "missing"],
     queryFn: async () => {
       if (!profileId) return null;
-      return (await jobsApi.getAcceptedByProfile(profileId)).data;
+      return (await jobsApi.getAcceptedByProfile(profileId, params)).data;
     },
     enabled: Boolean(profileId),
   });

@@ -108,6 +108,12 @@ describe("UserDashboardPage", () => {
     expect(screen.getByText("How to make your Java profile recruiter-ready")).toBeInTheDocument();
     expect(screen.getByText("Recommended jobs")).toBeInTheDocument();
     expect(screen.getByText("Featured companies")).toBeInTheDocument();
+    expect(useJobBoardQuery).toHaveBeenCalledWith(7, {
+      openOnly: true,
+      size: 6,
+    });
+    expect(usePendingJobsQuery).toHaveBeenCalledWith(7, { size: 1 });
+    expect(useAcceptedJobsQuery).toHaveBeenCalledWith(7, { size: 1 });
   });
 
   it("submits dashboard search to the job board query params", async () => {
