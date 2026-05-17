@@ -72,7 +72,7 @@ Trạng thái được cập nhật theo repo ngày `2026-05-17`.
 
 - Đã có `quarkus/Dockerfile.jvm` để build image JVM chung cho backend.
 - Đã có `client-react/Dockerfile` để build static frontend image bằng Nginx.
-- Chưa có `.gitlab-ci.yml`.
+- Đã có `.gitlab-ci.yml` giai đoạn đầu cho validate/test/package/build image.
 - Chưa có thư mục `deploy/helm/javanc` hoặc Kubernetes manifests.
 - Chưa có pipeline build/push image, scan, deploy và smoke test.
 - Chưa có phần repo thể hiện namespaces, ingress controller, cert-manager, ClusterIssuer, DNS hoặc registry pull secret.
@@ -925,7 +925,7 @@ Prod:
 | Phase | Trạng thái ngày `2026-05-17` | Ghi chú |
 |---|---|---|
 | Phase 1: Chuẩn hóa repo deploy | `Đang làm / gần hoàn tất` | Đã có `.gitignore`, env templates, tài liệu env, config profile, production guardrails, Dockerfile backend/frontend và `.dockerignore`; còn cần xác nhận build image local/CI ổn định |
-| Phase 2: GitLab CI validate/test/build | `Chưa bắt đầu` | Chưa có `.gitlab-ci.yml` |
+| Phase 2: GitLab CI validate/test/build | `Đã bắt đầu` | Đã có pipeline đầu tiên cho backend validate/test, frontend quality, package backend và build Docker image; chưa có scan/publish/deploy |
 | Phase 3: Build và push images | `Chưa bắt đầu` | Chưa có pipeline publish image |
 | Phase 4: Helm chart | `Chưa bắt đầu` | Chưa có `deploy/helm/javanc` |
 | Phase 5: Kubernetes foundation | `Chưa thể xác nhận từ repo` | Đây là hạ tầng ngoài repo: namespace, ingress, cert-manager, DNS, pull secret |
@@ -945,11 +945,12 @@ Prod:
 
 ### Phase 2: GitLab CI validate/test/build
 
-- Tạo `.gitlab-ci.yml`.
-- Chạy backend tests.
-- Chạy frontend lint/test/build.
-- Cache Maven/npm hợp lý.
-- Chưa deploy.
+- `Đã có`: `.gitlab-ci.yml`.
+- `Đã có`: backend validate/test.
+- `Đã có`: frontend lint/test/build.
+- `Đã có`: cache Maven/npm.
+- `Đã có`: package backend và build Docker image.
+- `Còn thiếu`: scan, publish registry và deploy.
 
 ### Phase 3: Build và push images
 

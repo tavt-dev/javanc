@@ -1,0 +1,106 @@
+stages:
+  - validate
+  - test
+  - package
+  - image
+
+variables:
+  MAVEN_CLI_OPTS: >-
+    --batch-mode
+    --errors
+    --fail-at-end
+    --show-version
+  MAVEN_OPTS: >-
+    -Dmaven.repo.local=.m2/repository
+    -Djava.awt.headless=true
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+
+cache:
+  key:
+    files:
+      - quarkus/pom.xml
+      - client-react/package-lock.json
+  paths:
+    - .m2/repository/
+    - .npm/
+
+backend_validate:
+  stage: validate
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn $MAVEN_CLI_OPTS -f quarkus/pom.xml -DskipTests validate
+
+backend_test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn $MAVEN_CLI_OPTS -f quarkus/pom.xml test
+
+frontend_quality:
+  stage: test
+  image: node:22-alpine
+  script:
+    - cd client-react
+    - npm ci
+    - npm run lint
+    - npm run test:run
+    - npm run build
+
+package_backend:
+  stage: package
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - mvn $MAVEN_CLI_OPTS -f quarkus/pom.xml -DskipTests package
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - quarkus/gateway-service/target/quarkus-app/
+      - quarkus/image-service/target/quarkus-app/
+      - quarkus/notification-service/target/quarkus-app/
+      - quarkus/profile-service/target/quarkus-app/
+      - quarkus/project-service/target/quarkus-app/
+      - quarkus/email-service/target/quarkus-app/
+      - quarkus/user-service/target/quarkus-app/
+      - quarkus/manager-service/target/quarkus-app/
+
+build_backend_images:
+  stage: image
+  image: docker:27.5.1-cli
+  services:
+    - name: docker:27.5.1-dind
+      variables:
+        HEALTHCHECK_TCP_PORT: "2375"
+  needs:
+    - job: package_backend
+      artifacts: true
+  before_script:
+    - docker info
+  script:
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8080 -t javanc/gateway-service:$CI_COMMIT_SHA quarkus/gateway-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8083 -t javanc/image-service:$CI_COMMIT_SHA quarkus/image-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8084 -t javanc/notification-service:$CI_COMMIT_SHA quarkus/notification-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8085 -t javanc/profile-service:$CI_COMMIT_SHA quarkus/profile-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8086 -t javanc/project-service:$CI_COMMIT_SHA quarkus/project-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8087 -t javanc/email-service:$CI_COMMIT_SHA quarkus/email-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8088 -t javanc/user-service:$CI_COMMIT_SHA quarkus/user-service
+    - docker build -f quarkus/Dockerfile.jvm --build-arg SERVICE_PORT=8091 -t javanc/manager-service:$CI_COMMIT_SHA quarkus/manager-service
+
+build_frontend_image:
+  stage: image
+  image: docker:27.5.1-cli
+  services:
+    - name: docker:27.5.1-dind
+      variables:
+        HEALTHCHECK_TCP_PORT: "2375"
+  before_script:
+    - docker info
+  script:
+    - >-
+      docker build
+      --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:8080}"
+      --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-change-me-google-client-id.apps.googleusercontent.com}"
+      -t javanc/client-react:$CI_COMMIT_SHA
+      client-react
