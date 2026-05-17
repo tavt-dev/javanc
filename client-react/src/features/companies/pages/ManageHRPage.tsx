@@ -26,6 +26,7 @@ export function ManageHRPage() {
     debouncedCandidateSearch,
     Boolean(company),
   );
+  const candidates = candidatesQuery.data?.items ?? [];
   const requestHrMutation = useRequestHrPromotionMutation();
 
   useEffect(() => {
@@ -131,8 +132,8 @@ export function ManageHRPage() {
             <p className="text-sm text-destructive">
               Unable to load HR candidates.
             </p>
-          ) : (candidatesQuery.data ?? []).length ? (
-            (candidatesQuery.data ?? []).map((candidate) => (
+          ) : candidates.length ? (
+            candidates.map((candidate) => (
               <div
                 key={candidate.id}
                 className="flex flex-col gap-3 rounded-md border border-border bg-background/40 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"

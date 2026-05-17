@@ -16,6 +16,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.javanc</groupId>
+            <artifactId>pagination-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-jackson</artifactId>
         </dependency>

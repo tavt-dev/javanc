@@ -17,7 +17,7 @@ export function HrDashboardPage() {
   const companyQuery = useHrCompanyQuery(user?.id);
   const company = companyQuery.data ?? null;
   const jobsQuery = useJobsByCompanyQuery(company?.id);
-  const jobs = jobsQuery.data ?? [];
+  const jobs = jobsQuery.data?.items ?? [];
   const pendingApplicants = jobs.reduce((total, job) => total + (job.idProfiePending?.length ?? 0), 0);
   const acceptedApplicants = jobs.reduce((total, job) => total + (job.idProfile?.length ?? 0), 0);
 

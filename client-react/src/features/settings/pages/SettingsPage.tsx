@@ -45,13 +45,13 @@ export function SettingsPage() {
   const acceptHrMutation = useAcceptHrPromotionWithCompanyMutation();
   const rejectHrMutation = useRejectHrPromotionMutation();
   const leaveHrMutation = useLeaveHrCompanyMutation();
-  const managerRequestPending = (roleRequestsQuery.data ?? []).some(
+  const managerRequestPending = (roleRequestsQuery.data?.items ?? []).some(
     (request) =>
       request.type === "MANAGER_UPGRADE" &&
       (request.status === "PENDING_SYSADMIN" ||
         request.status === "PENDING_USER_CONFIRMATION"),
   );
-  const pendingHrInvitations = (hrPromotionsQuery.data ?? []).filter(
+  const pendingHrInvitations = (hrPromotionsQuery.data?.items ?? []).filter(
     (request) => request.status === "PENDING_USER_CONFIRMATION",
   );
 
@@ -213,7 +213,7 @@ export function SettingsPage() {
             </div>
           ))}
 
-          {(roleRequestsQuery.data ?? []).slice(0, 5).map((request) => (
+          {(roleRequestsQuery.data?.items ?? []).slice(0, 5).map((request) => (
             <div
               key={request.id}
               className="flex flex-col gap-2 rounded-md border border-border bg-background/40 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
@@ -232,7 +232,7 @@ export function SettingsPage() {
           ))}
 
           {!pendingHrInvitations.length &&
-            !(roleRequestsQuery.data ?? []).length && (
+            !(roleRequestsQuery.data?.items ?? []).length && (
               <p className="text-sm text-muted-foreground">
                 No role requests or HR invitations yet.
               </p>

@@ -28,11 +28,12 @@ describe("projectsApi", () => {
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       1,
       "/project/user/getProfile",
+      { params: { page: 0, size: 20, sort: "createdAt,desc" } },
     );
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       2,
       "/project/user/getProject",
-      { params: { id: 42 } },
+      { params: { id: 42, page: 0, size: 20, sort: "createAt,desc" } },
     );
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       3,
@@ -81,6 +82,7 @@ describe("projectsApi", () => {
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       1,
       "/project/user/projects",
+      { params: { page: 0, size: 20, sort: "createAt,desc" } },
     );
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       2,

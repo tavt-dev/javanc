@@ -29,14 +29,17 @@ export const userKeys = {
   adminRoleRequests: (params?: {
     status?: RoleRequestStatus | "";
     type?: RoleRequestType | "";
+    page?: number;
+    size?: number;
+    sort?: string;
   }) => ["users", "role-requests", "admin", params] as const,
   myHrPromotions: ["users", "hr-promotions", "me"] as const,
 };
 
-export function useUsersQuery() {
+export function useUsersQuery(params: UserSearchParams = {}) {
   return useQuery({
-    queryKey: userKeys.all,
-    queryFn: async () => (await usersApi.list()).data,
+    queryKey: ["users", "list", params],
+    queryFn: async () => (await usersApi.list(params)).data,
   });
 }
 
@@ -60,12 +63,8 @@ export function useCreateUserAccountMutation() {
   return useMutation({
     mutationFn: (input: CreateUserAccountRequest) =>
       usersApi.createAccount(input),
-    onSuccess: (response) => {
-      queryClient.setQueryData<AdminUserDTO[]>(userKeys.all, (current = []) => {
-        const created = response.data;
-        return [created, ...current.filter((user) => user.id !== created.id)];
-      });
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(t("users.accountCreated"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),
@@ -140,13 +139,16 @@ async function refreshSessionUser() {
 export function useMyRoleRequestsQuery() {
   return useQuery({
     queryKey: userKeys.myRoleRequests,
-    queryFn: async () => (await usersApi.myRoleRequests()).data ?? [],
+    queryFn: async () => (await usersApi.myRoleRequests()).data,
   });
 }
 
 export function useAdminRoleRequestsQuery(params?: {
   status?: RoleRequestStatus | "";
   type?: RoleRequestType | "";
+  page?: number;
+  size?: number;
+  sort?: string;
 }) {
   const cleaned = {
     status: params?.status || undefined,
@@ -155,14 +157,19 @@ export function useAdminRoleRequestsQuery(params?: {
   return useQuery({
     queryKey: userKeys.adminRoleRequests(params),
     queryFn: async () =>
-      (await usersApi.adminRoleRequests(cleaned)).data ?? [],
+      (await usersApi.adminRoleRequests({
+        ...cleaned,
+        page: params?.page,
+        size: params?.size,
+        sort: params?.sort,
+      })).data,
   });
 }
 
 export function useMyHrPromotionsQuery() {
   return useQuery({
     queryKey: userKeys.myHrPromotions,
-    queryFn: async () => (await usersApi.myHrPromotions()).data ?? [],
+    queryFn: async () => (await usersApi.myHrPromotions()).data,
   });
 }
 

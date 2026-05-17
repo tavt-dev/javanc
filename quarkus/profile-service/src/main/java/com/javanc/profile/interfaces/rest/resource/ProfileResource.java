@@ -6,6 +6,7 @@ import com.javanc.profile.application.service.ProfileApplicationService;
 import com.javanc.profile.interfaces.rest.dto.ApiResponse;
 import com.javanc.profile.interfaces.rest.dto.ProfileDTO;
 import com.javanc.profile.interfaces.rest.form.ProfileMultipartForm;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -80,12 +81,13 @@ public class ProfileResource {
     }
 
     @GET
-    public ApiResponse<List<ProfileDTO>> search(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+    public ApiResponse<PageResponse<ProfileDTO>> search(
+            @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @QueryParam("type") String type, @QueryParam("title") String title, @QueryParam("page") Integer page,
-            @QueryParam("size") Integer size) {
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
         CurrentUser actor = authService.authenticate(authorizationHeader);
         return new ApiResponse<>(true, "Profiles retrieved successfully",
-                profileService.search(actor, type, title, page, size));
+                profileService.search(actor, type, title, page, size, sort));
     }
 
     @GET

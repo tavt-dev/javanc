@@ -11,6 +11,7 @@ import com.javanc.user.adapter.in.rest.dto.RoleRequestDTO;
 import com.javanc.user.adapter.in.rest.dto.UpdateUserRequest;
 import com.javanc.user.adapter.in.rest.dto.UserDTO;
 import com.javanc.user.application.usecase.UserUseCase;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -58,21 +59,33 @@ public class UserResource {
     }
 
     @GET
-    public ApiResponse<List<UserDTO>> list(@HeaderParam("Authorization") String authorizationHeader,
+    public ApiResponse<PageResponse<UserDTO>> list(@HeaderParam("Authorization") String authorizationHeader,
+            @QueryParam("query") String query, @QueryParam("role") String role, @QueryParam("active") Boolean active,
+            @QueryParam("status") String status, @QueryParam("page") Integer page, @QueryParam("size") Integer size,
+            @QueryParam("sort") String sort) {
+        String token = tokenResolver.requireHeaderToken(authorizationHeader);
+        return new ApiResponse<>(true, "Users retrieved successfully",
+                mapUsers(userUseCase.list(token, query, role, active, status, page, size, sort)));
+    }
+
+    @GET
+    @Path("/batch")
+    public ApiResponse<List<UserDTO>> batch(@HeaderParam("Authorization") String authorizationHeader,
             @QueryParam("ids") List<Integer> ids) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "Users retrieved successfully",
-                userUseCase.list(token, ids).stream().map(mapper::toDto).toList());
+                userUseCase.batch(token, ids).stream().map(mapper::toDto).toList());
     }
 
     @GET
     @Path("/search")
-    public ApiResponse<List<UserDTO>> search(@HeaderParam("Authorization") String authorizationHeader,
+    public ApiResponse<PageResponse<UserDTO>> search(@HeaderParam("Authorization") String authorizationHeader,
             @QueryParam("query") String query, @QueryParam("role") String role, @QueryParam("page") Integer page,
-            @QueryParam("size") Integer size) {
+            @QueryParam("size") Integer size, @QueryParam("active") Boolean active, @QueryParam("status") String status,
+            @QueryParam("sort") String sort) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "Users retrieved successfully",
-                userUseCase.search(token, query, role, page, size).stream().map(mapper::toDto).toList());
+                mapUsers(userUseCase.search(token, query, role, active, status, page, size, sort)));
     }
 
     @PATCH
@@ -130,19 +143,23 @@ public class UserResource {
 
     @GET
     @Path("/me/role-requests")
-    public ApiResponse<List<RoleRequestDTO>> myRoleRequests(@HeaderParam("Authorization") String authorizationHeader) {
+    public ApiResponse<PageResponse<RoleRequestDTO>> myRoleRequests(
+            @HeaderParam("Authorization") String authorizationHeader, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "Role requests retrieved",
-                userUseCase.myRoleRequests(token).stream().map(mapper::toDto).toList());
+                mapRoleRequests(userUseCase.myRoleRequests(token, page, size, sort)));
     }
 
     @GET
     @Path("/admin/role-requests")
-    public ApiResponse<List<RoleRequestDTO>> adminRoleRequests(@HeaderParam("Authorization") String authorizationHeader,
-            @QueryParam("status") String status, @QueryParam("type") String type) {
+    public ApiResponse<PageResponse<RoleRequestDTO>> adminRoleRequests(
+            @HeaderParam("Authorization") String authorizationHeader,
+            @QueryParam("status") String status, @QueryParam("type") String type, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "Role requests retrieved",
-                userUseCase.adminRoleRequests(token, status, type).stream().map(mapper::toDto).toList());
+                mapRoleRequests(userUseCase.adminRoleRequests(token, status, type, page, size, sort)));
     }
 
     @PATCH
@@ -174,10 +191,12 @@ public class UserResource {
 
     @GET
     @Path("/me/hr-promotion-requests")
-    public ApiResponse<List<RoleRequestDTO>> myHrPromotions(@HeaderParam("Authorization") String authorizationHeader) {
+    public ApiResponse<PageResponse<RoleRequestDTO>> myHrPromotions(
+            @HeaderParam("Authorization") String authorizationHeader, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "HR promotion requests retrieved",
-                userUseCase.myHrPromotions(token).stream().map(mapper::toDto).toList());
+                mapRoleRequests(userUseCase.myHrPromotions(token, page, size, sort)));
     }
 
     @GET
@@ -209,5 +228,28 @@ public class UserResource {
     public ApiResponse<UserDTO> leaveHr(@HeaderParam("Authorization") String authorizationHeader) {
         String token = tokenResolver.requireHeaderToken(authorizationHeader);
         return new ApiResponse<>(true, "HR role removed", mapper.toDto(userUseCase.leaveHr(token)));
+    }
+
+    private PageResponse<UserDTO> mapUsers(PageResponse<com.javanc.user.application.result.UserResult> response) {
+        return new PageResponse<>(
+                response.items().stream().map(mapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
+    }
+
+    private PageResponse<RoleRequestDTO> mapRoleRequests(
+            PageResponse<com.javanc.user.application.result.RoleRequestResult> response) {
+        return new PageResponse<>(
+                response.items().stream().map(mapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 }

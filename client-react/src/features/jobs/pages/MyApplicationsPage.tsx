@@ -25,7 +25,7 @@ export function MyApplicationsPage() {
   const pendingQuery = usePendingJobsQuery(profile?.id);
   const acceptedQuery = useAcceptedJobsQuery(profile?.id);
   const activeQuery = tab === "pending" ? pendingQuery : acceptedQuery;
-  const jobs = activeQuery.data ?? [];
+  const jobs = activeQuery.data?.items ?? [];
 
   if (profileQuery.isLoading) {
     return (

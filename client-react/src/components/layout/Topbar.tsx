@@ -27,7 +27,7 @@ export function Topbar() {
   const setTheme = useUIStore((s) => s.setTheme);
   const logoutMutation = useLogoutMutation();
   const hrPromotionsQuery = useMyHrPromotionsQuery();
-  const pendingHrInvitations = (hrPromotionsQuery.data ?? []).filter(
+  const pendingHrInvitations = (hrPromotionsQuery.data?.items ?? []).filter(
     (request) => request.status === "PENDING_USER_CONFIRMATION",
   ).length;
 

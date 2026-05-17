@@ -2,6 +2,7 @@ package com.javanc.gateway.infrastructure.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javanc.gateway.application.model.AuthenticatedPrincipal;
 import com.javanc.gateway.application.port.TokenValidationPort;
 import com.javanc.gateway.infrastructure.client.dto.ApiResponse;
 import com.javanc.gateway.infrastructure.client.dto.TokenIntrospectionResponse;
@@ -34,7 +35,7 @@ public class UserTokenValidationClient implements TokenValidationPort {
     }
 
     @Override
-    public Uni<Boolean> isValid(String token) {
+    public Uni<AuthenticatedPrincipal> introspect(String token) {
         LOG.debugf("Calling user-service token validation url=%s", validationUrl);
         return Uni.createFrom().completionStage(
                 webClient.postAbs(validationUrl)
@@ -45,12 +46,16 @@ public class UserTokenValidationClient implements TokenValidationPort {
                 .map(response -> {
                     LOG.debugf("User-service validation response status=%d", response.statusCode());
                     if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                        return false;
+                        return AuthenticatedPrincipal.inactive();
                     }
                     ApiResponse<TokenIntrospectionResponse> apiResponse = parseResponse(response.bodyAsString());
-                    return apiResponse.getData() != null && apiResponse.getData().isActive();
+                    TokenIntrospectionResponse data = apiResponse.getData();
+                    if (data == null || !data.isActive()) {
+                        return AuthenticatedPrincipal.inactive();
+                    }
+                    return new AuthenticatedPrincipal(true, data.getUserId(), data.getRole());
                 })
-                .onFailure().recoverWithItem(false);
+                .onFailure().recoverWithItem(AuthenticatedPrincipal.inactive());
     }
 
     private ApiResponse<TokenIntrospectionResponse> parseResponse(String body) {

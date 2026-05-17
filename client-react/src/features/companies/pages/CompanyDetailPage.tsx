@@ -61,7 +61,7 @@ export function CompanyDetailPage() {
     );
   }
 
-  const jobs = jobsQuery.data ?? [];
+  const jobs = jobsQuery.data?.items ?? [];
 
   return (
     <PageTransition>

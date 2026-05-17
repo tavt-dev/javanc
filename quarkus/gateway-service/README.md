@@ -4,6 +4,14 @@ Quarkus replacement for `microservice/api-gateway`.
 
 The gateway uses static service URLs instead of Eureka. `user-service` remains the owner of token introspection through `POST /auth/introspect`.
 
+Rate limiting is handled in the gateway before forwarding:
+
+- public auth, read, write, and upload traffic use IP-scoped Redis token buckets;
+- protected routes also receive user-scoped limits after token introspection;
+- `RATE_LIMIT_MODE=shadow` observes over-limit traffic without blocking it;
+- `RATE_LIMIT_MODE=enforce` returns `429` with `RateLimit-*` headers;
+- `GATEWAY_RATE_LIMIT_TRUSTED_PROXY_CIDRS` must be set before forwarded client IP headers are trusted.
+
 ## Routes
 
 | Path | Target env var | Auth |

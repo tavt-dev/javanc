@@ -1,5 +1,7 @@
 package com.javanc.profile.application.service;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.javanc.profile.application.exception.ApplicationException;
 import com.javanc.profile.application.exception.ErrorCode;
 import com.javanc.profile.application.mapper.ProfileMapper;
@@ -227,14 +229,13 @@ class ProfileApplicationServiceTest {
         }
 
         @Override
-        public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
-            return profiles.stream()
+        public PageResponse<Profile> search(TypeProfile typeProfile, String title, PageRequest pageRequest) {
+            List<Profile> filtered = profiles.stream()
                     .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
                     .filter(profile -> typeProfile == null || profile.getTypeProfile() == typeProfile)
                     .filter(profile -> title == null || profile.getTitle().contains(title))
-                    .skip((long) page * size)
-                    .limit(size)
                     .toList();
+            return PageResponse.of(filtered, pageRequest, filtered.size());
         }
 
         @Override

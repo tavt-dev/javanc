@@ -1,12 +1,11 @@
 package com.javanc.project.application.port;
 
 import com.javanc.project.application.dto.ProfileDTO;
-
-import java.util.List;
+import com.javanc.common.pagination.PageResponse;
 
 public interface ProfileLookupPort {
 
-    List<ProfileDTO> getAllProfiles();
+    PageResponse<ProfileDTO> getAllProfiles(int page, int size, String sort);
 
     ProfileDTO getMyProfile();
 }

@@ -4,6 +4,7 @@ import com.javanc.notification.application.service.NotificationApplicationServic
 import com.javanc.notification.interfaces.rest.dto.ApiResponse;
 import com.javanc.notification.interfaces.rest.dto.MessageDTO;
 import com.javanc.notification.interfaces.rest.dto.NotificationDTO;
+import com.javanc.common.pagination.PageResponse;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.inject.Inject;
@@ -14,8 +15,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
-import java.util.List;
 
 @Path("/notification")
 @Produces(MediaType.APPLICATION_JSON)
@@ -60,8 +59,11 @@ public class NotificationResource {
 
     @GET
     @Path("/user/findByUser")
-    public ApiResponse<List<NotificationDTO>> findByUser(@QueryParam("userId") Integer userId) {
-        List<NotificationDTO> result = notificationService.getNotificationsByIdUser(userId);
+    public ApiResponse<PageResponse<NotificationDTO>> findByUser(@QueryParam("userId") Integer userId,
+            @QueryParam("read") Boolean read, @QueryParam("page") Integer page, @QueryParam("size") Integer size,
+            @QueryParam("sort") String sort) {
+        PageResponse<NotificationDTO> result = notificationService.getNotificationsByIdUser(userId, read, page, size,
+                sort);
         return new ApiResponse<>(true, "Find is success", result);
     }
 

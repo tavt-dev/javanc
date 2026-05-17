@@ -57,6 +57,7 @@ $env:JWT_REFRESH_EXPIRATION_SECONDS='604800'
 $env:GOOGLE_CLIENT_ID='<google-web-client-id>.apps.googleusercontent.com'
 $env:GOOGLE_ISSUER='https://accounts.google.com'
 $env:REDIS_ENABLED='true'
+$env:REDIS_HEALTH_ENABLED='false'
 $env:REDIS_URL='redis://:javanc_local@localhost:6379/0'
 $env:REDIS_HOST='localhost'
 $env:REDIS_PORT='6379'
@@ -228,12 +229,15 @@ Protected endpoints do not accept `?token=`.
 
 ## Redis Foundation
 
-Redis is wired as optional infrastructure in this phase. The current auth flows still use their existing persistence and do not depend on Redis yet.
+Redis is wired as optional infrastructure. Auth-specific rate limits use Redis token buckets for login, Google login, registration, verification, and resend-OTP flows while core account state remains in the database.
 
 - Set `REDIS_ENABLED=false` to run without Redis.
 - Use `REDIS_URL` as the connection source of truth. Local default: `redis://:javanc_local@localhost:6379/0`.
 - Keep passwords in environment or secret management only; do not commit real Redis credentials.
-- When Redis is enabled and unavailable, readiness becomes `DOWN`.
+- `REDIS_HEALTH_ENABLED=false` is the default so optional Redis features can fail open without making the service
+  unready; set it to `true` only when Redis should become a readiness dependency.
+- Set `USER_RATE_LIMIT_TRUSTED_PROXY_CIDRS` before trusting gateway-forwarded client IP headers for auth-specific
+  rate limits; otherwise direct callers are bucketed by their real remote address.
 
 Key convention for future features:
 

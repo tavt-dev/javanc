@@ -24,7 +24,15 @@ describe("notificationsApi", () => {
 
     expect(mockedApiClient.get).toHaveBeenCalledWith(
       "/notification/user/findByUser",
-      { params: { userId: 3 } },
+      {
+        params: {
+          userId: 3,
+          read: undefined,
+          page: 0,
+          size: 20,
+          sort: "createAt,desc",
+        },
+      },
     );
   });
 

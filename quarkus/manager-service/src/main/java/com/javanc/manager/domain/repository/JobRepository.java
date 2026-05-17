@@ -1,8 +1,9 @@
 package com.javanc.manager.domain.repository;
 
 import com.javanc.manager.domain.model.Job;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface JobRepository {
@@ -10,9 +11,6 @@ public interface JobRepository {
     Job save(Job job);
     void delete(Job job);
     Optional<Job> findByJobId(Integer id);
-    List<Job> findAllLimited();
-    List<Job> findByCompanyId(Integer idCompany);
-    List<Job> findByPendingProfileId(Integer idProfile);
-    List<Job> findByAcceptedProfileId(Integer idProfile);
-    List<Job> findNewJobsForProfile(Integer idProfile);
+    PageResponse<Job> search(String query, String type, Integer companyId, Boolean openOnly, Integer pendingProfileId,
+            Integer acceptedProfileId, Integer excludedProfileId, PageRequest pageRequest);
 }

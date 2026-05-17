@@ -1,9 +1,10 @@
 import { Bell } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PaginationControls } from "@/components/shared/PaginationControls";
 import { RetryState } from "@/components/shared/RetryState";
 import { NotificationItem } from "@/features/notifications/components/NotificationItem";
 import {
@@ -16,19 +17,28 @@ type NotificationFilter = "all" | "unread" | "read";
 
 export function NotificationsPage() {
   const user = useAuthStore((s) => s.user);
-  const [filter, setFilter] = useState<NotificationFilter>("all");
-  const notificationsQuery = useNotificationsQuery(user?.id);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = readNotificationFilter(searchParams.get("filter"));
+  const page = Number(searchParams.get("page") ?? 0);
+  const size = Number(searchParams.get("size") ?? 20);
+  const sort = searchParams.get("sort") ?? "createAt,desc";
+  const notificationsQuery = useNotificationsQuery(user?.id, {
+    read: filter === "all" ? undefined : filter === "read",
+    page,
+    size,
+    sort,
+  });
   const markReadMutation = useMarkNotificationReadMutation(user?.id ?? 0);
+  const notifications = notificationsQuery.notifications;
 
-  const filtered = useMemo(() => {
-    if (filter === "unread") {
-      return notificationsQuery.notifications.filter((item) => !item.read);
-    }
-    if (filter === "read") {
-      return notificationsQuery.notifications.filter((item) => item.read);
-    }
-    return notificationsQuery.notifications;
-  }, [filter, notificationsQuery.notifications]);
+  const updateListParams = (next: Record<string, string | undefined>) => {
+    const updated = new URLSearchParams(searchParams);
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) updated.delete(key);
+      else updated.set(key, value);
+    });
+    setSearchParams(updated, { replace: true });
+  };
 
   return (
     <PageTransition>
@@ -42,7 +52,12 @@ export function NotificationsPage() {
           <button
             key={item}
             type="button"
-            onClick={() => setFilter(item)}
+            onClick={() =>
+              updateListParams({
+                filter: item === "all" ? undefined : item,
+                page: "0",
+              })
+            }
             className={
               filter === item
                 ? "rounded-md bg-primary px-4 py-2 text-sm font-medium capitalize text-primary-foreground"
@@ -61,24 +76,39 @@ export function NotificationsPage() {
           error={notificationsQuery.error}
           onRetry={notificationsQuery.refetch}
         />
-      ) : filtered.length === 0 ? (
+      ) : notifications.length === 0 ? (
         <EmptyState
           icon={Bell}
           title="No notifications"
           description="There are no notifications for this filter."
         />
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              marking={markReadMutation.isPending}
-              onMarkRead={(item) => markReadMutation.mutate(item)}
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            {notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                marking={markReadMutation.isPending}
+                onMarkRead={(item) => markReadMutation.mutate(item)}
+              />
+            ))}
+          </div>
+          {notificationsQuery.page && (
+            <PaginationControls
+              page={notificationsQuery.page}
+              onPageChange={(nextPage) => updateListParams({ page: String(nextPage) })}
+              onSizeChange={(nextSize) =>
+                updateListParams({ size: String(nextSize), page: "0" })
+              }
             />
-          ))}
+          )}
         </div>
       )}
     </PageTransition>
   );
+}
+
+function readNotificationFilter(value: string | null): NotificationFilter {
+  return value === "unread" || value === "read" ? value : "all";
 }

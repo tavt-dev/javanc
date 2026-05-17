@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageResponse } from "@/types/api";
 import type {
   AdminUserDTO,
   ChangeUserRoleRequest,
@@ -30,6 +30,10 @@ function normalizeUsers(users: RawAdminUserDTO[]) {
   return users.map(normalizeUser);
 }
 
+function normalizeUserPage(page: PageResponse<RawAdminUserDTO>) {
+  return { ...page, items: normalizeUsers(page.items ?? []) };
+}
+
 const repeatedIdsSerializer = {
   serialize: (params: Record<string, unknown>) => {
     const searchParams = new URLSearchParams();
@@ -45,27 +49,45 @@ export const usersApi = {
     return { ...response.data, data: normalizeUser(response.data.data) };
   },
 
-  async list(ids?: number[]) {
-    const response = await apiClient.get<ApiResponse<RawAdminUserDTO[]>>("/users", {
-      params: ids?.length ? { ids } : undefined,
+  async list(params: UserSearchParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<RawAdminUserDTO>>>("/users", {
+      params: {
+        query: params.query || undefined,
+        role: params.role || undefined,
+        active: params.active,
+        status: params.status || undefined,
+        page: params.page ?? 0,
+        size: params.size ?? 20,
+        sort: params.sort ?? "createdAt,desc",
+      },
+    });
+    return { ...response.data, data: normalizeUserPage(response.data.data) };
+  },
+
+  async batch(ids: number[]) {
+    const response = await apiClient.get<ApiResponse<RawAdminUserDTO[]>>("/users/batch", {
+      params: { ids },
       paramsSerializer: repeatedIdsSerializer,
     });
     return { ...response.data, data: normalizeUsers(response.data.data ?? []) };
   },
 
   async search(params: UserSearchParams) {
-    const response = await apiClient.get<ApiResponse<RawAdminUserDTO[]>>(
+    const response = await apiClient.get<ApiResponse<PageResponse<RawAdminUserDTO>>>(
       "/users/search",
       {
         params: {
           query: params.query || undefined,
           role: params.role || undefined,
+          active: params.active,
+          status: params.status || undefined,
           page: params.page ?? 0,
-          size: params.size ?? 10,
+          size: params.size ?? 20,
+          sort: params.sort ?? "createdAt,desc",
         },
       },
     );
-    return { ...response.data, data: normalizeUsers(response.data.data ?? []) };
+    return { ...response.data, data: normalizeUserPage(response.data.data) };
   },
 
   async findById(userId: number) {
@@ -122,9 +144,10 @@ export const usersApi = {
     return response.data;
   },
 
-  async myRoleRequests() {
-    const response = await apiClient.get<ApiResponse<RoleRequestDTO[]>>(
+  async myRoleRequests(params = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<RoleRequestDTO>>>(
       "/users/me/role-requests",
+      { params },
     );
     return response.data;
   },
@@ -132,8 +155,11 @@ export const usersApi = {
   async adminRoleRequests(params?: {
     status?: string;
     type?: string;
+    page?: number;
+    size?: number;
+    sort?: string;
   }) {
-    const response = await apiClient.get<ApiResponse<RoleRequestDTO[]>>(
+    const response = await apiClient.get<ApiResponse<PageResponse<RoleRequestDTO>>>(
       "/users/admin/role-requests",
       { params },
     );
@@ -163,9 +189,10 @@ export const usersApi = {
     return response.data;
   },
 
-  async myHrPromotions() {
-    const response = await apiClient.get<ApiResponse<RoleRequestDTO[]>>(
+  async myHrPromotions(params = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<RoleRequestDTO>>>(
       "/users/me/hr-promotion-requests",
+      { params },
     );
     return response.data;
   },

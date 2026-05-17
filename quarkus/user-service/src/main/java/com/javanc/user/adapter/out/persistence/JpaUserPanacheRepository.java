@@ -7,7 +7,10 @@ import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.model.UserId;
 import com.javanc.user.domain.port.UserRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -44,11 +47,6 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
     }
 
     @Override
-    public List<User> findAllUsers() {
-        return listAll().stream().map(mapper::toDomain).toList();
-    }
-
-    @Override
     public List<User> findUsersByIds(Collection<UserId> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
@@ -58,26 +56,43 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
     }
 
     @Override
-    public List<User> searchUsers(String query, Role role, int page, int size) {
+    public PageResponse<User> findUsers(String query, Role role, AccountStatus status, PageRequest pageRequest) {
         String normalized = query == null ? "" : query.trim().toLowerCase();
         String like = "%" + normalized + "%";
         boolean numeric = normalized.matches("\\d+");
-        if (role != null && numeric) {
-            return find("role = ?1 and status = ?2 and (id = ?3 or lower(name) like ?4 or lower(email) like ?4 or (idEmployee is not null and lower(idEmployee) like ?4))",
-                    role, AccountStatus.ACTIVE, Integer.valueOf(normalized), like).page(page, size).list().stream()
-                    .map(mapper::toDomain).toList();
-        }
+        StringBuilder queryBuilder = new StringBuilder("1 = 1");
+        List<Object> params = new java.util.ArrayList<>();
         if (role != null) {
-            return find("role = ?1 and status = ?2 and (lower(name) like ?3 or lower(email) like ?3 or (idEmployee is not null and lower(idEmployee) like ?3))",
-                    role, AccountStatus.ACTIVE, like).page(page, size).list().stream().map(mapper::toDomain).toList();
+            queryBuilder.append(" and role = ?").append(params.size() + 1);
+            params.add(role);
         }
-        if (numeric) {
-            return find("status = ?1 and (id = ?2 or lower(name) like ?3 or lower(email) like ?3 or (idEmployee is not null and lower(idEmployee) like ?3))",
-                    AccountStatus.ACTIVE, Integer.valueOf(normalized), like).page(page, size).list().stream()
-                    .map(mapper::toDomain).toList();
+        if (status != null) {
+            queryBuilder.append(" and status = ?").append(params.size() + 1);
+            params.add(status);
         }
-        return find("status = ?1 and (lower(name) like ?2 or lower(email) like ?2 or (idEmployee is not null and lower(idEmployee) like ?2))",
-                AccountStatus.ACTIVE, like).page(page, size).list().stream().map(mapper::toDomain).toList();
+        if (!normalized.isBlank()) {
+            queryBuilder.append(" and (");
+            if (numeric) {
+                queryBuilder.append("id = ?").append(params.size() + 1).append(" or ");
+                params.add(Integer.valueOf(normalized));
+            }
+            queryBuilder.append("lower(name) like ?").append(params.size() + 1)
+                    .append(" or lower(email) like ?").append(params.size() + 1)
+                    .append(" or (idEmployee is not null and lower(idEmployee) like ?").append(params.size() + 1)
+                    .append("))");
+            params.add(like);
+        }
+        var panacheQuery = find(queryBuilder.toString(), sort(pageRequest), params.toArray());
+        long total = panacheQuery.count();
+        List<User> items = panacheQuery.page(pageRequest.page(), pageRequest.size()).list().stream()
+                .map(mapper::toDomain)
+                .toList();
+        return PageResponse.of(items, pageRequest, total);
+    }
+
+    @Override
+    public List<User> findAllUsers() {
+        return listAll().stream().map(mapper::toDomain).toList();
     }
 
     @Override
@@ -111,5 +126,11 @@ public class JpaUserPanacheRepository implements PanacheRepositoryBase<JpaUserEn
             existing.setStatus(AccountStatus.DELETED);
             flush();
         }
+    }
+
+    private Sort sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sort.ascending(request.sortField())
+                : Sort.descending(request.sortField());
     }
 }

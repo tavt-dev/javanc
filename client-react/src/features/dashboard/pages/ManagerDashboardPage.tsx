@@ -17,8 +17,8 @@ export function ManagerDashboardPage() {
   const company = companyQuery.data ?? null;
   const jobsQuery = useJobsByCompanyQuery(company?.id);
   const roleRequestsQuery = useMyRoleRequestsQuery();
-  const jobs = jobsQuery.data ?? [];
-  const hrInvitations = (roleRequestsQuery.data ?? []).filter(
+  const jobs = jobsQuery.data?.items ?? [];
+  const hrInvitations = (roleRequestsQuery.data?.items ?? []).filter(
     (request) => request.type === "HR_PROMOTION",
   );
   const pendingHrInvitations = hrInvitations.filter(

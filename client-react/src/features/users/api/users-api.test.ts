@@ -13,13 +13,25 @@ vi.mock("@/lib/api-client", () => ({
 
 const mockedApiClient = vi.mocked(apiClient);
 
+function page<T>(items: T[]) {
+  return {
+    items,
+    page: 0,
+    size: 20,
+    totalElements: items.length,
+    totalPages: items.length ? 1 : 0,
+    hasNext: false,
+    hasPrevious: false,
+  };
+}
+
 describe("usersApi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("uses admin user management endpoints", async () => {
-    mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
+    mockedApiClient.get.mockResolvedValue({ data: { data: page([]) } });
     mockedApiClient.post.mockResolvedValue({
       data: { data: { id: 7, active: true } },
     });
@@ -43,8 +55,15 @@ describe("usersApi", () => {
     await usersApi.delete(7);
 
     expect(mockedApiClient.get).toHaveBeenCalledWith("/users", {
-      params: undefined,
-      paramsSerializer: expect.any(Object),
+      params: {
+        query: undefined,
+        role: undefined,
+        active: undefined,
+        status: undefined,
+        page: 0,
+        size: 20,
+        sort: "createdAt,desc",
+      },
     });
     expect(mockedApiClient.get).toHaveBeenCalledWith("/users/me");
     expect(mockedApiClient.post).toHaveBeenCalledWith(
@@ -65,9 +84,9 @@ describe("usersApi", () => {
   });
 
   it("normalizes user DTO aliases and serializes ids for backend query params", async () => {
-    mockedApiClient.get.mockResolvedValue({
+    mockedApiClient.get.mockResolvedValueOnce({
       data: {
-        data: [
+        data: page([
           {
             id: 11,
             name: "Alias User",
@@ -76,25 +95,34 @@ describe("usersApi", () => {
             role: "admin",
             isActive: true,
           },
-        ],
+        ]),
       },
     });
 
-    const response = await usersApi.list([11, 12]);
+    const response = await usersApi.list();
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: { data: [{ id: 12, name: "Batch", email: "batch@example.com" }] },
+    });
+    await usersApi.batch([11, 12]);
     const config = mockedApiClient.get.mock.calls[0]?.[1];
+    const batchConfig = mockedApiClient.get.mock.calls[1]?.[1];
     const serializer = config?.paramsSerializer as
       | { serialize?: (params: Record<string, unknown>) => string }
       | undefined;
+    const batchSerializer = batchConfig?.paramsSerializer as
+      | { serialize?: (params: Record<string, unknown>) => string }
+      | undefined;
 
-    expect(response.data[0]).toMatchObject({
+    expect(response.data.items[0]).toMatchObject({
       idEmployee: "EMP-11",
       active: true,
     });
-    expect(serializer?.serialize?.({ ids: [11, 12] })).toBe("ids=11&ids=12");
+    expect(serializer).toBeUndefined();
+    expect(batchSerializer?.serialize?.({ ids: [11, 12] })).toBe("ids=11&ids=12");
   });
 
   it("uses role request endpoints", async () => {
-    mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
+    mockedApiClient.get.mockResolvedValue({ data: { data: page([]) } });
     mockedApiClient.post.mockResolvedValue({ data: { data: { id: 1 } } });
     mockedApiClient.patch.mockResolvedValue({ data: { data: { id: 1 } } });
 
@@ -119,7 +147,9 @@ describe("usersApi", () => {
       "/users/me/manager-upgrade-requests",
       { reason: "Ready to manage" },
     );
-    expect(mockedApiClient.get).toHaveBeenCalledWith("/users/me/role-requests");
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/users/me/role-requests", {
+      params: {},
+    });
     expect(mockedApiClient.get).toHaveBeenCalledWith(
       "/users/admin/role-requests",
       { params: { status: "PENDING_SYSADMIN" } },
@@ -138,6 +168,7 @@ describe("usersApi", () => {
     );
     expect(mockedApiClient.get).toHaveBeenCalledWith(
       "/users/me/hr-promotion-requests",
+      { params: {} },
     );
     expect(mockedApiClient.get).toHaveBeenCalledWith("/users/role-requests/3");
     expect(mockedApiClient.patch).toHaveBeenCalledWith(

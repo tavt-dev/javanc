@@ -10,6 +10,8 @@ import com.javanc.project.application.port.ImageStoragePort;
 import com.javanc.project.application.port.ProfileLookupPort;
 import com.javanc.project.domain.model.Project;
 import com.javanc.project.domain.repository.ProjectRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
@@ -18,10 +20,14 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
 public class ProjectApplicationService {
+    private static final Set<String> PROJECT_SORT_FIELDS = Set.of("id", "title", "createAt");
+    private static final Set<String> PROFILE_SORT_FIELDS = Set.of("id", "title", "typeProfile", "createdAt",
+            "updatedAt");
 
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
@@ -102,23 +108,23 @@ public class ProjectApplicationService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.PROJECT_NOT_FOUND));
     }
 
-    public List<ProfileDTO> getAllProfiles() {
-        return profileLookupPort.getAllProfiles();
+    public PageResponse<ProfileDTO> getAllProfiles(Integer page, Integer size, String sort) {
+        PageRequest request = profilePageRequest(page, size, sort);
+        return profileLookupPort.getAllProfiles(request.page(), request.size(), request.sortField() + ","
+                + request.direction().wireValue());
     }
 
-    public List<ProjectDTO> getProjectByIdProfile(Integer idProfile) {
+    public PageResponse<ProjectDTO> getProjectByIdProfile(Integer idProfile, Integer page, Integer size, String sort) {
         try {
-            return projectRepository.findByIdProfile(idProfile).stream()
-                    .map(projectMapper::toDto)
-                    .toList();
+            return mapProjects(projectRepository.findByIdProfile(idProfile, pageRequest(page, size, sort)));
         } catch (PersistenceException exception) {
             throw new ApplicationException(ErrorCode.DATABASE_ACCESS_ERROR, exception);
         }
     }
 
-    public List<ProjectDTO> getMyProjects() {
+    public PageResponse<ProjectDTO> getMyProjects(Integer page, Integer size, String sort) {
         ProfileDTO profile = requireMyProfile();
-        return getProjectByIdProfile(profile.getId());
+        return getProjectByIdProfile(profile.getId(), page, size, sort);
     }
 
     public ProjectDTO getMyProject(Integer id) {
@@ -154,5 +160,32 @@ public class ProjectApplicationService {
             throw new ApplicationException(ErrorCode.FORBIDDEN);
         }
         return profile;
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "createAt,desc", PROJECT_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private PageRequest profilePageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "createdAt,desc", PROFILE_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private PageResponse<ProjectDTO> mapProjects(PageResponse<Project> response) {
+        return new PageResponse<>(
+                response.items().stream().map(projectMapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 }

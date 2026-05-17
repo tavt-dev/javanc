@@ -101,7 +101,7 @@ describe("companiesApi", () => {
 
     expect(mockedApiClient.get).toHaveBeenCalledWith(
       "/manager/manager/hr-candidates",
-      { params: { query: "ana", page: 1, size: 20 } },
+      { params: { query: "ana", page: 1, size: 20, sort: "id,desc" } },
     );
     expect(mockedApiClient.post).toHaveBeenCalledWith(
       "/manager/manager/hr-promotions",

@@ -97,9 +97,9 @@ class NotificationResourceTest {
                 .statusCode(200)
                 .body("success", equalTo(true))
                 .body("message", equalTo("Find is success"))
-                .body("data", hasSize(2))
-                .body("data[0].idUser", equalTo(42))
-                .body("data[0].read", equalTo(false));
+                .body("data.items", hasSize(2))
+                .body("data.items[0].idUser", equalTo(42))
+                .body("data.items[0].read", equalTo(false));
     }
 
     @Test

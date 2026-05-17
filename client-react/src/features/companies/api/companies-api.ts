@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageParams, PageResponse } from "@/types/api";
 import type { CompanyDTO, CompanyFormValues } from "@/types/company";
 import type {
   AdminUserDTO,
@@ -47,22 +47,44 @@ function normalizeCompanyResponse(response: ApiResponse<CompanyDTO>) {
   return { ...response, data: normalizeCompany(response.data) };
 }
 
-function normalizeCompaniesResponse(response: ApiResponse<CompanyDTO[]>) {
-  return { ...response, data: (response.data ?? []).map(normalizeCompany) };
+function normalizeCompaniesResponse(response: ApiResponse<PageResponse<CompanyDTO>>) {
+  return {
+    ...response,
+    data: { ...response.data, items: (response.data?.items ?? []).map(normalizeCompany) },
+  };
 }
 
 export const companiesApi = {
-  async getAll() {
-    const response = await apiClient.get<ApiResponse<CompanyDTO[]>>(
+  async getAll(params: PageParams & { query?: string; type?: string; location?: string } = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<CompanyDTO>>>(
       "/manager/user/company/getcompany",
+      {
+        params: {
+          query: params.query || undefined,
+          type: params.type || undefined,
+          location: params.location || undefined,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: params.sort ?? "id,desc",
+        },
+      },
     );
     return normalizeCompaniesResponse(response.data);
   },
 
-  async getByType(type: string) {
-    const response = await apiClient.get<ApiResponse<CompanyDTO[]>>(
+  async getByType(type: string, params: PageParams & { query?: string; location?: string } = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<CompanyDTO>>>(
       "/manager/user/company/getcompanybytype",
-      { params: { type } },
+      {
+        params: {
+          type,
+          query: params.query || undefined,
+          location: params.location || undefined,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: params.sort ?? "id,desc",
+        },
+      },
     );
     return normalizeCompaniesResponse(response.data);
   },
@@ -145,14 +167,15 @@ export const companiesApi = {
     return normalizeCompanyResponse(response.data);
   },
 
-  async hrCandidates(params: { query?: string; page?: number; size?: number }) {
-    const response = await apiClient.get<ApiResponse<AdminUserDTO[]>>(
+  async hrCandidates(params: PageParams & { query?: string }) {
+    const response = await apiClient.get<ApiResponse<PageResponse<AdminUserDTO>>>(
       "/manager/manager/hr-candidates",
       {
         params: {
           query: params.query || undefined,
           page: params.page ?? 0,
-          size: params.size ?? 10,
+          size: params.size ?? 20,
+          sort: params.sort ?? "id,desc",
         },
       },
     );

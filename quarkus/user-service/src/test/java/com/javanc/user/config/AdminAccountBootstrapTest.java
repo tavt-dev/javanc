@@ -1,5 +1,7 @@
 package com.javanc.user.config;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.javanc.user.domain.model.AccountStatus;
 import com.javanc.user.domain.model.EmailAddress;
 import com.javanc.user.domain.model.EmployeeId;
@@ -208,10 +210,12 @@ class AdminAccountBootstrapTest {
         }
 
         @Override
-        public List<User> searchUsers(String query, Role role, int page, int size) {
-            return users.stream()
+        public PageResponse<User> findUsers(String query, Role role, AccountStatus status, PageRequest pageRequest) {
+            List<User> filtered = users.stream()
                     .filter(user -> role == null || user.role() == role)
+                    .filter(user -> status == null || user.status() == status)
                     .toList();
+            return PageResponse.of(filtered, pageRequest, filtered.size());
         }
 
         @Override

@@ -2,7 +2,10 @@ package com.javanc.project.infrastructure.persistence;
 
 import com.javanc.project.domain.model.Project;
 import com.javanc.project.domain.repository.ProjectRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
@@ -22,13 +25,20 @@ public class ProjectJpaRepository implements ProjectRepository, PanacheRepositor
     }
 
     @Override
-    public List<Project> findByIdProfile(Integer idProfile) {
-        return find("idProfile", idProfile).list();
+    public PageResponse<Project> findByIdProfile(Integer idProfile, PageRequest pageRequest) {
+        var query = find("idProfile", sort(pageRequest), idProfile);
+        return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
     }
 
     @Override
     public void delete(Project project) {
         Project managed = getEntityManager().contains(project) ? project : getEntityManager().merge(project);
         getEntityManager().remove(managed);
+    }
+
+    private Sort sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sort.ascending(request.sortField())
+                : Sort.descending(request.sortField());
     }
 }

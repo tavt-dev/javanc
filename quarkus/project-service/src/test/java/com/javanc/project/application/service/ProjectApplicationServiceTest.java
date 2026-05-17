@@ -1,5 +1,8 @@
 package com.javanc.project.application.service;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.project.application.dto.ImageDTO;
 import com.javanc.project.application.dto.ProfileDTO;
 import com.javanc.project.application.dto.ProjectDTO;
@@ -98,10 +101,10 @@ class ProjectApplicationServiceTest {
         repository.save(project(2, 20, "Two"));
         repository.save(project(3, 21, "Three"));
 
-        List<ProjectDTO> projects = service.getProjectByIdProfile(20);
+        PageResponse<ProjectDTO> projects = service.getProjectByIdProfile(20, 0, 20, "id,asc");
 
-        assertEquals(2, projects.size());
-        assertEquals("One", projects.get(0).getTitle());
+        assertEquals(2, projects.items().size());
+        assertEquals("One", projects.items().get(0).getTitle());
     }
 
     @Test
@@ -117,7 +120,7 @@ class ProjectApplicationServiceTest {
 
         ProjectDTO saved = service.createMyProject(create);
         assertEquals(88, saved.getIdProfile());
-        assertEquals(1, service.getMyProjects().size());
+        assertEquals(1, service.getMyProjects(0, 20, "id,asc").items().size());
 
         ProjectDTO update = new ProjectDTO();
         update.setTitle("Updated user project");
@@ -128,7 +131,7 @@ class ProjectApplicationServiceTest {
         assertEquals("Updated user project", updated.getTitle());
 
         service.deleteMyProject(saved.getId());
-        assertEquals(0, service.getMyProjects().size());
+        assertEquals(0, service.getMyProjects(0, 20, "id,asc").items().size());
     }
 
     @Test
@@ -148,9 +151,11 @@ class ProjectApplicationServiceTest {
     void profileListDelegatesAndReturnsUnwrappedProfiles() {
         ProfileDTO profile = new ProfileDTO();
         profile.setId(1);
-        when(profileLookupPort.getAllProfiles()).thenReturn(List.of(profile));
+        PageResponse<ProfileDTO> profiles = PageResponse.of(List.of(profile),
+                new PageRequest(0, 20, "createdAt", SortDirection.DESC), 1);
+        when(profileLookupPort.getAllProfiles(0, 20, "createdAt,desc")).thenReturn(profiles);
 
-        assertEquals(1, service.getAllProfiles().size());
+        assertEquals(1, service.getAllProfiles(0, 20, "createdAt,desc").items().size());
     }
 
     @Test
@@ -189,8 +194,11 @@ class ProjectApplicationServiceTest {
         }
 
         @Override
-        public List<Project> findByIdProfile(Integer idProfile) {
-            return projects.stream().filter(project -> project.getIdProfile().equals(idProfile)).toList();
+        public PageResponse<Project> findByIdProfile(Integer idProfile, PageRequest pageRequest) {
+            List<Project> filtered = projects.stream()
+                    .filter(project -> project.getIdProfile().equals(idProfile))
+                    .toList();
+            return PageResponse.of(filtered, pageRequest, filtered.size());
         }
 
         @Override

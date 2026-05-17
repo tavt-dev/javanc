@@ -9,21 +9,24 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useTranslation } from "react-i18next";
 import type { CompanyDTO, CompanyFormValues } from "@/types/company";
 import type { InternalAccountFormValues } from "@/types/user";
+import type { PageParams } from "@/types/api";
 
 export const companyKeys = {
-  all: ["companies", "all"] as const,
+  all: (params?: PageParams & { query?: string; type?: string; location?: string }) =>
+    ["companies", "all", params] as const,
   type: (type: string) => ["companies", "type", type] as const,
   detail: (companyId: number) => ["companies", "detail", companyId] as const,
   me: ["companies", "manager", "me"] as const,
   manager: (managerId: number) => ["companies", "manager", managerId] as const,
   hr: (hrId: number) => ["companies", "hr", hrId] as const,
-  hrCandidates: (query: string) => ["companies", "hr-candidates", query] as const,
+  hrCandidates: (query: string, params?: PageParams) =>
+    ["companies", "hr-candidates", query, params] as const,
 };
 
-export function useCompaniesQuery() {
+export function useCompaniesQuery(params: PageParams & { query?: string; type?: string; location?: string } = {}) {
   return useQuery({
-    queryKey: companyKeys.all,
-    queryFn: async () => (await companiesApi.getAll()).data,
+    queryKey: companyKeys.all(params),
+    queryFn: async () => (await companiesApi.getAll(params)).data,
   });
 }
 
@@ -31,7 +34,7 @@ export function useCompanyByTypeQuery(type?: string) {
   return useQuery({
     queryKey: type ? companyKeys.type(type) : ["companies", "type", "missing"],
     queryFn: async () => {
-      if (!type) return [];
+      if (!type) return null;
       return (await companiesApi.getByType(type)).data;
     },
     enabled: Boolean(type),
@@ -86,17 +89,22 @@ export function useHrCompanyQuery(hrId?: number | null) {
   });
 }
 
-export function useHrCandidatesQuery(query: string, enabled = true) {
+export function useHrCandidatesQuery(query: string, enabled = true, params: PageParams = {}) {
   return useQuery({
-    queryKey: companyKeys.hrCandidates(query),
+    queryKey: companyKeys.hrCandidates(query, params),
     queryFn: async () =>
-      (await companiesApi.hrCandidates({ query, page: 0, size: 10 })).data ?? [],
+      (await companiesApi.hrCandidates({
+        query,
+        page: params.page ?? 0,
+        size: params.size ?? 20,
+        sort: params.sort ?? "id,desc",
+      })).data,
     enabled,
   });
 }
 
 function invalidateCompany(company?: CompanyDTO) {
-  queryClient.invalidateQueries({ queryKey: companyKeys.all });
+  queryClient.invalidateQueries({ queryKey: ["companies"] });
   if (company?.id) {
     queryClient.invalidateQueries({ queryKey: companyKeys.detail(company.id) });
     queryClient.invalidateQueries({ queryKey: ["jobs", "company", company.id] });
@@ -141,7 +149,7 @@ export function useDeleteCompanyMutation() {
   return useMutation({
     mutationFn: (companyId: number) => companiesApi.delete(companyId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: companyKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast.success(t("companies.deleted"));
     },
     onError: (error) => toast.error(extractErrorMessage(error)),

@@ -2,7 +2,10 @@ package com.javanc.user.adapter.out.persistence;
 
 import com.javanc.user.domain.model.RoleRequestStatus;
 import com.javanc.user.domain.model.RoleRequestType;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
@@ -20,25 +23,40 @@ public class JpaRoleUpgradeRequestRepository implements PanacheRepositoryBase<Jp
         return findByIdOptional(id);
     }
 
-    public List<JpaRoleUpgradeRequestEntity> findForUser(Integer userId) {
-        return list("requesterUserId = ?1 or targetUserId = ?1 order by createdAt desc", userId);
+    public PageResponse<JpaRoleUpgradeRequestEntity> findForUser(Integer userId, PageRequest pageRequest) {
+        var query = find("requesterUserId = ?1 or targetUserId = ?1", sort(pageRequest), userId);
+        return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
     }
 
-    public List<JpaRoleUpgradeRequestEntity> findForAdmin(RoleRequestStatus status, RoleRequestType type) {
+    public PageResponse<JpaRoleUpgradeRequestEntity> findForAdmin(RoleRequestStatus status, RoleRequestType type,
+            PageRequest pageRequest) {
+        var sort = sort(pageRequest);
         if (status != null && type != null) {
-            return list("status = ?1 and type = ?2 order by createdAt desc", status, type);
+            var query = find("status = ?1 and type = ?2", sort, status, type);
+            return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
         }
         if (status != null) {
-            return list("status = ?1 order by createdAt desc", status);
+            var query = find("status = ?1", sort, status);
+            return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
         }
         if (type != null) {
-            return list("type = ?1 order by createdAt desc", type);
+            var query = find("type = ?1", sort, type);
+            return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
         }
-        return list("order by createdAt desc");
+        var query = findAll(sort);
+        return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
     }
 
-    public List<JpaRoleUpgradeRequestEntity> findHrPromotionsForUser(Integer targetUserId) {
-        return list("targetUserId = ?1 and type = ?2 order by createdAt desc", targetUserId,
+    public PageResponse<JpaRoleUpgradeRequestEntity> findHrPromotionsForUser(Integer targetUserId,
+            PageRequest pageRequest) {
+        var query = find("targetUserId = ?1 and type = ?2", sort(pageRequest), targetUserId,
                 RoleRequestType.HR_PROMOTION);
+        return PageResponse.of(query.page(pageRequest.page(), pageRequest.size()).list(), pageRequest, query.count());
+    }
+
+    private Sort sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sort.ascending(request.sortField())
+                : Sort.descending(request.sortField());
     }
 }

@@ -8,17 +8,20 @@ import com.javanc.notification.domain.model.Notification;
 import com.javanc.notification.domain.repository.NotificationRepository;
 import com.javanc.notification.interfaces.rest.dto.MessageDTO;
 import com.javanc.notification.interfaces.rest.dto.NotificationDTO;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
 public class NotificationApplicationService {
+    private static final Set<String> NOTIFICATION_SORT_FIELDS = Set.of("id", "createAt", "read");
 
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
@@ -84,15 +87,23 @@ public class NotificationApplicationService {
         }
     }
 
-    public List<NotificationDTO> getNotificationsByIdUser(Integer userId) {
+    public PageResponse<NotificationDTO> getNotificationsByIdUser(Integer userId, Boolean read, Integer page,
+            Integer size, String sort) {
         try {
             boolean checkUser = userLookupPort.checkUserId(userId);
             if (!checkUser) {
                 throw new ApplicationException(ErrorCode.DATABASE_ACCESS_ERROR);
             }
-            return notificationRepository.findByUserId(userId).stream()
-                    .map(notificationMapper::toDto)
-                    .toList();
+            PageResponse<Notification> response = notificationRepository.findByUserId(userId, read,
+                    pageRequest(page, size, sort));
+            return new PageResponse<>(
+                    response.items().stream().map(notificationMapper::toDto).toList(),
+                    response.page(),
+                    response.size(),
+                    response.totalElements(),
+                    response.totalPages(),
+                    response.hasNext(),
+                    response.hasPrevious());
         } catch (ApplicationException exception) {
             throw exception;
         } catch (PersistenceException exception) {
@@ -103,5 +114,13 @@ public class NotificationApplicationService {
     public Integer getGenerationId() {
         UUID uuid = UUID.randomUUID();
         return (int) (uuid.getMostSignificantBits() & 0xFFFFFFFFL);
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "createAt,desc", NOTIFICATION_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST);
+        }
     }
 }

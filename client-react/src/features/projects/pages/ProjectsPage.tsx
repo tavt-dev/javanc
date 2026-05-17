@@ -103,7 +103,7 @@ export function ProjectsPage() {
     );
   }
 
-  const projects = projectsQuery.data ?? [];
+  const projects = projectsQuery.data?.items ?? [];
 
   return (
     <PageTransition>

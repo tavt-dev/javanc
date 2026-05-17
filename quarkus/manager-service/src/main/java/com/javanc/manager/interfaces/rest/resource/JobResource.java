@@ -3,6 +3,7 @@ package com.javanc.manager.interfaces.rest.resource;
 import com.javanc.manager.application.dto.ApiResponse;
 import com.javanc.manager.application.dto.JobDTO;
 import com.javanc.manager.application.service.JobApplicationService;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -13,8 +14,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
-import java.util.List;
 
 @Path("/manager")
 @Produces(MediaType.APPLICATION_JSON)
@@ -92,31 +91,41 @@ public class JobResource {
 
     @GET
     @Path("/user/job/getall")
-    public ApiResponse<List<JobDTO>> getAll() {
-        return new ApiResponse<>(true, "Jobs found", jobService.getAllJobs());
+    public ApiResponse<PageResponse<JobDTO>> getAll(@QueryParam("query") String query, @QueryParam("type") String type,
+            @QueryParam("companyId") Integer companyId, @QueryParam("openOnly") Boolean openOnly,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs found",
+                jobService.searchJobs(query, type, companyId, openOnly, page, size, sort));
     }
 
     @GET
     @Path("/user/job/getjobbycompany")
-    public ApiResponse<List<JobDTO>> getJobByCompany(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "Jobs found", jobService.getJobByCompany(id));
+    public ApiResponse<PageResponse<JobDTO>> getJobByCompany(@QueryParam("id") Integer id,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs found", jobService.getJobByCompany(id, page, size, sort));
     }
 
     @GET
     @Path("/user/job/getjobpending")
-    public ApiResponse<List<JobDTO>> getJobPending(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "Jobs pending found", jobService.getJobByPrfilePending(id));
+    public ApiResponse<PageResponse<JobDTO>> getJobPending(@QueryParam("id") Integer id,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs pending found", jobService.getJobByPrfilePending(id, page, size, sort));
     }
 
     @GET
     @Path("/user/job/getjobaccepted")
-    public ApiResponse<List<JobDTO>> getJobAccepted(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "Jobs accepted found", jobService.getJobByProfileAccepted(id));
+    public ApiResponse<PageResponse<JobDTO>> getJobAccepted(@QueryParam("id") Integer id,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Jobs accepted found", jobService.getJobByProfileAccepted(id, page, size, sort));
     }
 
     @GET
     @Path("/user/job/getnewjob")
-    public ApiResponse<List<JobDTO>> getNewJob(@QueryParam("id") Integer id) {
-        return new ApiResponse<>(true, "New jobs found", jobService.getNewJob(id));
+    public ApiResponse<PageResponse<JobDTO>> getNewJob(@QueryParam("id") Integer id, @QueryParam("query") String query,
+            @QueryParam("type") String type, @QueryParam("companyId") Integer companyId,
+            @QueryParam("openOnly") Boolean openOnly, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "New jobs found",
+                jobService.getNewJob(id, query, type, companyId, openOnly, page, size, sort));
     }
 }

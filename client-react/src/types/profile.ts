@@ -39,4 +39,5 @@ export interface ProfileSearchParams {
   title?: string;
   page?: number;
   size?: number;
+  sort?: string;
 }

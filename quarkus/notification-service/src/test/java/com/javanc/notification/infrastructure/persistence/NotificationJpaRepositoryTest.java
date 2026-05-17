@@ -1,5 +1,7 @@
 package com.javanc.notification.infrastructure.persistence;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.notification.domain.model.Notification;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -40,6 +42,7 @@ class NotificationJpaRepositoryTest {
         repository.save(new Notification(202, "Two", LocalDateTime.now(), 77, null, true));
         repository.save(new Notification(203, "Other", LocalDateTime.now(), 88, null, false));
 
-        assertEquals(2, repository.findByUserId(77).size());
+        assertEquals(2, repository.findByUserId(77, null,
+                new PageRequest(0, 20, "createAt", SortDirection.DESC)).items().size());
     }
 }

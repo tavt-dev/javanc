@@ -24,11 +24,21 @@ Common response wrapper:
 }
 ```
 
+Pageable list routes now use `ApiResponse<PageResponse<T>>` with `data.items`, zero-based `page`, bounded `size`, and allowlisted `sort=field,dir`. See `docs/pageable-api-contract.md` for the detailed pageable contract and the current endpoint rollout list.
+
 Error policy:
 
 - Desired policy for new error handling: `success=false`, `message=string`, `data=null`.
 - Current compatibility behavior is not fully normalized. Some services still return `data=""` for selected errors.
 - Phase 2 documents this behavior and may add characterization tests, but does not change runtime response shape.
+
+Rate limit policy:
+
+- Gateway-wide and auth-specific rate limits return HTTP `429` with `success=false`, `message="Too many requests"`,
+  and `data=null` when enforcement is enabled.
+- Checked responses include `RateLimit-Limit`, `RateLimit-Remaining`, and `RateLimit-Reset`; blocked responses also
+  include `Retry-After`.
+- Rollout starts in `shadow` mode, where over-limit requests are observed through metrics but are not rejected.
 
 ## 2. Gateway Boundary
 
@@ -59,20 +69,21 @@ Base URLs through gateway: `/auth/**`, `/users/**`. Service port: `8088`.
 | `POST` | `/auth/logout` | Public | Bearer access token required by service | `current` | `Authorization: Bearer <accessToken>` | `null` | Does not use query-token access |
 | `GET` | `/users/me` | Bearer required | Any active authenticated user | `current` | Authorization header | `UserDTO` | Self lookup |
 | `GET` | `/users/{id}` | Bearer required | Self or `admin` | `current` | Path `id` | `UserDTO` | Used by other services for user validation |
-| `GET` | `/users?ids=...` | Bearer required | `admin` | `current` | Query `ids`, optional pagination/filter params | `List<UserDTO>` | Batch/list behavior depends on query params |
-| `GET` | `/users/search` | Bearer required | `admin`/authorized service logic | `current` | Query `query`, `role`, `page`, `size` | `List<UserDTO>` | Used by manager HR candidate flow |
+| `GET` | `/users` | Bearer required | `admin` | `current` | Query `query`, `role`, `active`, `status`, `page`, `size`, `sort` | `PageResponse<UserDTO>` | Admin/user browse list |
+| `GET` | `/users/batch` | Bearer required | `admin`/authorized service logic | `current` | Query `ids` | `List<UserDTO>` | Technical batch lookup; not pageable |
+| `GET` | `/users/search` | Bearer required | `admin`/authorized service logic | `current` | Query `query`, `role`, `page`, `size`, `sort` | `PageResponse<UserDTO>` | Used by manager HR candidate flow |
 | `PATCH` | `/users/{id}` | Bearer required | Self or `admin` | `current` | User profile update body | `UserDTO` | Profile fields only |
 | `PATCH` | `/users/{id}/status` | Bearer required | `admin` | `current` | `{ active }` or `{ status }` | `UserDTO` | Admin account protections apply |
 | `PATCH` | `/users/{id}/role` | Bearer required | `admin`, but direct role change is disabled in application logic | `legacy compatibility` | `{ role }` | Error or unchanged behavior per current logic | Keep documented because route exists |
 | `POST` | `/users/admin/accounts` | Bearer required | `admin` | `current` | Internal account creation body | `UserDTO` | Creates `admin/user/hr/manager` accounts |
 | `DELETE` | `/users/{id}` | Bearer required | `admin` | `current` | Path `id` | `UserDTO` | Soft delete |
 | `POST` | `/users/me/manager-upgrade-requests` | Bearer required | Active user | `current` | Optional request body | `RoleRequestDTO` | User requests manager role |
-| `GET` | `/users/me/role-requests` | Bearer required | Active user | `current` | Authorization header | `List<RoleRequestDTO>` | Self role request history |
-| `GET` | `/users/admin/role-requests` | Bearer required | `admin` | `current` | Optional query `status` | `List<RoleRequestDTO>` | Admin review queue |
+| `GET` | `/users/me/role-requests` | Bearer required | Active user | `current` | Query `page`, `size`, `sort` | `PageResponse<RoleRequestDTO>` | Self role request history |
+| `GET` | `/users/admin/role-requests` | Bearer required | `admin` | `current` | Query `status`, `page`, `size`, `sort` | `PageResponse<RoleRequestDTO>` | Admin review queue |
 | `PATCH` | `/users/admin/role-requests/{id}/approve` | Bearer required | `admin` | `current` | Path `id` | `RoleRequestDTO` | Approves role request |
 | `PATCH` | `/users/admin/role-requests/{id}/reject` | Bearer required | `admin` | `current` | Path `id` | `RoleRequestDTO` | Rejects role request |
 | `POST` | `/users/manager/hr-promotion-requests` | Bearer required | `manager` flow | `current` | HR promotion request body/query | `RoleRequestDTO` | Used by manager-service |
-| `GET` | `/users/me/hr-promotion-requests` | Bearer required | Target user | `current` | Authorization header | `List<RoleRequestDTO>` | Self HR promotion queue |
+| `GET` | `/users/me/hr-promotion-requests` | Bearer required | Target user | `current` | Query `page`, `size`, `sort` | `PageResponse<RoleRequestDTO>` | Self HR promotion queue |
 | `GET` | `/users/role-requests/{id}` | Bearer required | Authorized participant/admin | `current` | Path `id` | `RoleRequestDTO` | Role request detail |
 | `PATCH` | `/users/me/hr-promotion-requests/{id}/accept` | Bearer required | Target user | `current` | Path `id` | `RoleRequestDTO` | Accepts HR promotion |
 | `PATCH` | `/users/me/hr-promotion-requests/{id}/reject` | Bearer required | Target user | `current` | Path `id` | `RoleRequestDTO` | Rejects HR promotion |
@@ -98,7 +109,7 @@ Base URL through gateway: `/profiles/**`. Service port: `8085`.
 | `PATCH` | `/profiles/me` | Bearer required | Current user ownership | `current` | Partial profile JSON | `ProfileDTO` | Updates current profile |
 | `POST` | `/profiles/me/avatar` | Bearer required | Current user ownership; image-service upload | `current` | Multipart field `image` | `ProfileDTO` or avatar data | Stores avatar URL |
 | `DELETE` | `/profiles/me` | Bearer required | Current user ownership | `current` | Authorization header | `ProfileDTO` | Soft delete |
-| `GET` | `/profiles` | Bearer required | Active authenticated user | `current` | Query `type`, `title`, `page`, `size` | `List<ProfileDTO>` | Search/list current route |
+| `GET` | `/profiles` | Bearer required | Active authenticated user | `current` | Query `type`, `title`, `page`, `size`, `sort` | `PageResponse<ProfileDTO>` | Search/list current route |
 | `GET` | `/profiles/by-user/{userId}` | Bearer required | Self or `admin` | `current` | Path `userId` | `ProfileDTO` | User-profile lookup |
 | `GET` | `/profiles/batch` | Bearer required | `manager`/authorized batch role | `current` | Query `ids` | `List<ProfileDTO>` | Batch lookup for service flows |
 | `GET` | `/profiles/{id}` | Bearer required | Active authenticated user | `current` | Path `id` | `ProfileDTO` | Profile detail |
@@ -118,15 +129,15 @@ Base URL through gateway: `/project/**`. Service port: `8086`.
 
 | Method | Endpoint | Gateway auth | Service-level auth/validation | Status | Request | Success data | Notes |
 |---|---|---|---|---|---|---|---|
-| `GET` | `/project/user/projects` | Bearer required | Uses current profile from profile-service | `current` | Authorization context | `List<ProjectDTO>` | Preferred list route |
+| `GET` | `/project/user/projects` | Bearer required | Uses current profile from profile-service | `current` | Query `page`, `size`, `sort` | `PageResponse<ProjectDTO>` | Preferred list route |
 | `GET` | `/project/user/projects/{id}` | Bearer required | Current profile ownership | `current` | Path `id` | `ProjectDTO` | Preferred detail route |
 | `POST` | `/project/user/projects` | Bearer required | Uses current profile from profile-service | `current` | Project JSON | `ProjectDTO` | Preferred create route |
 | `PATCH` | `/project/user/projects/{id}` | Bearer required | Current profile ownership | `current` | Project patch JSON | `ProjectDTO` | Preferred update route |
 | `DELETE` | `/project/user/projects/{id}` | Bearer required | Current profile ownership | `current` | Path `id` | `ProjectDTO` or delete wrapper | Preferred delete route |
 | `POST` | `/project/user/save` | Bearer required | Legacy profile id in request | `legacy compatibility` | `ProjectDTO` JSON | `ProjectDTO` | Kept for compatibility |
 | `POST` | `/project/user/update` | Bearer required | Legacy id/profile semantics | `legacy compatibility` | `ProjectDTO` JSON | `ProjectDTO` | Keeps original `createAt` behavior |
-| `GET` | `/project/user/getProfile` | Bearer required | Calls profile-service | `legacy compatibility` | None | `List<ProfileDTO>` | Compatibility service aggregation |
-| `GET` | `/project/user/getProject` | Bearer required | Query profile id | `legacy compatibility` | Query `id` | `List<ProjectDTO>` | Legacy lookup by profile id |
+| `GET` | `/project/user/getProfile` | Bearer required | Calls profile-service | `legacy compatibility` | Query `page`, `size`, `sort` | `PageResponse<ProfileDTO>` | Compatibility service aggregation |
+| `GET` | `/project/user/getProject` | Bearer required | Query profile id | `legacy compatibility` | Query `id`, `page`, `size`, `sort` | `PageResponse<ProjectDTO>` | Legacy lookup by profile id |
 | `GET` | `/project/user/get` | Bearer required | Forwards multipart image to image-service | `legacy compatibility` | Multipart field `image` on GET | `ImageDTO` | Odd legacy contract; do not use for new flows |
 | `GET` | `/project/user/get1` | Bearer required | Calls image-service getAll | `legacy compatibility` | None | String, usually `"ok"` | Legacy compatibility route |
 
@@ -143,15 +154,15 @@ Base URL through gateway: `/manager/**`. Service port: `8091`.
 | `PUT` | `/manager/manager/sethrtocompany` | Bearer required | Manager/business rules in service | `legacy compatibility` | `AuthenticationRequest`, query `idCompany` | `CompanyDTO` | Creates HR account and attaches to company |
 | `PUT` | `/manager/manager/promotehrtocompany` | Bearer required | Manager/business rules in service | `current` | Query `idUser`, `idCompany` | `CompanyDTO` | Newer HR promotion request flow |
 | `GET` | `/manager/manager/company/me` | Bearer required | Current manager via user-service | `current` | Authorization context | `CompanyDTO` | Current managed company |
-| `GET` | `/manager/manager/hr-candidates` | Bearer required | Current manager via user-service | `current` | Query `query`, `page`, `size` | `List<UserDTO>` | Candidate search |
+| `GET` | `/manager/manager/hr-candidates` | Bearer required | Current manager via user-service | `current` | Query `query`, `page`, `size`, `sort` | `PageResponse<UserDTO>` | Candidate search |
 | `POST` | `/manager/manager/hr-promotions` | Bearer required | Current manager via user-service | `current` | Query `targetUserId` | `RoleRequestDTO` | Creates HR promotion request |
 | `PATCH` | `/manager/user/hr-promotions/{requestId}/accept` | Bearer required | Target user acceptance flow | `current` | Path `requestId` | `CompanyDTO` | Adds accepted HR to company |
 | `PATCH` | `/manager/hr/leave` | Bearer required | Current HR user | `current` | Authorization context | `CompanyDTO` | HR leaves company |
 | `POST` | `/manager/admin/company/delete` | Bearer required | Admin/business rules in service | `current` | Query `id` | String `"ok"` | Deletes company |
 | `PUT` | `/manager/manager/setmaanagertocompany` | Bearer required | Manager/admin assignment rules in service | `legacy compatibility` | `AuthenticationRequest`, query `idCompany` | `CompanyDTO` | Misspelled path preserved for compatibility |
 | `GET` | `/manager/user/company/getbyid` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `CompanyDTO` | Legacy company lookup |
-| `GET` | `/manager/user/company/getcompany` | Bearer required | Business validation | `legacy compatibility` | None | `List<CompanyDTO>` | Legacy company list |
-| `GET` | `/manager/user/company/getcompanybytype` | Bearer required | Business validation | `legacy compatibility` | Query `type` | `List<CompanyDTO>` | Legacy type search |
+| `GET` | `/manager/user/company/getcompany` | Bearer required | Business validation | `legacy compatibility` | Query `query`, `type`, `location`, `page`, `size`, `sort` | `PageResponse<CompanyDTO>` | Legacy company list |
+| `GET` | `/manager/user/company/getcompanybytype` | Bearer required | Business validation | `legacy compatibility` | Query `type`, `page`, `size`, `sort` | `PageResponse<CompanyDTO>` | Legacy type search |
 | `GET` | `/manager/company/getcompanybyidmanager` | Bearer required | Business validation | `legacy compatibility` | Query `managerId` | `CompanyDTO` | Legacy manager lookup |
 | `GET` | `/manager/hr/findByIdHr` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `CompanyDTO` | Legacy HR lookup |
 
@@ -174,11 +185,11 @@ Compatibility field names:
 | `PUT` | `/manager/hr/job/accept` | Bearer required | HR/business rules in service | `legacy compatibility` | Query `jobDTO`, `idProfile` | `JobDTO` | Legacy accept route; sends notification/email side effects |
 | `PUT` | `/manager/hr/job/reject` | Bearer required | HR/business rules in service | `legacy compatibility` | Query `jobDTO`, `idProfile` | `JobDTO` | Legacy reject route |
 | `GET` | `/manager/user/job/findbyid` | Bearer required | Business validation | `legacy compatibility` | Query/binding `id` | `JobDTO` | Legacy lookup |
-| `GET` | `/manager/user/job/getall` | Bearer required | Business validation | `legacy compatibility` | None | `List<JobDTO>` | Legacy list |
-| `GET` | `/manager/user/job/getjobbycompany` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `List<JobDTO>` | Legacy company jobs |
-| `GET` | `/manager/user/job/getjobpending` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `List<JobDTO>` | Legacy pending jobs |
-| `GET` | `/manager/user/job/getjobaccepted` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `List<JobDTO>` | Legacy accepted jobs |
-| `GET` | `/manager/user/job/getnewjob` | Bearer required | Business validation | `legacy compatibility` | Query `id` | `List<JobDTO>` | Legacy new-job query |
+| `GET` | `/manager/user/job/getall` | Bearer required | Business validation | `legacy compatibility` | Query `query`, `type`, `companyId`, `openOnly`, `page`, `size`, `sort` | `PageResponse<JobDTO>` | Legacy list |
+| `GET` | `/manager/user/job/getjobbycompany` | Bearer required | Business validation | `legacy compatibility` | Query `id`, `page`, `size`, `sort` | `PageResponse<JobDTO>` | Legacy company jobs |
+| `GET` | `/manager/user/job/getjobpending` | Bearer required | Business validation | `legacy compatibility` | Query `id`, `page`, `size`, `sort` | `PageResponse<JobDTO>` | Legacy pending jobs |
+| `GET` | `/manager/user/job/getjobaccepted` | Bearer required | Business validation | `legacy compatibility` | Query `id`, `page`, `size`, `sort` | `PageResponse<JobDTO>` | Legacy accepted jobs |
+| `GET` | `/manager/user/job/getnewjob` | Bearer required | Business validation | `legacy compatibility` | Query `id`, `page`, `size`, `sort` | `PageResponse<JobDTO>` | Legacy new-job query |
 
 ## 7. Notification Service
 
@@ -188,7 +199,7 @@ Base URL through gateway: `/notification/**`. Service port: `8084`.
 |---|---|---|---|---|---|---|---|
 | `POST` | `/notification/create` | Public | Request validation; no gateway auth | `current` | `MessageDTO` JSON | String `"true"` | Usually called by other services |
 | `POST` | `/notification/update` | Public | Notification existence/business validation | `current` | `NotificationDTO` JSON | `NotificationDTO` | Updates read/status fields |
-| `GET` | `/notification/user/findByUser` | Public | Calls user-service to validate `userId` | `current` | Query `userId` | `List<NotificationDTO>` | Public gateway route with internal user validation |
+| `GET` | `/notification/user/findByUser` | Public | Calls user-service to validate `userId` | `current` | Query `userId`, `read`, `page`, `size`, `sort` | `PageResponse<NotificationDTO>` | Public gateway route with internal user validation |
 | `GET` | `/notification/getAll` | Public | None beyond service logic | `legacy compatibility` | None | String `"ok"` | Compatibility smoke/check route |
 
 Known compatibility error behavior:

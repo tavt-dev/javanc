@@ -5,24 +5,33 @@ import { queryClient } from "@/lib/query-client";
 import { jobsApi } from "@/features/jobs/api/jobs-api";
 import { useTranslation } from "react-i18next";
 import type { JobDTO } from "@/types/job";
+import type { PageParams } from "@/types/api";
 
 export const jobKeys = {
-  all: ["jobs", "all"] as const,
-  newest: (profileId: number) => ["jobs", "new", profileId] as const,
+  all: (params?: PageParams & { query?: string; type?: string; companyId?: string; openOnly?: boolean }) =>
+    ["jobs", "all", params] as const,
+  newest: (
+    profileId: number,
+    params?: PageParams & { query?: string; type?: string; companyId?: string; openOnly?: boolean },
+  ) => ["jobs", "new", profileId, params] as const,
   detail: (jobId: number) => ["jobs", "detail", jobId] as const,
-  company: (companyId: number) => ["jobs", "company", companyId] as const,
+  company: (companyId: number, params?: PageParams) =>
+    params ? (["jobs", "company", companyId, params] as const) : (["jobs", "company", companyId] as const),
   pending: (profileId: number) => ["jobs", "pending", profileId] as const,
   accepted: (profileId: number) => ["jobs", "accepted", profileId] as const,
   applicationStatus: (jobId: number) => ["jobs", "application-status", jobId] as const,
 };
 
-export function useJobBoardQuery(profileId?: number | null) {
+export function useJobBoardQuery(
+  profileId?: number | null,
+  params: PageParams & { query?: string; type?: string; companyId?: string; openOnly?: boolean } = {},
+) {
   return useQuery({
-    queryKey: profileId ? jobKeys.newest(profileId) : jobKeys.all,
+    queryKey: profileId ? jobKeys.newest(profileId, params) : jobKeys.all(params),
     queryFn: async () => {
       const response = profileId
-        ? await jobsApi.getNewForProfile(profileId)
-        : await jobsApi.getAll();
+        ? await jobsApi.getNewForProfile(profileId, params)
+        : await jobsApi.getAll(params);
       return response.data;
     },
   });
@@ -39,12 +48,12 @@ export function useJobDetailQuery(jobId: number | null) {
   });
 }
 
-export function useJobsByCompanyQuery(companyId?: number | null) {
+export function useJobsByCompanyQuery(companyId?: number | null, params: PageParams = {}) {
   return useQuery({
-    queryKey: companyId ? jobKeys.company(companyId) : ["jobs", "company", "missing"],
+    queryKey: companyId ? jobKeys.company(companyId, params) : ["jobs", "company", "missing"],
     queryFn: async () => {
-      if (!companyId) return [];
-      return (await jobsApi.getByCompany(companyId)).data;
+      if (!companyId) return null;
+      return (await jobsApi.getByCompany(companyId, params)).data;
     },
     enabled: Boolean(companyId),
   });
@@ -54,7 +63,7 @@ export function usePendingJobsQuery(profileId?: number | null) {
   return useQuery({
     queryKey: profileId ? jobKeys.pending(profileId) : ["jobs", "pending", "missing"],
     queryFn: async () => {
-      if (!profileId) return [];
+      if (!profileId) return null;
       return (await jobsApi.getPendingByProfile(profileId)).data;
     },
     enabled: Boolean(profileId),
@@ -67,7 +76,7 @@ export function useAcceptedJobsQuery(profileId?: number | null) {
       ? jobKeys.accepted(profileId)
       : ["jobs", "accepted", "missing"],
     queryFn: async () => {
-      if (!profileId) return [];
+      if (!profileId) return null;
       return (await jobsApi.getAcceptedByProfile(profileId)).data;
     },
     enabled: Boolean(profileId),

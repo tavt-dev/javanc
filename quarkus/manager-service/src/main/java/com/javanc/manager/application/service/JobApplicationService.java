@@ -14,14 +14,18 @@ import com.javanc.manager.application.port.UserAccountPort;
 import com.javanc.manager.domain.model.Job;
 import com.javanc.manager.domain.repository.JobRepository;
 import com.javanc.manager.domain.service.ManagerIdGenerator;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class JobApplicationService {
+    private static final Set<String> JOB_SORT_FIELDS = Set.of("id", "title", "typeJob", "size", "idCompany");
 
     private final JobRepository jobRepository;
     private final JobMapper jobMapper;
@@ -66,24 +70,28 @@ public class JobApplicationService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.JOB_NOT_FOUND)));
     }
 
-    public List<JobDTO> getAllJobs() {
-        return jobRepository.findAllLimited().stream().map(jobMapper::toDto).toList();
+    public PageResponse<JobDTO> searchJobs(String query, String type, Integer companyId, Boolean openOnly,
+            Integer page, Integer size, String sort) {
+        return mapJobs(jobRepository.search(query, type, companyId, openOnly, null, null, null,
+                pageRequest(page, size, sort)));
     }
 
-    public List<JobDTO> getJobByCompany(Integer id) {
-        return jobRepository.findByCompanyId(id).stream().map(jobMapper::toDto).toList();
+    public PageResponse<JobDTO> getJobByCompany(Integer id, Integer page, Integer size, String sort) {
+        return mapJobs(jobRepository.search(null, null, id, null, null, null, null, pageRequest(page, size, sort)));
     }
 
-    public List<JobDTO> getJobByPrfilePending(Integer id) {
-        return jobRepository.findByPendingProfileId(id).stream().map(jobMapper::toDto).toList();
+    public PageResponse<JobDTO> getJobByPrfilePending(Integer id, Integer page, Integer size, String sort) {
+        return mapJobs(jobRepository.search(null, null, null, null, id, null, null, pageRequest(page, size, sort)));
     }
 
-    public List<JobDTO> getJobByProfileAccepted(Integer id) {
-        return jobRepository.findByAcceptedProfileId(id).stream().map(jobMapper::toDto).toList();
+    public PageResponse<JobDTO> getJobByProfileAccepted(Integer id, Integer page, Integer size, String sort) {
+        return mapJobs(jobRepository.search(null, null, null, null, null, id, null, pageRequest(page, size, sort)));
     }
 
-    public List<JobDTO> getNewJob(Integer id) {
-        return jobRepository.findNewJobsForProfile(id).stream().map(jobMapper::toDto).toList();
+    public PageResponse<JobDTO> getNewJob(Integer id, String query, String type, Integer companyId, Boolean openOnly,
+            Integer page, Integer size, String sort) {
+        return mapJobs(jobRepository.search(query, type, companyId, openOnly, null, null, id,
+                pageRequest(page, size, sort)));
     }
 
     public JobDTO applyJob(Integer idJob, Integer idProfile) {
@@ -179,5 +187,24 @@ public class JobApplicationService {
             throw new ApplicationException(ErrorCode.BAD_REQUEST);
         }
         return profile;
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "id,desc", JOB_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private PageResponse<JobDTO> mapJobs(PageResponse<Job> response) {
+        return new PageResponse<>(
+                response.items().stream().map(jobMapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 }

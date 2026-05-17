@@ -79,25 +79,25 @@ describe("UserDashboardPage", () => {
       refetch: vi.fn(),
     }));
     vi.mocked(useMyProjectsQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useMyProjectsQuery>>({
-      data: [{ id: 1, title: "Booking API", display: true, idProfile: 7 }],
+      data: page([{ id: 1, title: "Booking API", display: true, idProfile: 7 }]),
     }));
     vi.mocked(useJobBoardQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useJobBoardQuery>>({
-      data: jobs,
+      data: page(jobs),
       isLoading: false,
       isFetching: false,
       error: null,
       refetch: vi.fn(),
     }));
     vi.mocked(useCompaniesQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useCompaniesQuery>>({
-      data: companies,
+      data: page(companies),
       isLoading: false,
       isFetching: false,
     }));
     vi.mocked(usePendingJobsQuery).mockReturnValue(
-      mockHookReturn<ReturnType<typeof usePendingJobsQuery>>({ data: [jobs[0]] }),
+      mockHookReturn<ReturnType<typeof usePendingJobsQuery>>({ data: page([jobs[0]]) }),
     );
     vi.mocked(useAcceptedJobsQuery).mockReturnValue(
-      mockHookReturn<ReturnType<typeof useAcceptedJobsQuery>>({ data: [] }),
+      mockHookReturn<ReturnType<typeof useAcceptedJobsQuery>>({ data: page([]) }),
     );
   });
 
@@ -143,4 +143,16 @@ function LocationProbe() {
 
 function mockHookReturn<T>(value: unknown): T {
   return value as T;
+}
+
+function page<T>(items: T[]) {
+  return {
+    items,
+    page: 0,
+    size: 20,
+    totalElements: items.length,
+    totalPages: items.length ? 1 : 0,
+    hasNext: false,
+    hasPrevious: false,
+  };
 }

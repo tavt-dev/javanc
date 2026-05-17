@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.notification.infrastructure.messaging.KafkaCommandConsumer;
 import com.javanc.notification.infrastructure.messaging.ProcessedMessageRepository;
 import com.javanc.notification.infrastructure.persistence.NotificationJpaRepository;
@@ -52,8 +54,10 @@ class Phase6NotificationConsumerSideEffectsTest {
         consumer.consume(json);
         consumer.consume(json);
 
-        assertEquals(1, notificationRepository.findByUserId(33).size());
-        assertEquals("Your application was accepted", notificationRepository.findByUserId(33).getFirst().getMessage());
+        var notifications = notificationRepository.findByUserId(33, null,
+                new PageRequest(0, 20, "createAt", SortDirection.DESC)).items();
+        assertEquals(1, notifications.size());
+        assertEquals("Your application was accepted", notifications.getFirst().getMessage());
     }
 
     public static class SideEffectsEnabledProfile implements QuarkusTestProfile {

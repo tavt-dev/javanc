@@ -6,6 +6,7 @@ import com.javanc.manager.application.dto.ChangeRoleRequest;
 import com.javanc.manager.application.dto.CreateHrPromotionRequest;
 import com.javanc.manager.application.dto.RoleRequestDTO;
 import com.javanc.manager.application.dto.UserDTO;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -41,8 +42,8 @@ public interface UserClient {
 
     @GET
     @Path("/users/search")
-    ApiResponse<java.util.List<UserDTO>> searchUsers(@QueryParam("query") String query, @QueryParam("role") String role,
-            @QueryParam("page") Integer page, @QueryParam("size") Integer size);
+    ApiResponse<PageResponse<UserDTO>> searchUsers(@QueryParam("query") String query, @QueryParam("role") String role,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort);
 
     @POST
     @Path("/users/manager/hr-promotion-requests")

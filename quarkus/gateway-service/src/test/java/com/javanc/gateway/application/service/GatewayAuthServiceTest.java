@@ -1,5 +1,6 @@
 package com.javanc.gateway.application.service;
 
+import com.javanc.gateway.application.model.AuthenticatedPrincipal;
 import com.javanc.gateway.application.port.TokenValidationPort;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,8 @@ class GatewayAuthServiceTest {
 
     @Test
     void extractsBearerTokenSafely() {
-        GatewayAuthService service = new GatewayAuthService(token -> Uni.createFrom().item(true));
+        GatewayAuthService service = new GatewayAuthService(
+                token -> Uni.createFrom().item(new AuthenticatedPrincipal(true, 1, "user")));
 
         assertEquals("abc", service.bearerToken("Bearer abc"));
         assertFalse(service.isAuthorized("Basic abc").await().indefinitely());
@@ -35,15 +37,16 @@ class GatewayAuthServiceTest {
 
         assertTrue(service.isAuthorized("Bearer valid").await().indefinitely());
         assertEquals("valid", port.token);
+        assertEquals(7, service.authenticate("Bearer valid").await().indefinitely().userId());
     }
 
     private static class RecordingPort implements TokenValidationPort {
         private String token;
 
         @Override
-        public Uni<Boolean> isValid(String token) {
+        public Uni<AuthenticatedPrincipal> introspect(String token) {
             this.token = token;
-            return Uni.createFrom().item(true);
+            return Uni.createFrom().item(new AuthenticatedPrincipal(true, 7, "user"));
         }
     }
 }

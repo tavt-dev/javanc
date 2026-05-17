@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageParams, PageResponse } from "@/types/api";
 import type { MessageDTO, NotificationDTO } from "@/types/notification";
 
 export const notificationsApi = {
@@ -11,10 +11,18 @@ export const notificationsApi = {
     return response.data;
   },
 
-  async findByUser(userId: number) {
-    const response = await apiClient.get<ApiResponse<NotificationDTO[]>>(
+  async findByUser(userId: number, params: PageParams & { read?: boolean } = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<NotificationDTO>>>(
       "/notification/user/findByUser",
-      { params: { userId } },
+      {
+        params: {
+          userId,
+          read: params.read,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: params.sort ?? "createAt,desc",
+        },
+      },
     );
     return response.data;
   },

@@ -21,7 +21,7 @@ export function ProfileDetailPage() {
   const profile = profileQuery.data;
   const isOwner = Boolean(profile && user?.id === profile.idUser);
   const projectsQuery = useProjectsByProfileQuery(profile?.id);
-  const visibleProjects = (projectsQuery.data ?? []).filter(
+  const visibleProjects = (projectsQuery.data?.items ?? []).filter(
     (project) => isOwner || project.display,
   );
 

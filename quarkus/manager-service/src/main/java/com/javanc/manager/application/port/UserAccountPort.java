@@ -3,8 +3,7 @@ package com.javanc.manager.application.port;
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.RoleRequestDTO;
 import com.javanc.manager.application.dto.UserDTO;
-
-import java.util.List;
+import com.javanc.common.pagination.PageResponse;
 
 public interface UserAccountPort {
     Integer createAccount(AuthenticationRequest authenticationRequest);
@@ -13,7 +12,7 @@ public interface UserAccountPort {
 
     UserDTO currentUser();
 
-    List<UserDTO> searchUsers(String query, String role, int page, int size);
+    PageResponse<UserDTO> searchUsers(String query, String role, int page, int size, String sort);
 
     RoleRequestDTO requestHrPromotion(Integer targetUserId, Integer companyId, String companyName);
 

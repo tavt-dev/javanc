@@ -12,15 +12,21 @@ import com.javanc.manager.application.port.UserAccountPort;
 import com.javanc.manager.domain.model.Company;
 import com.javanc.manager.domain.repository.CompanyRepository;
 import com.javanc.manager.domain.service.ManagerIdGenerator;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class CompanyApplicationService {
+    private static final Set<String> COMPANY_SORT_FIELDS = Set.of("id", "name", "type", "city", "country");
+    private static final Set<String> USER_SORT_FIELDS = Set.of("id", "name", "email", "role", "status", "createdAt",
+            "updatedAt");
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
@@ -67,12 +73,9 @@ public class CompanyApplicationService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.COMPANY_NOT_FOUND)));
     }
 
-    public List<CompanyDTO> getCompanyDTOs() {
-        return companyRepository.findAllLimited().stream().map(companyMapper::toDto).toList();
-    }
-
-    public List<CompanyDTO> getCompanyByType(String type) {
-        return companyRepository.findByTypeRegex(type).stream().map(companyMapper::toDto).toList();
+    public PageResponse<CompanyDTO> searchCompanies(String query, String type, String location, Integer page,
+            Integer size, String sort) {
+        return mapCompanies(companyRepository.search(query, type, location, pageRequest(page, size, sort)));
     }
 
     public CompanyDTO setHRToCompany(AuthenticationRequest request, Integer idCompany) {
@@ -99,14 +102,20 @@ public class CompanyApplicationService {
                         "Create or assign a company before inviting HR")));
     }
 
-    public List<UserDTO> searchHrCandidates(String query, Integer page, Integer size) {
+    public PageResponse<UserDTO> searchHrCandidates(String query, Integer page, Integer size, String sort) {
         CompanyDTO company = getMyManagedCompany();
-        int resolvedPage = page == null ? 0 : page;
-        int resolvedSize = size == null ? 10 : size;
         List<Integer> existingHr = company.idHR == null ? List.of() : company.idHR;
-        return userAccountPort.searchUsers(query, "user", resolvedPage, resolvedSize).stream()
-                .filter(user -> user.id != null && !existingHr.contains(user.id))
-                .toList();
+        PageRequest request = userPageRequest(page, size, sort);
+        PageResponse<UserDTO> users = userAccountPort.searchUsers(query, "user", request.page(), request.size(),
+                sortExpression(request));
+        return new PageResponse<>(
+                users.items().stream().filter(user -> user.id != null && !existingHr.contains(user.id)).toList(),
+                users.page(),
+                users.size(),
+                users.totalElements(),
+                users.totalPages(),
+                users.hasNext(),
+                users.hasPrevious());
     }
 
     public RoleRequestDTO requestHrPromotion(Integer targetUserId) {
@@ -172,5 +181,36 @@ public class CompanyApplicationService {
             companyDTO.idHR.add(hrId);
         }
         return update(companyDTO);
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "id,desc", COMPANY_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private PageRequest userPageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "id,desc", USER_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private String sortExpression(PageRequest request) {
+        return request.sortField() + "," + request.direction().name().toLowerCase();
+    }
+
+    private PageResponse<CompanyDTO> mapCompanies(PageResponse<Company> response) {
+        return new PageResponse<>(
+                response.items().stream().map(companyMapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 }

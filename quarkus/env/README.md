@@ -24,3 +24,14 @@ Frontend:
 
 - `client-react/.env.example` is the local frontend template.
 - `client-react/.env.production.example` is the production build template.
+
+Local seed data:
+
+```powershell
+.\quarkus\scripts\local-infra-up.ps1
+.\quarkus\scripts\seed-local-data.ps1
+```
+
+The seed script is idempotent. It installs sample users, profiles, companies, jobs, projects, notifications, and runs the user-service Flyway migrations first if the local `portfolio` schema is still empty.
+
+Seed account password for all seeded users: `Password1`.

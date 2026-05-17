@@ -51,16 +51,16 @@ describe("JobBoardPage", () => {
       profile: { id: 7 },
     }));
     vi.mocked(useJobBoardQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useJobBoardQuery>>({
-      data: jobs,
+      data: page(jobs),
       isLoading: false,
       error: null,
       refetch: vi.fn(),
     }));
     vi.mocked(useCompaniesQuery).mockReturnValue(mockHookReturn<ReturnType<typeof useCompaniesQuery>>({
-      data: [
+      data: page([
         { id: 1, name: "JavaNC Labs" },
         { id: 2, name: "Data House" },
-      ],
+      ]),
     }));
   });
 
@@ -73,9 +73,12 @@ describe("JobBoardPage", () => {
     expect(screen.getByLabelText("Job type")).toHaveValue("python");
     expect(screen.getByLabelText("Company")).toHaveValue("2");
     expect(screen.getByLabelText("Open only")).toBeChecked();
-    expect(screen.getByText("Python Analyst")).toBeInTheDocument();
-    expect(screen.queryByText("Java Developer")).not.toBeInTheDocument();
-    expect(screen.queryByText("Python Closed Role")).not.toBeInTheDocument();
+    expect(useJobBoardQuery).toHaveBeenCalledWith(7, expect.objectContaining({
+      query: "python",
+      type: "python",
+      companyId: "2",
+      openOnly: true,
+    }));
   });
 });
 
@@ -91,4 +94,16 @@ function renderJobBoard(initialEntry: string) {
 
 function mockHookReturn<T>(value: unknown): T {
   return value as T;
+}
+
+function page<T>(items: T[]) {
+  return {
+    items,
+    page: 0,
+    size: 20,
+    totalElements: items.length,
+    totalPages: items.length ? 1 : 0,
+    hasNext: false,
+    hasPrevious: false,
+  };
 }

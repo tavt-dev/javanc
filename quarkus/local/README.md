@@ -33,6 +33,17 @@ Redis is available for the first cache/session foundation in `user-service`. Che
 docker exec javanc-redis redis-cli -a javanc_local ping
 ```
 
+## Rate limit rollout
+
+Gateway-wide and auth-specific rate limits use Redis token buckets. Local defaults keep the feature enabled in `shadow`
+mode so requests are observed but not blocked.
+
+- Switch `RATE_LIMIT_MODE=enforce` only after checking rate-limit metrics in `/q/metrics`.
+- Set `RATE_LIMIT_ENABLED=false` for an emergency disable without changing code.
+- Keep `RATE_LIMIT_FAIL_OPEN=true` so a Redis outage does not block normal traffic.
+- Set `GATEWAY_RATE_LIMIT_TRUSTED_PROXY_CIDRS` only when a real reverse proxy is in front of the gateway; otherwise
+  client-supplied forwarding headers are ignored.
+
 Kafka remains optional:
 
 - Baseline HTTP runtime: keep `MESSAGING_ENABLED=false` and `OUTBOX_PUBLISHER_ENABLED=false`.

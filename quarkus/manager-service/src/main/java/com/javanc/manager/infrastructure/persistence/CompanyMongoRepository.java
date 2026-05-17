@@ -2,7 +2,10 @@ package com.javanc.manager.infrastructure.persistence;
 
 import com.javanc.manager.domain.model.Company;
 import com.javanc.manager.domain.repository.CompanyRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import io.quarkus.mongodb.panache.PanacheMongoRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -36,13 +39,28 @@ public class CompanyMongoRepository implements CompanyRepository, PanacheMongoRe
     }
 
     @Override
-    public List<Company> findAllLimited() {
-        return findAll().page(0, 50).list();
-    }
-
-    @Override
-    public List<Company> findByTypeRegex(String type) {
-        return mongoCollection().find(Filters.regex("type", type)).limit(20).into(new ArrayList<>());
+    public PageResponse<Company> search(String query, String type, String location, PageRequest pageRequest) {
+        List<org.bson.conversions.Bson> filters = new ArrayList<>();
+        if (query != null && !query.isBlank()) {
+            String safe = java.util.regex.Pattern.quote(query.trim());
+            filters.add(Filters.or(Filters.regex("name", safe, "i"), Filters.regex("type", safe, "i"),
+                    Filters.regex("description", safe, "i")));
+        }
+        if (type != null && !type.isBlank()) {
+            filters.add(Filters.regex("type", java.util.regex.Pattern.quote(type.trim()), "i"));
+        }
+        if (location != null && !location.isBlank()) {
+            String safe = java.util.regex.Pattern.quote(location.trim());
+            filters.add(Filters.or(Filters.regex("city", safe, "i"), Filters.regex("country", safe, "i")));
+        }
+        org.bson.conversions.Bson filter = filters.isEmpty() ? new org.bson.Document() : Filters.and(filters);
+        long total = mongoCollection().countDocuments(filter);
+        List<Company> items = mongoCollection().find(filter)
+                .sort(sort(pageRequest))
+                .skip(pageRequest.page() * pageRequest.size())
+                .limit(pageRequest.size())
+                .into(new ArrayList<>());
+        return PageResponse.of(items, pageRequest, total);
     }
 
     @Override
@@ -53,5 +71,11 @@ public class CompanyMongoRepository implements CompanyRepository, PanacheMongoRe
     @Override
     public Optional<Company> findByHrId(Integer idHr) {
         return Optional.ofNullable(mongoCollection().find(Filters.eq("idHr", idHr)).first());
+    }
+
+    private org.bson.conversions.Bson sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sorts.ascending(request.sortField())
+                : Sorts.descending(request.sortField());
     }
 }

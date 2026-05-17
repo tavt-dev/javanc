@@ -8,6 +8,7 @@ import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.mapper.CompanyMapper;
 import com.javanc.manager.application.service.CompanyApplicationService;
 import com.javanc.manager.interfaces.rest.form.CompanyMultipartForm;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -19,8 +20,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-
-import java.util.List;
 
 @Path("/manager")
 @Produces(MediaType.APPLICATION_JSON)
@@ -73,10 +72,12 @@ public class CompanyResource {
 
     @GET
     @Path("/manager/hr-candidates")
-    public ApiResponse<List<UserDTO>> hrCandidates(@QueryParam("query") String query, @QueryParam("page") Integer page,
-            @QueryParam("size") Integer size) {
+    public ApiResponse<PageResponse<UserDTO>> hrCandidates(@QueryParam("query") String query,
+            @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size,
+            @QueryParam("sort") String sort) {
         return new ApiResponse<>(true, "HR candidates retrieved successfully",
-                companyService.searchHrCandidates(query, page, size));
+                companyService.searchHrCandidates(query, page, size, sort));
     }
 
     @POST
@@ -122,14 +123,20 @@ public class CompanyResource {
 
     @GET
     @Path("/user/company/getcompany")
-    public ApiResponse<List<CompanyDTO>> getAllCompanies() {
-        return new ApiResponse<>(true, "Companies retrieved successfully", companyService.getCompanyDTOs());
+    public ApiResponse<PageResponse<CompanyDTO>> getAllCompanies(@QueryParam("query") String query,
+            @QueryParam("type") String type, @QueryParam("location") String location, @QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Companies retrieved successfully",
+                companyService.searchCompanies(query, type, location, page, size, sort));
     }
 
     @GET
     @Path("/user/company/getcompanybytype")
-    public ApiResponse<List<CompanyDTO>> getCompanyByType(@QueryParam("type") String type) {
-        return new ApiResponse<>(true, "Companies retrieved successfully by type", companyService.getCompanyByType(type));
+    public ApiResponse<PageResponse<CompanyDTO>> getCompanyByType(@QueryParam("type") String type,
+            @QueryParam("query") String query, @QueryParam("location") String location,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Companies retrieved successfully by type",
+                companyService.searchCompanies(query, type, location, page, size, sort));
     }
 
     @GET

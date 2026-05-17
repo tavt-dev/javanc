@@ -29,11 +29,14 @@ import com.javanc.user.domain.port.UserRepository;
 import com.javanc.user.shared.exception.ApplicationException;
 import com.javanc.user.shared.exception.ErrorCode;
 import com.javanc.user.shared.exception.UserNotFoundException;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class UserUseCase {
@@ -71,29 +74,41 @@ public class UserUseCase {
         return UserResultMapper.toResult(target);
     }
 
-    public List<UserResult> list(String token, List<Integer> ids) {
+    private static final Set<String> USER_SORT_FIELDS = Set.of("id", "name", "email", "role", "status", "createdAt",
+            "updatedAt");
+    private static final Set<String> ROLE_REQUEST_SORT_FIELDS = Set.of("id", "type", "status", "createdAt",
+            "updatedAt");
+
+    public PageResponse<UserResult> list(String token, String query, String role, Boolean active, String status,
+            Integer page, Integer size, String sort) {
         User actor = authenticatedUser(token);
         requireCanListUsers(actor);
-        if (ids != null && !ids.isEmpty()) {
-            return userRepository.findUsersByIds(ids.stream().map(UserId::new).toList()).stream()
-                    .map(UserResultMapper::toResult)
-                    .toList();
-        }
-        return userRepository.findAllUsers().stream().map(UserResultMapper::toResult).toList();
+        Role roleFilter = role == null || role.isBlank() ? null : parseRequiredRole(role);
+        AccountStatus statusFilter = parseOptionalStatusFilter(active, status);
+        PageRequest request = pageRequest(page, size, sort, "createdAt,desc", USER_SORT_FIELDS);
+        PageResponse<User> result = userRepository.findUsers(query, roleFilter, statusFilter, request);
+        return mapUsers(result);
     }
 
-    public List<UserResult> search(String token, String query, String role, Integer page, Integer size) {
+    public List<UserResult> batch(String token, List<Integer> ids) {
         User actor = authenticatedUser(token);
         requireCanListUsers(actor);
-        int resolvedPage = page == null ? 0 : page;
-        int resolvedSize = size == null ? 10 : size;
-        if (resolvedPage < 0 || resolvedSize < 1 || resolvedSize > 50) {
-            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid pagination");
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
         }
-        Role roleFilter = role == null || role.isBlank() ? null : parseRequiredRole(role);
-        return userRepository.searchUsers(query, roleFilter, resolvedPage, resolvedSize).stream()
+        return userRepository.findUsersByIds(ids.stream().map(UserId::new).toList()).stream()
                 .map(UserResultMapper::toResult)
                 .toList();
+    }
+
+    public PageResponse<UserResult> search(String token, String query, String role, Boolean active, String status,
+            Integer page, Integer size, String sort) {
+        User actor = authenticatedUser(token);
+        requireCanListUsers(actor);
+        Role roleFilter = role == null || role.isBlank() ? null : parseRequiredRole(role);
+        AccountStatus statusFilter = parseOptionalStatusFilter(active, status);
+        PageRequest request = pageRequest(page, size, sort, "createdAt,desc", USER_SORT_FIELDS);
+        return mapUsers(userRepository.findUsers(query, roleFilter, statusFilter, request));
     }
 
     @Transactional
@@ -157,17 +172,19 @@ public class UserUseCase {
         return toRoleRequestResult(request);
     }
 
-    public List<RoleRequestResult> myRoleRequests(String token) {
+    public PageResponse<RoleRequestResult> myRoleRequests(String token, Integer page, Integer size, String sort) {
         User actor = authenticatedUser(token);
-        return roleRequestRepository.findForUser(actor.id().value()).stream().map(this::toRoleRequestResult).toList();
+        PageRequest request = pageRequest(page, size, sort, "createdAt,desc", ROLE_REQUEST_SORT_FIELDS);
+        return mapRoleRequests(roleRequestRepository.findForUser(actor.id().value(), request));
     }
 
-    public List<RoleRequestResult> adminRoleRequests(String token, String status, String type) {
+    public PageResponse<RoleRequestResult> adminRoleRequests(String token, String status, String type, Integer page,
+            Integer size, String sort) {
         User actor = authenticatedUser(token);
         requireCanManageUsers(actor);
-        return roleRequestRepository.findForAdmin(parseOptionalStatus(status), parseOptionalType(type)).stream()
-                .map(this::toRoleRequestResult)
-                .toList();
+        PageRequest request = pageRequest(page, size, sort, "createdAt,desc", ROLE_REQUEST_SORT_FIELDS);
+        return mapRoleRequests(roleRequestRepository.findForAdmin(parseOptionalStatus(status), parseOptionalType(type),
+                request));
     }
 
     @Transactional
@@ -229,11 +246,10 @@ public class UserUseCase {
         return toRoleRequestResult(request);
     }
 
-    public List<RoleRequestResult> myHrPromotions(String token) {
+    public PageResponse<RoleRequestResult> myHrPromotions(String token, Integer page, Integer size, String sort) {
         User actor = authenticatedUser(token);
-        return roleRequestRepository.findHrPromotionsForUser(actor.id().value()).stream()
-                .map(this::toRoleRequestResult)
-                .toList();
+        PageRequest request = pageRequest(page, size, sort, "createdAt,desc", ROLE_REQUEST_SORT_FIELDS);
+        return mapRoleRequests(roleRequestRepository.findHrPromotionsForUser(actor.id().value(), request));
     }
 
     @Transactional
@@ -499,6 +515,48 @@ public class UserUseCase {
         } catch (IllegalArgumentException exception) {
             throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid role request status");
         }
+    }
+
+    private AccountStatus parseOptionalStatusFilter(Boolean active, String status) {
+        if (status != null && !status.isBlank()) {
+            try {
+                return AccountStatus.fromNullable(status);
+            } catch (IllegalArgumentException exception) {
+                throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid account status");
+            }
+        }
+        return active == null ? null : AccountStatus.fromActive(active);
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort, String defaultSort,
+            Set<String> allowedFields) {
+        try {
+            return PageRequest.resolve(page, size, sort, defaultSort, allowedFields);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
+        }
+    }
+
+    private PageResponse<UserResult> mapUsers(PageResponse<User> response) {
+        return new PageResponse<>(
+                response.items().stream().map(UserResultMapper::toResult).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
+    }
+
+    private PageResponse<RoleRequestResult> mapRoleRequests(PageResponse<JpaRoleUpgradeRequestEntity> response) {
+        return new PageResponse<>(
+                response.items().stream().map(this::toRoleRequestResult).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 
     private RoleRequestType parseOptionalType(String value) {

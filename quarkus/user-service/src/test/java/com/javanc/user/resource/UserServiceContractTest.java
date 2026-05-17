@@ -189,7 +189,7 @@ class UserServiceContractTest {
                 .get("/users")
                 .then()
                 .statusCode(200)
-                .body("data[0].id", notNullValue());
+                .body("data.items[0].id", notNullValue());
 
         given()
                 .header("Authorization", "Bearer " + adminToken)
@@ -277,7 +277,7 @@ class UserServiceContractTest {
                 .get("/users/search?query=alice&role=user")
                 .then()
                 .statusCode(200)
-                .body("data.email", hasItem("contract.alice.candidate@example.com"));
+                .body("data.items.email", hasItem("contract.alice.candidate@example.com"));
 
         given()
                 .header("Authorization", "Bearer " + managerToken)
@@ -343,7 +343,7 @@ class UserServiceContractTest {
                 .get("/users/admin/role-requests?status=PENDING_SYSADMIN")
                 .then()
                 .statusCode(200)
-                .body("data[0].id", notNullValue());
+                .body("data.items[0].id", notNullValue());
 
         given()
                 .header("Authorization", "Bearer " + adminToken)

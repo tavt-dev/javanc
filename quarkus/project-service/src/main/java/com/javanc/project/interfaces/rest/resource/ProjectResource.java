@@ -6,6 +6,7 @@ import com.javanc.project.application.dto.ProfileDTO;
 import com.javanc.project.application.dto.ProjectDTO;
 import com.javanc.project.application.service.ProjectApplicationService;
 import com.javanc.project.interfaces.rest.form.ImageMultipartForm;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -50,8 +51,9 @@ public class ProjectResource {
 
     @GET
     @Path("/user/projects")
-    public ApiResponse<List<ProjectDTO>> myProjects() {
-        return new ApiResponse<>(true, "Projects fetched successfully", projectService.getMyProjects());
+    public ApiResponse<PageResponse<ProjectDTO>> myProjects(@QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Projects fetched successfully", projectService.getMyProjects(page, size, sort));
     }
 
     @GET
@@ -83,16 +85,17 @@ public class ProjectResource {
 
     @GET
     @Path("/user/getProfile")
-    public ApiResponse<List<ProfileDTO>> getProfile() {
-        List<ProfileDTO> profiles = projectService.getAllProfiles();
-        return new ApiResponse<>(true, "Profiles fetched successfully", profiles);
+    public ApiResponse<PageResponse<ProfileDTO>> getProfile(@QueryParam("page") Integer page,
+            @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Profiles fetched successfully", projectService.getAllProfiles(page, size, sort));
     }
 
     @GET
     @Path("/user/getProject")
-    public ApiResponse<List<ProjectDTO>> getProjectByIdProfile(@QueryParam("id") Integer id) {
-        List<ProjectDTO> projects = projectService.getProjectByIdProfile(id);
-        return new ApiResponse<>(true, "Projects fetched successfully", projects);
+    public ApiResponse<PageResponse<ProjectDTO>> getProjectByIdProfile(@QueryParam("id") Integer id,
+            @QueryParam("page") Integer page, @QueryParam("size") Integer size, @QueryParam("sort") String sort) {
+        return new ApiResponse<>(true, "Projects fetched successfully",
+                projectService.getProjectByIdProfile(id, page, size, sort));
     }
 
     @GET

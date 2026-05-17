@@ -1,6 +1,7 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import { Check, ClipboardList, Edit, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable } from "@/components/shared/DataTable";
@@ -8,6 +9,7 @@ import { DataToolbar } from "@/components/shared/DataToolbar";
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import { ManagementDialog } from "@/components/shared/ManagementDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PaginationControls } from "@/components/shared/PaginationControls";
 import { RetryState } from "@/components/shared/RetryState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { InternalAccountForm } from "@/features/users/components/InternalAccountForm";
@@ -22,7 +24,7 @@ import {
   useUpdateUserMutation,
   useUsersQuery,
 } from "@/features/users/hooks/use-user-queries";
-import { canDeactivateUser, filterUsers } from "@/features/users/utils/user-utils";
+import { canDeactivateUser } from "@/features/users/utils/user-utils";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Role } from "@/types/auth";
 import type {
@@ -37,14 +39,18 @@ import type {
 const columnHelper = createColumnHelper<AdminUserDTO>();
 
 export function UserManagementPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentUser = useAuthStore((s) => s.user);
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState<"all" | Role>("all");
-  const [active, setActive] = useState<"all" | "active" | "inactive">("all");
+  const search = searchParams.get("query") ?? "";
+  const role = (searchParams.get("role") as "all" | Role | null) ?? "all";
+  const active =
+    (searchParams.get("active") as "all" | "active" | "inactive" | null) ??
+    "all";
+  const page = Number(searchParams.get("page") ?? 0);
+  const size = Number(searchParams.get("size") ?? 20);
+  const sort = searchParams.get("sort") ?? "createdAt,desc";
   const [tab, setTab] = useState<"users" | "roleRequests">("users");
-  const [requestStatus, setRequestStatus] = useState<RoleRequestStatus | "">(
-    "PENDING_SYSADMIN",
-  );
+  const [requestStatus, setRequestStatus] = useState<RoleRequestStatus | "">("PENDING_SYSADMIN");
   const [requestType, setRequestType] = useState<RoleRequestType | "">("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUserDTO | null>(null);
@@ -53,12 +59,19 @@ export function UserManagementPage() {
     useState<RoleRequestDTO | null>(null);
   const [adminNote, setAdminNote] = useState("");
 
-  const usersQuery = useUsersQuery();
+  const usersQuery = useUsersQuery({
+    query: search || undefined,
+    role: role === "all" ? undefined : role,
+    active: active === "all" ? undefined : active === "active",
+    page,
+    size,
+    sort,
+  });
   const roleRequestsQuery = useAdminRoleRequestsQuery({
     status: requestStatus,
     type: requestType,
   });
-  const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+  const users = usersQuery.data?.items ?? [];
   const createMutation = useCreateUserAccountMutation();
   const updateMutation = useUpdateUserMutation(editingUser?.id ?? 0);
   const statusMutation = useChangeUserStatusMutation(deleteUser?.id ?? 0);
@@ -66,10 +79,14 @@ export function UserManagementPage() {
   const approveMutation = useApproveRoleRequestMutation();
   const rejectMutation = useRejectRoleRequestMutation();
 
-  const filteredUsers = useMemo(
-    () => filterUsers(users, { search, role, active }),
-    [active, role, search, users],
-  );
+  const updateListParams = (next: Record<string, string | undefined>) => {
+    const updated = new URLSearchParams(searchParams);
+    Object.entries(next).forEach(([key, value]) => {
+      if (!value) updated.delete(key);
+      else updated.set(key, value);
+    });
+    setSearchParams(updated, { replace: true });
+  };
 
   const columns = useMemo(
     () => [
@@ -188,23 +205,21 @@ export function UserManagementPage() {
           <DataToolbar
             search={search}
             searchPlaceholder="Search users"
-            onSearchChange={setSearch}
+            onSearchChange={(value) => updateListParams({ query: value || undefined, page: "0" })}
             onClear={() => {
-              setSearch("");
-              setRole("all");
-              setActive("all");
+              updateListParams({ query: undefined, role: undefined, active: undefined, page: "0" });
             }}
             variant="job-search"
             filters={
               <>
-                <select className="form-input sm:w-36" value={role} onChange={(event) => setRole(event.target.value as "all" | Role)}>
+                <select className="form-input sm:w-36" value={role} onChange={(event) => updateListParams({ role: event.target.value === "all" ? undefined : event.target.value, page: "0" })}>
                   <option value="all">All roles</option>
                   <option value="user">User</option>
                   <option value="hr">HR</option>
                   <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                 </select>
-                <select className="form-input sm:w-36" value={active} onChange={(event) => setActive(event.target.value as "all" | "active" | "inactive")}>
+                <select className="form-input sm:w-36" value={active} onChange={(event) => updateListParams({ active: event.target.value === "all" ? undefined : event.target.value, page: "0" })}>
                   <option value="all">All status</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -218,7 +233,16 @@ export function UserManagementPage() {
           ) : usersQuery.error ? (
             <RetryState error={usersQuery.error} onRetry={usersQuery.refetch} />
           ) : (
-            <DataTable data={filteredUsers} columns={columns} empty="No users found." />
+            <div className="space-y-4">
+              <DataTable data={users} columns={columns} empty="No users found." />
+              {usersQuery.data && (
+                <PaginationControls
+                  page={usersQuery.data}
+                  onPageChange={(nextPage) => updateListParams({ page: String(nextPage) })}
+                  onSizeChange={(nextSize) => updateListParams({ size: String(nextSize), page: "0" })}
+                />
+              )}
+            </div>
           )}
         </>
       ) : (
@@ -272,8 +296,8 @@ export function UserManagementPage() {
             </div>
           ) : (
             <div className="mt-4 grid gap-3">
-              {(roleRequestsQuery.data ?? []).length ? (
-                (roleRequestsQuery.data ?? []).map((request) => (
+              {(roleRequestsQuery.data?.items ?? []).length ? (
+                (roleRequestsQuery.data?.items ?? []).map((request) => (
                   <RoleRequestRow
                     key={request.id}
                     request={request}

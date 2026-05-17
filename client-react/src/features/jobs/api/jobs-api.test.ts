@@ -13,6 +13,18 @@ vi.mock("@/lib/api-client", () => ({
 
 const mockedApiClient = vi.mocked(apiClient);
 
+function page<T>(items: T[]) {
+  return {
+    items,
+    page: 0,
+    size: 20,
+    totalElements: items.length,
+    totalPages: items.length ? 1 : 0,
+    hasNext: false,
+    hasPrevious: false,
+  };
+}
+
 describe("jobsApi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,7 +59,7 @@ describe("jobsApi", () => {
   });
 
   it("gets pending and accepted jobs by profile id", async () => {
-    mockedApiClient.get.mockResolvedValue({ data: { data: [] } });
+    mockedApiClient.get.mockResolvedValue({ data: { data: page([]) } });
 
     await jobsApi.getPendingByProfile(7);
     await jobsApi.getAcceptedByProfile(7);
@@ -55,12 +67,12 @@ describe("jobsApi", () => {
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       1,
       "/manager/user/job/getjobpending",
-      { params: { id: 7 } },
+      { params: { id: 7, page: 0, size: 20, sort: "id,desc" } },
     );
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(
       2,
       "/manager/user/job/getjobaccepted",
-      { params: { id: 7 } },
+      { params: { id: 7, page: 0, size: 20, sort: "id,desc" } },
     );
   });
 
@@ -108,13 +120,13 @@ describe("jobsApi", () => {
   it("normalizes legacy applicant arrays from backend responses", async () => {
     mockedApiClient.get.mockResolvedValueOnce({
       data: {
-        data: [{ id: 7, title: "Java", idCompany: 8 }],
+        data: page([{ id: 7, title: "Java", idCompany: 8 }]),
       },
     });
 
     const response = await jobsApi.getAll();
 
-    expect(response.data[0]).toMatchObject({
+    expect(response.data.items[0]).toMatchObject({
       idProfiePending: [],
       idProfile: [],
     });

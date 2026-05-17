@@ -34,7 +34,7 @@ export function CompanyManagementPage() {
   const [assignCompany, setAssignCompany] = useState<CompanyDTO | null>(null);
 
   const companiesQuery = useCompaniesQuery();
-  const companies = useMemo(() => companiesQuery.data ?? [], [companiesQuery.data]);
+  const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data]);
   const createMutation = useCreateCompanyMutation();
   const updateMutation = useUpdateCompanyMutation();
   const deleteMutation = useDeleteCompanyMutation();

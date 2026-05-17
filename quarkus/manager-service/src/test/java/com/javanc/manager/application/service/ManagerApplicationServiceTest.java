@@ -1,5 +1,8 @@
 package com.javanc.manager.application.service;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.CompanyDTO;
 import com.javanc.manager.application.dto.JobDTO;
@@ -218,23 +221,19 @@ class ManagerApplicationServiceTest {
         }
 
         @Override
-        public List<Company> findAllLimited() {
-            return saved == null ? List.of() : List.of(saved);
-        }
-
-        @Override
-        public List<Company> findByTypeRegex(String type) {
-            return findAllLimited();
+        public PageResponse<Company> search(String query, String type, String location, PageRequest pageRequest) {
+            List<Company> companies = saved == null ? List.of() : List.of(saved);
+            return PageResponse.of(companies, pageRequest, companies.size());
         }
 
         @Override
         public Optional<Company> findByManagerId(Integer idManager) {
-            return findAllLimited().stream().findFirst();
+            return Optional.ofNullable(saved);
         }
 
         @Override
         public Optional<Company> findByHrId(Integer idHr) {
-            return findAllLimited().stream().findFirst();
+            return Optional.ofNullable(saved);
         }
     }
 
@@ -263,28 +262,11 @@ class ManagerApplicationServiceTest {
         }
 
         @Override
-        public List<Job> findAllLimited() {
-            return saved == null ? List.of() : List.of(saved);
-        }
-
-        @Override
-        public List<Job> findByCompanyId(Integer idCompany) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findByPendingProfileId(Integer idProfile) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findByAcceptedProfileId(Integer idProfile) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findNewJobsForProfile(Integer idProfile) {
-            return findAllLimited();
+        public PageResponse<Job> search(String query, String type, Integer companyId, Boolean openOnly,
+                Integer pendingProfileId, Integer acceptedProfileId, Integer excludedProfileId,
+                PageRequest pageRequest) {
+            List<Job> jobs = saved == null ? List.of() : List.of(saved);
+            return PageResponse.of(jobs, pageRequest, jobs.size());
         }
     }
 
@@ -324,8 +306,8 @@ class ManagerApplicationServiceTest {
         }
 
         @Override
-        public List<UserDTO> searchUsers(String query, String role, int page, int size) {
-            return List.of();
+        public PageResponse<UserDTO> searchUsers(String query, String role, int page, int size, String sort) {
+            return PageResponse.of(List.of(), new PageRequest(page, size, "id", SortDirection.DESC), 0);
         }
 
         @Override

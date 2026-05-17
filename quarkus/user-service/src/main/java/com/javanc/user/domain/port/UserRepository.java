@@ -2,9 +2,12 @@ package com.javanc.user.domain.port;
 
 import com.javanc.user.domain.model.EmailAddress;
 import com.javanc.user.domain.model.EmployeeId;
+import com.javanc.user.domain.model.AccountStatus;
 import com.javanc.user.domain.model.Role;
 import com.javanc.user.domain.model.User;
 import com.javanc.user.domain.model.UserId;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,11 +21,11 @@ public interface UserRepository {
 
     Optional<User> findByEmployeeId(EmployeeId employeeId);
 
-    List<User> findAllUsers();
+    PageResponse<User> findUsers(String query, Role role, AccountStatus status, PageRequest pageRequest);
 
     List<User> findUsersByIds(Collection<UserId> ids);
 
-    List<User> searchUsers(String query, Role role, int page, int size);
+    List<User> findAllUsers();
 
     boolean existsByRole(Role role);
 

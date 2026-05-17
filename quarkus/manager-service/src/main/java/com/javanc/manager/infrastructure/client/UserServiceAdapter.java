@@ -9,14 +9,19 @@ import com.javanc.manager.application.dto.UserDTO;
 import com.javanc.manager.application.exception.ApplicationException;
 import com.javanc.manager.application.exception.ErrorCode;
 import com.javanc.manager.application.port.UserAccountPort;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class UserServiceAdapter implements UserAccountPort {
+    private static final Set<String> USER_SORT_FIELDS = Set.of("id", "name", "email", "role", "status", "createdAt",
+            "updatedAt");
 
     private final UserClient userClient;
 
@@ -53,9 +58,11 @@ public class UserServiceAdapter implements UserAccountPort {
     }
 
     @Override
-    public List<UserDTO> searchUsers(String query, String role, int page, int size) {
-        ApiResponse<List<UserDTO>> response = userClient.searchUsers(query, role, page, size);
-        return response == null || response.data == null ? List.of() : response.data;
+    public PageResponse<UserDTO> searchUsers(String query, String role, int page, int size, String sort) {
+        ApiResponse<PageResponse<UserDTO>> response = userClient.searchUsers(query, role, page, size, sort);
+        return response == null || response.data == null
+                ? PageResponse.of(List.of(), PageRequest.resolve(page, size, sort, "id,desc", USER_SORT_FIELDS), 0)
+                : response.data;
     }
 
     @Override

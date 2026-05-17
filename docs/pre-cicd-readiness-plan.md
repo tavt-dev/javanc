@@ -11,7 +11,8 @@ Phase nay chi lam nen tang:
 3. Giu repo sach khoi secret that.
 4. Tach cau hinh Quarkus theo profile file ro rang.
 5. Them guardrail production vao runtime config.
-6. Xac nhan migration readiness truoc khi di vao CI/CD that.
+6. Chuan hoa list API sang pageable contract dung chung.
+7. Xac nhan migration readiness truoc khi di vao CI/CD that.
 
 Khong nam trong phase nay:
 
@@ -67,6 +68,7 @@ Van can chu y truoc khi vao CI/CD:
   - `application-test.properties`
   - `application-prod.properties`
 - Hop dong env production tap trung nam tai `quarkus/env/services-prod.env.example`.
+- Cac route browse/search chinh da dung `ApiResponse<PageResponse<T>>`; chi tiet xem `docs/pageable-api-contract.md`.
 
 ## 3. Runbook thuc hien
 
@@ -112,6 +114,17 @@ Neu can co lap theo module:
 mvn -f quarkus/pom.xml -pl user-service -am test
 mvn -f quarkus/pom.xml -pl gateway-service -am test
 ```
+
+Neu IDE hoac terminal dang chay thang mot service POM, vi du `mvn -f quarkus/notification-service/pom.xml test`,
+can install cac artifact noi bo vao local Maven repo truoc:
+
+```powershell
+.\quarkus\scripts\install-local-maven-artifacts.ps1
+```
+
+Neu khong bootstrap buoc nay, Maven co the bao loi khong tim thay `com.javanc:pagination-common:1.0-SNAPSHOT`
+hoac parent `com.javanc:javanc-quarkus-services:1.0-SNAPSHOT`. Cach uu tien trong repo van la chay tu parent
+voi `-pl <service> -am` de Maven build kem cac module phu thuoc.
 
 Pass criteria:
 

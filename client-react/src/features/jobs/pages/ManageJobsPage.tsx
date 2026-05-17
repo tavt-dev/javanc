@@ -38,7 +38,7 @@ export function ManageJobsPage() {
   const companyQuery = useHrCompanyQuery(user?.id);
   const company = companyQuery.data ?? null;
   const jobsQuery = useJobsByCompanyQuery(company?.id);
-  const jobs = useMemo(() => jobsQuery.data ?? [], [jobsQuery.data]);
+  const jobs = useMemo(() => jobsQuery.data?.items ?? [], [jobsQuery.data]);
   const createMutation = useCreateJobMutation(company?.id ?? 0);
   const updateMutation = useUpdateJobMutation(company?.id ?? 0);
   const deleteMutation = useDeleteJobMutation(company?.id ?? 0);

@@ -4,6 +4,8 @@ import com.javanc.profile.domain.model.Profile;
 import com.javanc.profile.domain.model.ProfileStatus;
 import com.javanc.profile.domain.model.TypeProfile;
 import com.javanc.profile.domain.repository.ProfileRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -11,6 +13,7 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Sorts;
 import io.quarkus.mongodb.panache.PanacheMongoRepositoryBase;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -127,7 +130,7 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
     }
 
     @Override
-    public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
+    public PageResponse<Profile> search(TypeProfile typeProfile, String title, PageRequest pageRequest) {
         List<org.bson.conversions.Bson> filters = new ArrayList<>();
         filters.add(activeFilter());
         if (typeProfile != null) {
@@ -136,10 +139,14 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
         if (title != null && !title.isBlank()) {
             filters.add(keywordFilter(title));
         }
-        return mongoCollection().find(Filters.and(filters))
-                .skip(page * size)
-                .limit(size)
+        org.bson.conversions.Bson filter = Filters.and(filters);
+        long total = mongoCollection().countDocuments(filter);
+        List<Profile> items = mongoCollection().find(filter)
+                .sort(sort(pageRequest))
+                .skip(pageRequest.page() * pageRequest.size())
+                .limit(pageRequest.size())
                 .into(new ArrayList<>());
+        return PageResponse.of(items, pageRequest, total);
     }
 
     @Override
@@ -168,6 +175,12 @@ public class ProfileMongoRepository implements ProfileRepository, PanacheMongoRe
 
     private org.bson.conversions.Bson activeFilter() {
         return Filters.or(Filters.exists("status", false), Filters.eq("status", ProfileStatus.ACTIVE.name()));
+    }
+
+    private org.bson.conversions.Bson sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sorts.ascending(request.sortField())
+                : Sorts.descending(request.sortField());
     }
 
     private boolean active(Profile profile) {

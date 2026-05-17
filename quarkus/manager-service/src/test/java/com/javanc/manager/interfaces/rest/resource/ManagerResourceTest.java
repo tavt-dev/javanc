@@ -1,5 +1,8 @@
 package com.javanc.manager.interfaces.rest.resource;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.manager.application.dto.AuthenticationRequest;
 import com.javanc.manager.application.dto.MessageDTO;
 import com.javanc.manager.application.dto.ProfileDTO;
@@ -145,13 +148,9 @@ class ManagerResourceTest {
         }
 
         @Override
-        public List<Company> findAllLimited() {
-            return company == null ? List.of() : List.of(company);
-        }
-
-        @Override
-        public List<Company> findByTypeRegex(String type) {
-            return findAllLimited();
+        public PageResponse<Company> search(String query, String type, String location, PageRequest pageRequest) {
+            List<Company> companies = company == null ? List.of() : List.of(company);
+            return PageResponse.of(companies, pageRequest, companies.size());
         }
 
         @Override
@@ -194,28 +193,11 @@ class ManagerResourceTest {
         }
 
         @Override
-        public List<Job> findAllLimited() {
-            return job == null ? List.of() : List.of(job);
-        }
-
-        @Override
-        public List<Job> findByCompanyId(Integer idCompany) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findByPendingProfileId(Integer idProfile) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findByAcceptedProfileId(Integer idProfile) {
-            return findAllLimited();
-        }
-
-        @Override
-        public List<Job> findNewJobsForProfile(Integer idProfile) {
-            return findAllLimited();
+        public PageResponse<Job> search(String query, String type, Integer companyId, Boolean openOnly,
+                Integer pendingProfileId, Integer acceptedProfileId, Integer excludedProfileId,
+                PageRequest pageRequest) {
+            List<Job> jobs = job == null ? List.of() : List.of(job);
+            return PageResponse.of(jobs, pageRequest, jobs.size());
         }
     }
 
@@ -255,8 +237,8 @@ class ManagerResourceTest {
         }
 
         @Override
-        public List<UserDTO> searchUsers(String query, String role, int page, int size) {
-            return List.of();
+        public PageResponse<UserDTO> searchUsers(String query, String role, int page, int size, String sort) {
+            return PageResponse.of(List.of(), new PageRequest(page, size, "id", SortDirection.DESC), 0);
         }
 
         @Override

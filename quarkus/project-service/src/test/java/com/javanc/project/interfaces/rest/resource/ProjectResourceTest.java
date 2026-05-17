@@ -1,5 +1,8 @@
 package com.javanc.project.interfaces.rest.resource;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.project.application.dto.ImageDTO;
 import com.javanc.project.application.dto.ProfileDTO;
 import com.javanc.project.application.port.ImageStoragePort;
@@ -75,7 +78,7 @@ class ProjectResourceTest {
                 .then()
                 .statusCode(200)
                 .extract()
-                .path("data[0].createAt");
+                .path("data.items[0].createAt");
 
         given()
                 .contentType("application/json")
@@ -113,8 +116,8 @@ class ProjectResourceTest {
                 .statusCode(200)
                 .body("success", equalTo(true))
                 .body("message", equalTo("Projects fetched successfully"))
-                .body("data", hasSize(2))
-                .body("data[0].idProfile", equalTo(70));
+                .body("data.items", hasSize(2))
+                .body("data.items[0].idProfile", equalTo(70));
     }
 
     @Test
@@ -144,8 +147,8 @@ class ProjectResourceTest {
                 .when().get("/project/user/projects")
                 .then()
                 .statusCode(200)
-                .body("data", hasSize(1))
-                .body("data[0].id", equalTo(id));
+                .body("data.items", hasSize(1))
+                .body("data.items[0].id", equalTo(id));
 
         given()
                 .contentType("application/json")
@@ -172,7 +175,7 @@ class ProjectResourceTest {
                 .when().get("/project/user/projects")
                 .then()
                 .statusCode(200)
-                .body("data", hasSize(0));
+                .body("data.items", hasSize(0));
     }
 
     @Test
@@ -180,7 +183,9 @@ class ProjectResourceTest {
         ProfileDTO profile = new ProfileDTO();
         profile.setId(11);
         profile.setObjective("Backend");
-        when(profileLookupPort.getAllProfiles()).thenReturn(List.of(profile));
+        when(profileLookupPort.getAllProfiles(0, 20, "createdAt,desc"))
+                .thenReturn(PageResponse.of(List.of(profile),
+                        new PageRequest(0, 20, "createdAt", SortDirection.DESC), 1));
 
         given()
                 .when()
@@ -189,8 +194,8 @@ class ProjectResourceTest {
                 .statusCode(200)
                 .body("success", equalTo(true))
                 .body("message", equalTo("Profiles fetched successfully"))
-                .body("data", hasSize(1))
-                .body("data[0].id", equalTo(11));
+                .body("data.items", hasSize(1))
+                .body("data.items[0].id", equalTo(11));
     }
 
     @Test

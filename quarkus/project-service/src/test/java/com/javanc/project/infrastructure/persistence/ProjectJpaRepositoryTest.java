@@ -1,5 +1,7 @@
 package com.javanc.project.infrastructure.persistence;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.SortDirection;
 import com.javanc.project.domain.model.Project;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -42,7 +44,8 @@ class ProjectJpaRepositoryTest {
         repository.save(project(202, 601, "Match B"));
         repository.save(project(203, 602, "Other"));
 
-        assertEquals(2, repository.findByIdProfile(601).size());
+        assertEquals(2, repository.findByIdProfile(601,
+                new PageRequest(0, 20, "id", SortDirection.ASC)).items().size());
     }
 
     private Project project(Integer id, Integer profileId, String title) {

@@ -1,12 +1,13 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageParams, PageResponse } from "@/types/api";
 import type { ProfileDTO } from "@/types/profile";
 import type { ProjectDTO, ProjectFormValues } from "@/types/project";
 
 export const projectsApi = {
-  async myProjects() {
-    const response = await apiClient.get<ApiResponse<ProjectDTO[]>>(
+  async myProjects(params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<ProjectDTO>>>(
       "/project/user/projects",
+      { params: { page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "createAt,desc" } },
     );
     return response.data;
   },
@@ -41,9 +42,10 @@ export const projectsApi = {
     return response.data;
   },
 
-  async profilesCompatibility() {
-    const response = await apiClient.get<ApiResponse<ProfileDTO[]>>(
+  async profilesCompatibility(params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<ProfileDTO>>>(
       "/project/user/getProfile",
+      { params: { page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "createdAt,desc" } },
     );
     return response.data;
   },
@@ -55,10 +57,10 @@ export const projectsApi = {
     return response.data;
   },
 
-  async getByProfile(profileId: number) {
-    const response = await apiClient.get<ApiResponse<ProjectDTO[]>>(
+  async getByProfile(profileId: number, params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<ProjectDTO>>>(
       "/project/user/getProject",
-      { params: { id: profileId } },
+      { params: { id: profileId, page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "createAt,desc" } },
     );
     return response.data;
   },

@@ -16,7 +16,7 @@ export const projectKeys = {
 export function useMyProjectsQuery(profileId?: number | null) {
   return useQuery({
     queryKey: projectKeys.me,
-    queryFn: async () => (await projectsApi.myProjects()).data ?? [],
+    queryFn: async () => (await projectsApi.myProjects()).data,
     enabled: Boolean(profileId),
   });
 }
@@ -27,7 +27,7 @@ export function useProjectsByProfileQuery(profileId?: number | null) {
       ? projectKeys.profile(profileId)
       : ["projects", "profile", "missing"],
     queryFn: async () => {
-      if (!profileId) return [];
+      if (!profileId) return null;
       return (await projectsApi.getByProfile(profileId)).data;
     },
     enabled: Boolean(profileId),

@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageParams, PageResponse } from "@/types/api";
 import type { JobDTO } from "@/types/job";
 
 function normalizeJob(job: JobDTO): JobDTO {
@@ -14,22 +14,50 @@ function normalizeJobResponse(response: ApiResponse<JobDTO>) {
   return { ...response, data: normalizeJob(response.data) };
 }
 
-function normalizeJobsResponse(response: ApiResponse<JobDTO[]>) {
-  return { ...response, data: (response.data ?? []).map(normalizeJob) };
+function normalizeJobsResponse(response: ApiResponse<PageResponse<JobDTO>>) {
+  return {
+    ...response,
+    data: { ...response.data, items: (response.data?.items ?? []).map(normalizeJob) },
+  };
 }
 
 export const jobsApi = {
-  async getAll() {
-    const response = await apiClient.get<ApiResponse<JobDTO[]>>(
+  async getAll(params: PageParams & { query?: string; type?: string; companyId?: string; openOnly?: boolean } = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<JobDTO>>>(
       "/manager/user/job/getall",
+      {
+        params: {
+          query: params.query || undefined,
+          type: params.type || undefined,
+          companyId: params.companyId || undefined,
+          openOnly: params.openOnly || undefined,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: params.sort ?? "id,desc",
+        },
+      },
     );
     return normalizeJobsResponse(response.data);
   },
 
-  async getNewForProfile(profileId: number) {
-    const response = await apiClient.get<ApiResponse<JobDTO[]>>(
+  async getNewForProfile(
+    profileId: number,
+    params: PageParams & { query?: string; type?: string; companyId?: string; openOnly?: boolean } = {},
+  ) {
+    const response = await apiClient.get<ApiResponse<PageResponse<JobDTO>>>(
       "/manager/user/job/getnewjob",
-      { params: { id: profileId } },
+      {
+        params: {
+          id: profileId,
+          query: params.query || undefined,
+          type: params.type || undefined,
+          companyId: params.companyId || undefined,
+          openOnly: params.openOnly || undefined,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: params.sort ?? "id,desc",
+        },
+      },
     );
     return normalizeJobsResponse(response.data);
   },
@@ -42,26 +70,26 @@ export const jobsApi = {
     return response.data;
   },
 
-  async getByCompany(companyId: number) {
-    const response = await apiClient.get<ApiResponse<JobDTO[]>>(
+  async getByCompany(companyId: number, params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<JobDTO>>>(
       "/manager/user/job/getjobbycompany",
-      { params: { id: companyId } },
+      { params: { id: companyId, page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "id,desc" } },
     );
     return normalizeJobsResponse(response.data);
   },
 
-  async getPendingByProfile(profileId: number) {
-    const response = await apiClient.get<ApiResponse<JobDTO[]>>(
+  async getPendingByProfile(profileId: number, params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<JobDTO>>>(
       "/manager/user/job/getjobpending",
-      { params: { id: profileId } },
+      { params: { id: profileId, page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "id,desc" } },
     );
     return normalizeJobsResponse(response.data);
   },
 
-  async getAcceptedByProfile(profileId: number) {
-    const response = await apiClient.get<ApiResponse<JobDTO[]>>(
+  async getAcceptedByProfile(profileId: number, params: PageParams = {}) {
+    const response = await apiClient.get<ApiResponse<PageResponse<JobDTO>>>(
       "/manager/user/job/getjobaccepted",
-      { params: { id: profileId } },
+      { params: { id: profileId, page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "id,desc" } },
     );
     return normalizeJobsResponse(response.data);
   },

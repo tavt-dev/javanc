@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse, PageResponse } from "@/types/api";
 import type {
   ProfileDTO,
   ProfileFormValues,
@@ -68,7 +68,7 @@ export const profilesApi = {
   },
 
   async search(params: ProfileSearchParams) {
-    const response = await apiClient.get<ApiResponse<ProfileDTO[]>>(
+    const response = await apiClient.get<ApiResponse<PageResponse<ProfileDTO>>>(
       "/profiles",
       {
         params: {
@@ -76,6 +76,7 @@ export const profilesApi = {
           title: params.title || undefined,
           page: params.page ?? 0,
           size: params.size ?? 20,
+          sort: params.sort ?? "createdAt,desc",
         },
       },
     );

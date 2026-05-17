@@ -34,6 +34,7 @@ describe("profilesApi", () => {
         title: "developer",
         page: 0,
         size: 20,
+        sort: "createdAt,desc",
       },
     });
   });

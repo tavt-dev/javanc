@@ -18,9 +18,9 @@ export function AdminDashboardPage() {
   const usersQuery = useUsersQuery();
   const companiesQuery = useCompaniesQuery();
   const roleRequestsQuery = useAdminRoleRequestsQuery();
-  const users = usersQuery.data ?? [];
-  const companies = companiesQuery.data ?? [];
-  const pendingRoleRequests = getPendingRoleRequests(roleRequestsQuery.data ?? []);
+  const users = usersQuery.data?.items ?? [];
+  const companies = companiesQuery.data?.items ?? [];
+  const pendingRoleRequests = getPendingRoleRequests(roleRequestsQuery.data?.items ?? []);
   const inactiveUsers = users.filter((user) => !user.active || user.status === "INACTIVE").length;
 
   if (usersQuery.isLoading || companiesQuery.isLoading || roleRequestsQuery.isLoading) {

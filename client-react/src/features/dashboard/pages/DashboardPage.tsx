@@ -38,7 +38,7 @@ export function DashboardPage() {
   const profileQuery = useMyProfileQuery();
   const profile = profileQuery.profile;
   const projectsQuery = useProjectsByProfileQuery(profile?.id);
-  const projects = projectsQuery.data ?? [];
+  const projects = projectsQuery.data?.items ?? [];
 
   if (profileQuery.isLoading) {
     return (

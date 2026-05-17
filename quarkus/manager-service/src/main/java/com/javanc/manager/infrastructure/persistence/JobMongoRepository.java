@@ -2,7 +2,10 @@ package com.javanc.manager.infrastructure.persistence;
 
 import com.javanc.manager.domain.model.Job;
 import com.javanc.manager.domain.repository.JobRepository;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import io.quarkus.mongodb.panache.PanacheMongoRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -38,30 +41,45 @@ public class JobMongoRepository implements JobRepository, PanacheMongoRepository
     }
 
     @Override
-    public List<Job> findAllLimited() {
-        return findAll().page(0, 20).list();
-    }
-
-    @Override
-    public List<Job> findByCompanyId(Integer idCompany) {
-        return find("idCompany", idCompany).list();
-    }
-
-    @Override
-    public List<Job> findByPendingProfileId(Integer idProfile) {
-        return mongoCollection().find(Filters.eq("idProfiePending", idProfile)).into(new ArrayList<>());
-    }
-
-    @Override
-    public List<Job> findByAcceptedProfileId(Integer idProfile) {
-        return mongoCollection().find(Filters.eq("idProfile", idProfile)).into(new ArrayList<>());
-    }
-
-    @Override
-    public List<Job> findNewJobsForProfile(Integer idProfile) {
-        return mongoCollection().find(Filters.and(
-                Filters.nin("idProfiePending", idProfile),
-                Filters.nin("idProfile", idProfile)))
+    public PageResponse<Job> search(String query, String type, Integer companyId, Boolean openOnly,
+            Integer pendingProfileId, Integer acceptedProfileId, Integer excludedProfileId, PageRequest pageRequest) {
+        List<org.bson.conversions.Bson> filters = new ArrayList<>();
+        if (query != null && !query.isBlank()) {
+            String safe = java.util.regex.Pattern.quote(query.trim());
+            filters.add(Filters.or(Filters.regex("title", safe, "i"), Filters.regex("description", safe, "i")));
+        }
+        if (type != null && !type.isBlank()) {
+            filters.add(Filters.eq("typeJob", type.trim().toLowerCase()));
+        }
+        if (companyId != null) {
+            filters.add(Filters.eq("idCompany", companyId));
+        }
+        if (Boolean.TRUE.equals(openOnly)) {
+            filters.add(Filters.gt("size", 0));
+        }
+        if (pendingProfileId != null) {
+            filters.add(Filters.eq("idProfiePending", pendingProfileId));
+        }
+        if (acceptedProfileId != null) {
+            filters.add(Filters.eq("idProfile", acceptedProfileId));
+        }
+        if (excludedProfileId != null) {
+            filters.add(Filters.nin("idProfiePending", excludedProfileId));
+            filters.add(Filters.nin("idProfile", excludedProfileId));
+        }
+        org.bson.conversions.Bson filter = filters.isEmpty() ? new org.bson.Document() : Filters.and(filters);
+        long total = mongoCollection().countDocuments(filter);
+        List<Job> items = mongoCollection().find(filter)
+                .sort(sort(pageRequest))
+                .skip(pageRequest.page() * pageRequest.size())
+                .limit(pageRequest.size())
                 .into(new ArrayList<>());
+        return PageResponse.of(items, pageRequest, total);
+    }
+
+    private org.bson.conversions.Bson sort(PageRequest request) {
+        return request.direction() == com.javanc.common.pagination.SortDirection.ASC
+                ? Sorts.ascending(request.sortField())
+                : Sorts.descending(request.sortField());
     }
 }

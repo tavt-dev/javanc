@@ -1,5 +1,7 @@
 package com.javanc.notification.application.service;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.javanc.notification.application.exception.ApplicationException;
 import com.javanc.notification.application.exception.ErrorCode;
 import com.javanc.notification.application.mapper.NotificationMapper;
@@ -55,11 +57,11 @@ class NotificationApplicationServiceTest {
     void findByUserValidatesUserBeforeQueryingNotifications() {
         repository.saved.add(new Notification(1, "One", null, 99, null, false));
 
-        List<NotificationDTO> result = service.getNotificationsByIdUser(99);
+        PageResponse<NotificationDTO> result = service.getNotificationsByIdUser(99, null, 0, 20, "createAt,desc");
 
         assertTrue(userLookupPort.checked);
-        assertEquals(1, result.size());
-        assertEquals("One", result.get(0).getMessage());
+        assertEquals(1, result.items().size());
+        assertEquals("One", result.items().get(0).getMessage());
     }
 
     @Test
@@ -67,7 +69,7 @@ class NotificationApplicationServiceTest {
         userLookupPort.valid = false;
 
         ApplicationException exception = assertThrows(ApplicationException.class,
-                () -> service.getNotificationsByIdUser(99));
+                () -> service.getNotificationsByIdUser(99, null, 0, 20, "createAt,desc"));
 
         assertEquals(ErrorCode.DATABASE_ACCESS_ERROR, exception.getErrorCode());
     }
@@ -87,8 +89,12 @@ class NotificationApplicationServiceTest {
         }
 
         @Override
-        public List<Notification> findByUserId(Integer userId) {
-            return saved.stream().filter(notification -> userId.equals(notification.getIdUser())).toList();
+        public PageResponse<Notification> findByUserId(Integer userId, Boolean read, PageRequest pageRequest) {
+            List<Notification> filtered = saved.stream()
+                    .filter(notification -> userId.equals(notification.getIdUser()))
+                    .filter(notification -> read == null || notification.isRead() == read)
+                    .toList();
+            return PageResponse.of(filtered, pageRequest, filtered.size());
         }
     }
 

@@ -3,11 +3,10 @@ package com.javanc.project.infrastructure.client;
 import com.javanc.project.application.dto.ApiResponse;
 import com.javanc.project.application.dto.ProfileDTO;
 import com.javanc.project.application.port.ProfileLookupPort;
+import com.javanc.common.pagination.PageResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-
-import java.util.List;
 
 @ApplicationScoped
 public class ProfileServiceAdapter implements ProfileLookupPort {
@@ -20,8 +19,8 @@ public class ProfileServiceAdapter implements ProfileLookupPort {
     }
 
     @Override
-    public List<ProfileDTO> getAllProfiles() {
-        ApiResponse<List<ProfileDTO>> response = profileClient.getAll();
+    public PageResponse<ProfileDTO> getAllProfiles(int page, int size, String sort) {
+        ApiResponse<PageResponse<ProfileDTO>> response = profileClient.getAll(page, size, sort);
         return response.getData();
     }
 

@@ -1,5 +1,7 @@
 package com.javanc.profile.interfaces.rest.resource;
 
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.javanc.profile.application.exception.ApplicationException;
 import com.javanc.profile.application.exception.ErrorCode;
 import com.javanc.profile.application.port.ImageStoragePort;
@@ -148,8 +150,8 @@ class ProfileResourceTest {
                 .when().get("/profiles")
                 .then()
                 .statusCode(200)
-                .body("data.size()", equalTo(1))
-                .body("data[0].id", equalTo(44));
+                .body("data.items.size()", equalTo(1))
+                .body("data.items[0].id", equalTo(44));
 
         given()
                 .header("Authorization", "Bearer user-token")
@@ -283,28 +285,35 @@ class ProfileResourceTest {
 
         @Override
         public List<Profile> findByType(TypeProfile typeProfile) {
-            return search(typeProfile, null, 0, 20);
+            return profiles.stream()
+                    .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
+                    .filter(profile -> profile.getTypeProfile() == typeProfile)
+                    .toList();
         }
 
         @Override
         public List<Profile> findAllLimited() {
-            return search(null, null, 0, 20);
+            return profiles.stream()
+                    .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
+                    .toList();
         }
 
         @Override
         public List<Profile> findByTitleRegex(String title) {
-            return search(null, title, 0, 20);
+            return profiles.stream()
+                    .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
+                    .filter(profile -> profile.getTitle().contains(title))
+                    .toList();
         }
 
         @Override
-        public List<Profile> search(TypeProfile typeProfile, String title, int page, int size) {
-            return profiles.stream()
+        public PageResponse<Profile> search(TypeProfile typeProfile, String title, PageRequest pageRequest) {
+            List<Profile> filtered = profiles.stream()
                     .filter(profile -> profile.getStatus() != ProfileStatus.DELETED)
                     .filter(profile -> typeProfile == null || profile.getTypeProfile() == typeProfile)
                     .filter(profile -> title == null || profile.getTitle().contains(title))
-                    .skip((long) page * size)
-                    .limit(size)
                     .toList();
+            return PageResponse.of(filtered, pageRequest, filtered.size());
         }
 
         @Override

@@ -12,6 +12,8 @@ import com.javanc.profile.domain.model.ProfileStatus;
 import com.javanc.profile.domain.model.TypeProfile;
 import com.javanc.profile.domain.repository.ProfileRepository;
 import com.javanc.profile.interfaces.rest.dto.ProfileDTO;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 import com.mongodb.MongoException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -20,6 +22,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @ApplicationScoped
@@ -27,6 +30,8 @@ public class ProfileApplicationService {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 100;
+    private static final Set<String> PROFILE_SORT_FIELDS = Set.of("id", "title", "typeProfile", "createdAt",
+            "updatedAt");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9+() .-]{7,32}$");
 
@@ -152,17 +157,20 @@ public class ProfileApplicationService {
         return profileMapper.toDto(singleActiveProfileByUserId(userId));
     }
 
-    public List<ProfileDTO> search(CurrentUser actor, String typeProfile, String title, Integer page, Integer size) {
+    public PageResponse<ProfileDTO> search(CurrentUser actor, String typeProfile, String title, Integer page,
+            Integer size, String sort) {
         requireActor(actor);
-        int resolvedPage = page == null ? 0 : page;
-        int resolvedSize = size == null ? DEFAULT_PAGE_SIZE : size;
-        if (resolvedPage < 0 || resolvedSize < 1 || resolvedSize > MAX_PAGE_SIZE) {
-            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Invalid pagination");
-        }
         TypeProfile type = parseTypeProfile(typeProfile);
-        return profileRepository.search(type, normalizeOptional(title), resolvedPage, resolvedSize).stream()
-                .map(profileMapper::toDto)
-                .toList();
+        PageRequest request = pageRequest(page, size, sort);
+        PageResponse<Profile> response = profileRepository.search(type, normalizeOptional(title), request);
+        return new PageResponse<>(
+                response.items().stream().map(profileMapper::toDto).toList(),
+                response.page(),
+                response.size(),
+                response.totalElements(),
+                response.totalPages(),
+                response.hasNext(),
+                response.hasPrevious());
     }
 
     public List<ProfileDTO> findByIds(CurrentUser actor, List<Integer> ids) {
@@ -306,6 +314,14 @@ public class ProfileApplicationService {
     private void requireActor(CurrentUser actor) {
         if (actor == null || actor.userId() == null) {
             throw new ApplicationException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
+    private PageRequest pageRequest(Integer page, Integer size, String sort) {
+        try {
+            return PageRequest.resolve(page, size, sort, "createdAt,desc", PROFILE_SORT_FIELDS);
+        } catch (IllegalArgumentException exception) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, exception.getMessage());
         }
     }
 }

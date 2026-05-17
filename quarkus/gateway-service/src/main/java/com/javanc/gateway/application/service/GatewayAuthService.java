@@ -1,5 +1,6 @@
 package com.javanc.gateway.application.service;
 
+import com.javanc.gateway.application.model.AuthenticatedPrincipal;
 import com.javanc.gateway.application.port.TokenValidationPort;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,15 +20,19 @@ public class GatewayAuthService {
         this.tokenValidationPort = tokenValidationPort;
     }
 
-    public Uni<Boolean> isAuthorized(String authorizationHeader) {
+    public Uni<AuthenticatedPrincipal> authenticate(String authorizationHeader) {
         String token = bearerToken(authorizationHeader);
         if (token == null) {
             LOG.warn("Authorization header is missing or is not a Bearer token");
-            return Uni.createFrom().item(false);
+            return Uni.createFrom().item(AuthenticatedPrincipal.inactive());
         }
-        return tokenValidationPort.isValid(token)
-                .invoke(valid -> LOG.debugf("User-service token validation result valid=%s", valid))
-                .onFailure().recoverWithItem(false);
+        return tokenValidationPort.introspect(token)
+                .invoke(principal -> LOG.debugf("User-service token validation result valid=%s", principal.active()))
+                .onFailure().recoverWithItem(AuthenticatedPrincipal.inactive());
+    }
+
+    public Uni<Boolean> isAuthorized(String authorizationHeader) {
+        return authenticate(authorizationHeader).map(AuthenticatedPrincipal::active);
     }
 
     public String bearerToken(String authorizationHeader) {

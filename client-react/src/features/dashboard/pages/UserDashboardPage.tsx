@@ -94,11 +94,11 @@ export function UserDashboardPage() {
   const pendingJobsQuery = usePendingJobsQuery(profile?.id);
   const acceptedJobsQuery = useAcceptedJobsQuery(profile?.id);
 
-  const projects = projectsQuery.data ?? [];
-  const jobs = jobsQuery.data ?? [];
-  const companies = useMemo(() => companiesQuery.data ?? [], [companiesQuery.data]);
-  const pendingJobs = pendingJobsQuery.data ?? [];
-  const acceptedJobs = acceptedJobsQuery.data ?? [];
+  const projects = projectsQuery.data?.items ?? [];
+  const jobs = jobsQuery.data?.items ?? [];
+  const companies = useMemo(() => companiesQuery.data?.items ?? [], [companiesQuery.data]);
+  const pendingJobs = pendingJobsQuery.data?.items ?? [];
+  const acceptedJobs = acceptedJobsQuery.data?.items ?? [];
   const [searchState, setSearchState] = useState<DashboardSearchState>({
     query: "",
     type: "",

@@ -1,6 +1,8 @@
 package com.javanc.notification.domain.repository;
 
 import com.javanc.notification.domain.model.Notification;
+import com.javanc.common.pagination.PageRequest;
+import com.javanc.common.pagination.PageResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,5 +13,5 @@ public interface NotificationRepository {
 
     Optional<Notification> findByNotificationId(Integer id);
 
-    List<Notification> findByUserId(Integer userId);
+    PageResponse<Notification> findByUserId(Integer userId, Boolean read, PageRequest pageRequest);
 }

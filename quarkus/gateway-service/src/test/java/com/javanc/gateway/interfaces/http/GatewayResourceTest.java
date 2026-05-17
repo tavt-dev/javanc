@@ -2,6 +2,7 @@ package com.javanc.gateway.interfaces.http;
 
 import com.javanc.gateway.application.model.ForwardRequest;
 import com.javanc.gateway.application.model.ForwardResponse;
+import com.javanc.gateway.application.model.AuthenticatedPrincipal;
 import com.javanc.gateway.application.port.RequestForwardingPort;
 import com.javanc.gateway.application.port.TokenValidationPort;
 import io.quarkus.test.junit.QuarkusTest;
@@ -240,9 +241,11 @@ class GatewayResourceTest {
         private static String lastToken;
 
         @Override
-        public Uni<Boolean> isValid(String token) {
+        public Uni<AuthenticatedPrincipal> introspect(String token) {
             lastToken = token;
-            return Uni.createFrom().item("valid".equals(token));
+            return Uni.createFrom().item("valid".equals(token)
+                    ? new AuthenticatedPrincipal(true, 42, "user")
+                    : AuthenticatedPrincipal.inactive());
         }
     }
 }

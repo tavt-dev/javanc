@@ -47,8 +47,11 @@ export interface ChangeUserStatusRequest {
 export interface UserSearchParams {
   query?: string;
   role?: Role;
+  active?: boolean;
+  status?: string;
   page?: number;
   size?: number;
+  sort?: string;
 }
 
 export interface CreateManagerUpgradeRequest {
